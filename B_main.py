@@ -66,7 +66,7 @@ def list_blobs(bucket_name):
 
     # Note: Client.list_blobs requires at least package version 1.17.0.
     blobs = storage_client.list_blobs(bucket_name)
-
+    return blobs
 
 
 ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
@@ -186,7 +186,7 @@ class CustomTrainer(DefaultTrainer):
 ## Load custom dataset, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE THING CLASSES TO LOAD FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # Get data froom bucket
-bloblist = list_blobs('uw-com-vision')
+blobs = list_blobs('uw-com-vision')
 
 for keyword in ["Train", "Test"]:
     for blob in blobs:
