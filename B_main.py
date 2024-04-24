@@ -53,6 +53,19 @@ from skimage.measure import find_contours
 from skimage.measure import label
 from scipy.ndimage import binary_fill_holes
 from skimage.morphology import dilation, erosion
+from google.cloud import storage
+
+
+## Def get data from buckets
+
+def list_blobs(bucket_name):
+    """Lists all the blobs in the bucket."""
+    # bucket_name = "your-bucket-name"
+
+    storage_client = storage.Client()
+
+    # Note: Client.list_blobs requires at least package version 1.17.0.
+    blobs = storage_client.list_blobs(bucket_name)
 
 
 
@@ -172,6 +185,15 @@ class CustomTrainer(DefaultTrainer):
 
 ## Load custom dataset, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE THING CLASSES TO LOAD FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+# Get data froom bucket
+bloblist = list_blobs('uw-com-vision')
+
+for keyword in ["Train", "Test"]:
+    for blob in blobs:
+        local_filename = '/home/deamoon_uw_nn/DATASET/' + keyword + "/" + blob.name
+        blob.download_to_filename(local_filename)
+
+#Dataset load
 for d in ["Train", "Test"]:
     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
     DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/content/drive/MyDrive/Colab Notebooks/UW/COM_Vision/DATASETS/SA/Original_backup/" + d, 
