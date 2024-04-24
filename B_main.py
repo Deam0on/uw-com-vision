@@ -58,7 +58,7 @@ from google.cloud import storage
 
 ## Def get data from buckets
 
-def list_blobs(bucket_name):
+def download_list_blobs(bucket_name):
     """Lists all the blobs in the bucket."""
     # bucket_name = "your-bucket-name"
 
@@ -66,7 +66,11 @@ def list_blobs(bucket_name):
 
     # Note: Client.list_blobs requires at least package version 1.17.0.
     blobs = storage_client.list_blobs(bucket_name)
-    return blobs
+    
+    for keyword in ["Train", "Test"]:
+        for blob in blobs:
+            local_filename = '/home/deamoon_uw_nn/DATASET/' + keyword + "/" + blob.name
+            blob.download_to_filename(local_filename)
 
 
 ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
@@ -186,18 +190,13 @@ class CustomTrainer(DefaultTrainer):
 ## Load custom dataset, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE THING CLASSES TO LOAD FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # Get data froom bucket
-blobs = list_blobs('uw-com-vision')
-
-for keyword in ["Train", "Test"]:
-    for blob in blobs:
-        local_filename = '/home/deamoon_uw_nn/DATASET/' + keyword + "/" + blob.name
-        blob.download_to_filename(local_filename)
+download_list_blobs('uw-com-vision')
 
 #Dataset load
 for d in ["Train", "Test"]:
     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
-    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/content/drive/MyDrive/Colab Notebooks/UW/COM_Vision/DATASETS/SA/Original_backup/" + d, 
-                                                                                   "/content/drive/MyDrive/Colab Notebooks/UW/COM_Vision/DATASETS/SA/Original_backup/" + d))
+    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d, 
+                                                                                   "//home/deamoon_uw_nn/DATASET/" + d))
     MetadataCatalog.get("multiclass_Train").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
   
 multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
