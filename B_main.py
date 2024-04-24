@@ -65,7 +65,7 @@ def download_list_blobs(bucket_name):
     client = storage.Client()
     for keyword in ["Train", "Test"]:
         for blob in client.list_blobs(bucket_name, prefix='DATASET/' + keyword):
-            local_filename = '/home/deamoon_uw_nn/DATASET/' + keyword + "/" + blob.name
+            local_filename = '/home/deamoon_uw_nn/ + blob.name
             blob.download_to_filename(local_filename)
 
                 
