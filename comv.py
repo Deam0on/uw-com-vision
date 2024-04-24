@@ -200,12 +200,12 @@ multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
 
-# OBSOLETE, used only to check visually that dataset load OK
-dataset_dicts = DatasetCatalog.get('multiclass_Train')
-for d in random.sample(dataset_dicts,3):
-    print(d["file_name"])
+# # OBSOLETE, used only to check visually that dataset load OK
+# dataset_dicts = DatasetCatalog.get('multiclass_Train')
+# for d in random.sample(dataset_dicts,3):
+#     print(d["file_name"])
 
-print(dataset_dicts)
+# print(dataset_dicts)
 
 
 ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -401,7 +401,7 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
     return masks
 
 
-## load for analysis
+## load for analysis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PATH
 
 path = "./output/"  # the weight save path
 inpath = "/content/drive/MyDrive/Colab Notebooks/UW/COM_Vision/DATASETS/D_val/images/"
