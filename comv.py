@@ -205,6 +205,8 @@ dataset_dicts = DatasetCatalog.get('multiclass_Train')
 for d in random.sample(dataset_dicts,3):
     print(d["file_name"])
 
+print(dataset_dicts)
+
 
 ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
