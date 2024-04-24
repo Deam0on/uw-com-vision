@@ -56,22 +56,19 @@ from skimage.morphology import dilation, erosion
 from google.cloud import storage
 
 
-## Def get data from buckets
+## Def get data from buckets gs//mybucket/abc/myfolder
 
 def download_list_blobs(bucket_name,folder):
     """Lists all the blobs in the bucket."""
     # bucket_name = "your-bucket-name"
 
-    storage_client = storage.Client()
-
-    # Note: Client.list_blobs requires at least package version 1.17.0.
-    blobs = storage_client.list_blobs(bucket_name, prefix=folder):
-    
+    client = storage.Client()
     for keyword in ["Train", "Test"]:
-        for blob in blobs:
+        for blob in client.list_blobs(bucket_name, prefix='DATASET/' + keyword):
             local_filename = '/home/deamoon_uw_nn/DATASET/' + keyword + "/" + blob.name
             blob.download_to_filename(local_filename)
 
+                
 
 ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
 
