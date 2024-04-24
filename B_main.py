@@ -58,7 +58,7 @@ from google.cloud import storage
 
 ## Def get data from buckets gs//mybucket/abc/myfolder
 
-def download_list_blobs(bucket_name,folder):
+def download_list_blobs(bucket_name):
     """Lists all the blobs in the bucket."""
     # bucket_name = "your-bucket-name"
 
@@ -187,7 +187,7 @@ class CustomTrainer(DefaultTrainer):
 ## Load custom dataset, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE THING CLASSES TO LOAD FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # Get data froom bucket
-download_list_blobs('uw-com-vision','DATASET'):
+download_list_blobs('uw-com-vision')
 
 #Dataset load
 for d in ["Train", "Test"]:
