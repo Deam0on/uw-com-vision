@@ -51,7 +51,7 @@ from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 import pycocotools.mask as mask_util
 from skimage.measure import find_contours
 from skimage.measure import label
-from scipy.ndimage.morphology import binary_fill_holes
+from scipy.ndimage import binary_fill_holes
 from skimage.morphology import dilation, erosion
 
 
@@ -207,7 +207,7 @@ cfg.SOLVER.MAX_ITER = 1000
 cfg.SOLVER.STEPS = []
 cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
 cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
-cfg.MODEL.DEVICE = "cuda"
+cfg.MODEL.DEVICE = "cpu"
 
 
 ## Train model
