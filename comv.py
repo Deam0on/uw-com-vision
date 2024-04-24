@@ -200,15 +200,10 @@ multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
 
-## OBSOLETE, used only to check visually that dataset load OK
-# dataset_dicts = DatasetCatalog.get('multiclass_Train')
-# for d in random.sample(dataset_dicts,3):
-#     img = cv2.imread(d["file_name"])
-#     v = Visualizer(img[:, :, ::-1], metadata=multiclass_metadata, scale=0.5)
-#     v = v.draw_dataset_dict(d)
-#     plt.figure(figsize = (14, 10))
-#     plt.imshow(cv2.cvtColor(v.get_image()[:, :, ::-1], cv2.COLOR_BGR2RGB))
-#     plt.show()
+# OBSOLETE, used only to check visually that dataset load OK
+dataset_dicts = DatasetCatalog.get('multiclass_Train')
+for d in random.sample(dataset_dicts,3):
+    print(d["file_name"])
 
 
 ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
