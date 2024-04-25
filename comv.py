@@ -408,7 +408,7 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
 path = "./output/"  # the weight save path
 inpath = "/home/deamoon_uw_nn/DATASET/INFERENCE"
 images_name = listdir(inpath)
-images_name = [f for f in os.listdir(inpath) if f.endswith('.png')]
+images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
 
 Img_ID = []
 EncodedPixels = []
@@ -427,7 +427,7 @@ for name in images_name:
 
     if masks:  # If any objects are detected in this image
             for i in range(len(masks)):  # Loop all instances
-                Img_ID.append(name.replace('.png', ''))
+                Img_ID.append(name.replace('.tif', ''))
                 EncodedPixels.append(conv(rle_encoding(masks[i])))
 
 
@@ -501,13 +501,14 @@ def GetInference():
 def GetCounts():
   outputs = predictor(im)
   classes = outputs["instances"].pred_classes.to("cpu").numpy()
-  TotalCount = sum(classes==1)+sum(classes==2)+sum(classes==3)
+  TotalCount = sum(classes==1)+sum(classes==2)+sum(classes==3)+sum(classes==4)
   ParticleCount = sum(classes==1)
   BubbleCount = sum(classes==2)
   DropletCount = sum(classes==3)
   PList.append(ParticleCount)
   DList.append(DropletCount)
   BList.append(BubbleCount)
+  # things_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
 
 ## get mask contours for outlines / ferret
