@@ -178,27 +178,6 @@ for d in keywords:
 multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=det_classes)
 
-# ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# cfg = get_cfg()
-# cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
-# cfg.DATASETS.TRAIN = ("multiclass_Train",)
-# cfg.DATASETS.TEST = ()   # no metrics implemented for this dataset
-# cfg.DATALOADER.NUM_WORKERS = 2
-# cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
-# cfg.SOLVER.IMS_PER_BATCH = 2
-# cfg.SOLVER.BASE_LR = 0.00025
-# cfg.SOLVER.MAX_ITER = 1000
-# cfg.SOLVER.STEPS = []
-# cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
-# cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
-# cfg.MODEL.DEVICE = "cuda"
-
-# ## Train model
-# os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
-# trainer = CustomTrainer(cfg)
-# trainer.resume_or_load(resume=False)
-# trainer.train()
-
 ## Collect prediction masks
 # Convert binary_mask to RLE
 def binary_mask_to_rle(binary_mask):
@@ -362,46 +341,6 @@ for name in images_name:
 ## save inference 
 df = pd.DataFrame({"ImageId": Img_ID, "EncodedPixels": EncodedPixels})
 df.to_csv("./output/R50_flip_" + ".csv", index=False, sep=',')
-
-## def cat for inf and show
-dataset_dicts = DatasetCatalog.get('multiclass_Test')
-for i, d in enumerate(random.sample(dataset_dicts,5)):
-    im = cv2.imread(d["file_name"])
-    outputs = predictor(im)
-    v = Visualizer(im[:, :, ::-1],
-                   metadata=multiclass_test_metadata, scale=0.5)
-    v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-    plt.figure(figsize = (15, 20))
-    plt.imshow(cv2.cvtColor(v.get_image()[:, :, ::-1], cv2.COLOR_BGR2RGB))
-    # plt.savefig(f"./Results/Output_{i}.png")
-plt.show()
-
-
-
-# ## single image inference, now obsolete, but rewrite to standalone function
-
-# image_path = "/content/drive/MyDrive/Colab Notebooks/UW/COM_Vision/DATASETS/D_train/images/01213_A.000006.tif"
-
-
-# def on_image(image_path, predictor):
-#     im = cv2.imread(image_path)
-#     outputs = predictor(im)
-#     v = Visualizer(im[:, :, ::-1],
-#                    metadata=multiclass_test_metadata,
-#                    scale=0.5,
-#                    instance_mode=ColorMode.IMAGE_BW)
-#     v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-
-#     plt.figure(figsize=(15, 20))
-#     #plt.imshow(v.get_image())
-#     plt.imshow(cv2.cvtColor(v.get_image()[:, :, ::-1], cv2.COLOR_BGR2RGB))
-#     plt.show()
-
-
-
-# on_image(image_path, predictor)
-
-
 
 ## def for analysis and measurements
 def midpoint(ptA, ptB):
