@@ -1,5 +1,4 @@
 ## IMPORTS
-
 import os
 from os import listdir
 import time
@@ -55,27 +54,7 @@ from scipy.ndimage import binary_fill_holes
 from skimage.morphology import dilation, erosion
 from google.cloud import storage
 
-
-## UPDATE DATASETS
-
-# os.system("gsutil -m cp -r gs://uw-com-vision/DATASET /home/deamoon_uw_nn")
-# # Get data froom bucket
-# keywords = ["Train", "Test"]
-# client = storage.Client()
-# for keyword in keywords:
-#     for blob in client.list_blobs('uw-com-vision', prefix='DATASET/' + keyword):
-#         local_filename = '/home/deamoon_uw_nn/' + blob.name
-#         blob.download_to_filename(local_filename)    
-
-# # Get data froom bucket
-
-# client = storage.Client()
-# for blob in client.list_blobs('uw-com-vision', prefix='DATASET/INFERENCE' ):
-#     local_filename = '/home/deamoon_uw_nn/' + blob.name
-#     blob.download_to_filename(local_filename)                
-
 ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
-
 def get_superannotate_dicts(img_dir, label_dir):
     dataset_dicts = []
     idx = 0
@@ -90,16 +69,14 @@ def get_superannotate_dicts(img_dir, label_dir):
 
                 record = {}
                 filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
-                # height, width = cv2.imread(filename).shape[:2]
                 record["file_name"] = filename
                 record["image_id"] = idx
                 record["height"] = imgs_anns["metadata"]["height"]
                 record["width"] = imgs_anns["metadata"]["width"]
                 idx = idx + 1
-
                 annos = imgs_anns["instances"]
-                #annos = imgs_anns["regions"]
                 objs = []
+                
                 for anno in annos:
                     categoryName = anno["className"]
                     type = anno["type"]
@@ -150,9 +127,7 @@ def get_superannotate_dicts(img_dir, label_dir):
                 dataset_dicts.append(record)
     return dataset_dicts
 
-
 ## Def custom mapper, rand changes to dataset imgs, induce variability to dataset
-
 def custom_mapper(dataset_dicts):
     dataset_dicts = copy.deepcopy(dataset_dicts)  # it will be modified by code below
     image = utils.read_image(dataset_dicts["file_name"], format="BGR")
@@ -179,14 +154,11 @@ def custom_mapper(dataset_dicts):
     dataset_dicts["instances"] = utils.filter_empty_instances(instances)
     return dataset_dicts
 
-
 ## Replace default trainer, subs 2x 1D method
-
 class CustomTrainer(DefaultTrainer):
     @classmethod
     def build_train_loader(cls, cfg):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
-
 
 ## Load custom dataset, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE THING CLASSES TO LOAD FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #Dataset load
@@ -200,17 +172,7 @@ for d in keywords:
 multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
-
-# # OBSOLETE, used only to check visually that dataset load OK
-# dataset_dicts = DatasetCatalog.get('multiclass_Train')
-# for d in random.sample(dataset_dicts,3):
-#     print(d["file_name"])
-
-# print(dataset_dicts)
-
-
 ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
 cfg.DATASETS.TRAIN = ("multiclass_Train",)
@@ -225,42 +187,11 @@ cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
 cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
 cfg.MODEL.DEVICE = "cuda"
 
-
 ## Train model
-
 os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 trainer = CustomTrainer(cfg)
 trainer.resume_or_load(resume=False)
 trainer.train()
-
-
-## OBSOLETE, only visualization
-# train_data_loader = trainer.build_train_loader(cfg)
-# data_iter = iter(train_data_loader)
-# batch = next(data_iter)
-
-# rows, cols = 2, 2
-# plt.figure(figsize=(20,20))
-
-# for i, per_image in enumerate(batch[:int(rows*cols)]):
-
-#     plt.subplot(rows, cols, i+1)
-
-#     # Pytorch tensor is in (C, H, W) format
-#     img = per_image["image"].permute(1, 2, 0).cpu().detach().numpy()
-#     img = utils.convert_image_to_rgb(img, cfg.INPUT.FORMAT)
-
-#     visualizer = Visualizer(img, metadata=multiclass_metadata, scale=0.5)
-
-#     target_fields = per_image["instances"].get_fields()
-#     labels = None
-#     vis = visualizer.overlay_instances(
-#         labels=labels,
-#         boxes=target_fields.get("gt_boxes", None),
-#         masks=target_fields.get("gt_masks", None),
-#         keypoints=target_fields.get("gt_keypoints", None),
-#     )
-#     plt.imshow(vis.get_image()[:, :, ::-1])
 
 ## Collect prediction masks
 # Convert binary_mask to RLE
@@ -274,7 +205,6 @@ def binary_mask_to_rle(binary_mask):
             counts.append(0)
         counts.append(len(list(elements)))
     return rle
-
 
 THRESHOLDS = [.18, .35, .58]
 MIN_PIXELS = [75, 150, 75]
@@ -309,8 +239,6 @@ def get_masks(fn, predictor):
             res.append(rle_encode(mask))
     return res
 
-
-
 # inference with trained model
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
@@ -326,8 +254,6 @@ MetadataCatalog.get("multiclass_Train").set(
 MetadataCatalog.get("multiclass_Train").set(
          things_colors=[(115, 254, 248), (239, 254, 21), (146, 19, 26), (47, 213, 218)])
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Train")
-
-
 
 ### Conversion from RLE to BitMask
 def rle_decode(mask_rle, shape):
@@ -401,10 +327,6 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
 
     return masks
 
-
-
-
-
 path = "./output/"  # the weight save path
 inpath = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
 images_name = listdir(inpath)
@@ -431,14 +353,9 @@ for name in images_name:
                 Img_ID.append(name.replace('.tif', ''))
                 EncodedPixels.append(conv(rle_encoding(masks[i])))
 
-
 ## save inference 
-
 df = pd.DataFrame({"ImageId": Img_ID, "EncodedPixels": EncodedPixels})
 df.to_csv("./output/R50_flip_" + ".csv", index=False, sep=',')
-
-
-
 
 ## def cat for inf and show
 dataset_dicts = DatasetCatalog.get('multiclass_Test')
@@ -481,12 +398,10 @@ plt.show()
 
 
 ## def for analysis and measurements
-
 def midpoint(ptA, ptB):
     return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
 
 ## sub inference from mask
-
 def GetInference():
   outputs = predictor(im)
   v = Visualizer(im[:, :, ::-1],
@@ -496,9 +411,7 @@ def GetInference():
   out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
   # cv2.imwrite(out.get_image()[:, :, ::-1])
 
-
 ## count types
-
 def GetCounts():
   outputs = predictor(im)
   classes = outputs["instances"].pred_classes.to("cpu").numpy()
@@ -513,7 +426,6 @@ def GetCounts():
 
 
 ## get mask contours for outlines / ferret
-
 def GetMask_Contours():
   outputs = predictor(im)
   mask_array = outputs['instances'].pred_masks.to("cpu").numpy()
@@ -586,7 +498,6 @@ def GetMask_Contours():
 
 
 ## create and append lists
-
 lengthList = list()
 widthList = list()
 circularEDList = list()
@@ -619,7 +530,6 @@ for test_img in os.listdir(test_img_path):
     count = count+1
 
 # #moving avgs
-
 window_size = 3
 i = 0
 k = 0
