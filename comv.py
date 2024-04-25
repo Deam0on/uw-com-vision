@@ -56,17 +56,8 @@ from skimage.morphology import dilation, erosion
 from google.cloud import storage
 
 
-## Def get data from buckets gs//mybucket/abc/myfolder
 
-def download_list_blobs(bucket_name, prefix, keywods):
-    """Lists all the blobs in the bucket."""
-    # bucket_name = "your-bucket-name"
-
-    client = storage.Client()
-    for keyword in keywords:
-        for blob in client.list_blobs(bucket_name, prefix=prefix + "/" + keyword):
-            local_filename = '/home/deamoon_uw_nn/' + blob.name
-            blob.download_to_filename(local_filename)
+    
 
                 
 
@@ -188,7 +179,11 @@ class CustomTrainer(DefaultTrainer):
 
 # Get data froom bucket
 keywords = ["Train", "Test"]
-download_list_blobs('uw-com-vision','DATASET',keywords)
+client = storage.Client()
+for keyword in keywords:
+    for blob in client.list_blobs('uw-com-vision', prefix='DATASET/' + keyword):
+        local_filename = '/home/deamoon_uw_nn/' + blob.name
+        blob.download_to_filename(local_filename)
 
 #Dataset load
 for d in keywords:
@@ -402,9 +397,12 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
     return masks
 
 
-## load for analysis
-keywords = ["INFERENCE"]
-download_list_blobs('uw-com-vision','DATASET',keywords)
+# Get data froom bucket
+
+client = storage.Client()
+for blob in client.list_blobs('uw-com-vision', prefix='DATASET/INFERENCE' ):
+    local_filename = '/home/deamoon_uw_nn/' + blob.name
+    blob.download_to_filename(local_filename)
 
 
 path = "./output/"  # the weight save path
