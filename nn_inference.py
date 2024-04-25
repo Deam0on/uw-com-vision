@@ -166,6 +166,9 @@ class CustomTrainer(DefaultTrainer):
 with open('/home/deamoon_uw_nn/classes.csv', newline='') as f:
     reader = csv.reader(f)
     det_classes = list(reader)
+with open('/home/deamoon_uw_nn/classes_cc.csv', newline='') as f:
+    reader = csv.reader(f)
+    det_colors = [tuple(row) for row in reader]
 
 #Dataset load
 keywords = ["Train", "Test"]
@@ -235,9 +238,9 @@ predictor = DefaultPredictor(cfg)
 # REDO catalog, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!things classes from file, as above
 cfg.MODEL.DEVICE = "cuda"
 MetadataCatalog.get("multiclass_Train").set(
-         things_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
+         thing_classes=det_classes)
 MetadataCatalog.get("multiclass_Train").set(
-         things_colors=[(115, 254, 248), (239, 254, 21), (146, 19, 26), (47, 213, 218)])
+         things_colors=det_colors)
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Train")
 
 ### Conversion from RLE to BitMask
@@ -357,6 +360,7 @@ def GetInference():
   # cv2.imwrite(out.get_image()[:, :, ::-1])
 
 ## count types
+
 def GetCounts():
   outputs = predictor(im)
   classes = outputs["instances"].pred_classes.to("cpu").numpy()
