@@ -56,10 +56,23 @@ from skimage.morphology import dilation, erosion
 from google.cloud import storage
 
 
+## UPDATE DATASETS
 
-    
+os.system("gsutil -m cp -r gs://uw-com-vision/DATASET /home/deamoon_uw_nn/DATASET")
+# # Get data froom bucket
+# keywords = ["Train", "Test"]
+# client = storage.Client()
+# for keyword in keywords:
+#     for blob in client.list_blobs('uw-com-vision', prefix='DATASET/' + keyword):
+#         local_filename = '/home/deamoon_uw_nn/' + blob.name
+#         blob.download_to_filename(local_filename)    
 
-                
+# # Get data froom bucket
+
+# client = storage.Client()
+# for blob in client.list_blobs('uw-com-vision', prefix='DATASET/INFERENCE' ):
+#     local_filename = '/home/deamoon_uw_nn/' + blob.name
+#     blob.download_to_filename(local_filename)                
 
 ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
 
@@ -176,14 +189,6 @@ class CustomTrainer(DefaultTrainer):
 
 
 ## Load custom dataset, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE THING CLASSES TO LOAD FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-# Get data froom bucket
-keywords = ["Train", "Test"]
-client = storage.Client()
-for keyword in keywords:
-    for blob in client.list_blobs('uw-com-vision', prefix='DATASET/' + keyword):
-        local_filename = '/home/deamoon_uw_nn/' + blob.name
-        blob.download_to_filename(local_filename)
 
 #Dataset load
 for d in keywords:
@@ -397,12 +402,7 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
     return masks
 
 
-# Get data froom bucket
 
-client = storage.Client()
-for blob in client.list_blobs('uw-com-vision', prefix='DATASET/INFERENCE' ):
-    local_filename = '/home/deamoon_uw_nn/' + blob.name
-    blob.download_to_filename(local_filename)
 
 
 path = "./output/"  # the weight save path
