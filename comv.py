@@ -494,7 +494,7 @@ def GetInference():
                   scale=1,
                   instance_mode=ColorMode.SEGMENTATION)
   out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-  # cv2_imshow(out.get_image()[:, :, ::-1])
+  # cv2.imwrite(out.get_image()[:, :, ::-1])
 
 
 ## count types
@@ -605,7 +605,8 @@ tDL = 0
 count = 0
 
 test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
-
+x_th = len(test_img_path)
+x_c = 0
 
 for test_img in os.listdir(test_img_path):
 
