@@ -54,129 +54,129 @@ from scipy.ndimage import binary_fill_holes
 from skimage.morphology import dilation, erosion
 from google.cloud import storage
 
-# ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
-# def get_superannotate_dicts(img_dir, label_dir):
-#     dataset_dicts = []
-#     idx = 0
-#     for r, d, f in os.walk(label_dir):
-#         for file in f:
-#             if file.endswith(".json"):
-#                 json_file = os.path.join(r, file)
-#                 print(json_file)
+## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
+def get_superannotate_dicts(img_dir, label_dir):
+    dataset_dicts = []
+    idx = 0
+    for r, d, f in os.walk(label_dir):
+        for file in f:
+            if file.endswith(".json"):
+                json_file = os.path.join(r, file)
+                print(json_file)
 
-#                 with open(json_file) as f:
-#                     imgs_anns = json.load(f)
+                with open(json_file) as f:
+                    imgs_anns = json.load(f)
 
-#                 record = {}
-#                 filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
-#                 record["file_name"] = filename
-#                 record["image_id"] = idx
-#                 record["height"] = imgs_anns["metadata"]["height"]
-#                 record["width"] = imgs_anns["metadata"]["width"]
-#                 idx = idx + 1
-#                 annos = imgs_anns["instances"]
-#                 objs = []
+                record = {}
+                filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
+                record["file_name"] = filename
+                record["image_id"] = idx
+                record["height"] = imgs_anns["metadata"]["height"]
+                record["width"] = imgs_anns["metadata"]["width"]
+                idx = idx + 1
+                annos = imgs_anns["instances"]
+                objs = []
                 
-#                 for anno in annos:
-#                     categoryName = anno["className"]
-#                     type = anno["type"]
+                for anno in annos:
+                    categoryName = anno["className"]
+                    type = anno["type"]
 
-#                     if type == "ellipse":
-#                         cx = anno["cx"]
-#                         cy = anno["cy"]
-#                         rx = anno["rx"]
-#                         ry = anno["ry"]
-#                         theta = anno["angle"]
-#                         ellipse = ((cx, cy), (rx, ry), theta)
-#                         # Create a circle of radius 1 around the centre point:
-#                         circ = shapely.geometry.Point(ellipse[0]).buffer(1)
-#                         # Create ellipse along x and y:
-#                         ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
-#                         # rotate the ellipse(clockwise, x axis pointing right):
-#                         ellr = shapely.affinity.rotate(ell, ellipse[2])
+                    if type == "ellipse":
+                        cx = anno["cx"]
+                        cy = anno["cy"]
+                        rx = anno["rx"]
+                        ry = anno["ry"]
+                        theta = anno["angle"]
+                        ellipse = ((cx, cy), (rx, ry), theta)
+                        # Create a circle of radius 1 around the centre point:
+                        circ = shapely.geometry.Point(ellipse[0]).buffer(1)
+                        # Create ellipse along x and y:
+                        ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
+                        # rotate the ellipse(clockwise, x axis pointing right):
+                        ellr = shapely.affinity.rotate(ell, ellipse[2])
 
-#                         px, py = ellr.exterior.coords.xy
-#                     elif type == "polygon":
-#                         px = anno["points"][0:-1:2]  #0 -1 2
-#                         py = anno["points"][1:-1:2] # 1 -1 2
-#                         px.append(anno["points"][0])    # 0
-#                         py.append(anno["points"][-1])   # -1
+                        px, py = ellr.exterior.coords.xy
+                    elif type == "polygon":
+                        px = anno["points"][0:-1:2]  #0 -1 2
+                        py = anno["points"][1:-1:2] # 1 -1 2
+                        px.append(anno["points"][0])    # 0
+                        py.append(anno["points"][-1])   # -1
                       
-#                     poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-#                     poly = [p for x in poly for p in x]
+                    poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
+                    poly = [p for x in poly for p in x]
 
-#                     if "Scale bar" in categoryName :
-#                         category_id = 0
-#                     elif "Wall thickness of polyHIPEs" in categoryName :
-#                         category_id = 1
-#                     elif "Pore throats of polyHIPEs" in categoryName :
-#                         category_id = 2
-#                     elif "Pores of polyHIPEs" in categoryName :
-#                         category_id = 3
-#                     else:
-#                         raise ValueError("Category Name Not Found: "+ categoryName)
+                    if "Scale bar" in categoryName :
+                        category_id = 0
+                    elif "Wall thickness of polyHIPEs" in categoryName :
+                        category_id = 1
+                    elif "Pore throats of polyHIPEs" in categoryName :
+                        category_id = 2
+                    elif "Pores of polyHIPEs" in categoryName :
+                        category_id = 3
+                    else:
+                        raise ValueError("Category Name Not Found: "+ categoryName)
 
-#                     obj = {
-#                         "bbox":[np.min(px), np.min(py), np.max(px), np.max(py)],
-#                         "bbox_mode": BoxMode.XYXY_ABS,
-#                         "segmentation": [poly],
-#                         "category_id": category_id,
-#                     }
-#                     objs.append(obj)
-#                 record["annotations"] = objs
-#                 dataset_dicts.append(record)
-#     return dataset_dicts
+                    obj = {
+                        "bbox":[np.min(px), np.min(py), np.max(px), np.max(py)],
+                        "bbox_mode": BoxMode.XYXY_ABS,
+                        "segmentation": [poly],
+                        "category_id": category_id,
+                    }
+                    objs.append(obj)
+                record["annotations"] = objs
+                dataset_dicts.append(record)
+    return dataset_dicts
 
-# ## Def custom mapper, rand changes to dataset imgs, induce variability to dataset
-# def custom_mapper(dataset_dicts):
-#     dataset_dicts = copy.deepcopy(dataset_dicts)  # it will be modified by code below
-#     image = utils.read_image(dataset_dicts["file_name"], format="BGR")
-#     transform_list = [
-#         T.Resize((800,800)),
-#         T.RandomBrightness(0.8, 1.8),
-#         T.RandomContrast(0.6, 1.3),
-#         T.RandomSaturation(0.8, 1.4),
-#         T.RandomRotation(angle=[90, 90]),
-#         T.RandomLighting(0.7),
-#         T.RandomFlip(prob=0.4, horizontal=False, vertical=True),
-#     ]
+## Def custom mapper, rand changes to dataset imgs, induce variability to dataset
+def custom_mapper(dataset_dicts):
+    dataset_dicts = copy.deepcopy(dataset_dicts)  # it will be modified by code below
+    image = utils.read_image(dataset_dicts["file_name"], format="BGR")
+    transform_list = [
+        T.Resize((800,800)),
+        T.RandomBrightness(0.8, 1.8),
+        T.RandomContrast(0.6, 1.3),
+        T.RandomSaturation(0.8, 1.4),
+        T.RandomRotation(angle=[90, 90]),
+        T.RandomLighting(0.7),
+        T.RandomFlip(prob=0.4, horizontal=False, vertical=True),
+    ]
   
-#     image, transforms = T.apply_transform_gens(transform_list, image)
-#     dataset_dicts["image"] = torch.as_tensor(image.transpose(2, 0, 1).astype("float32"))
+    image, transforms = T.apply_transform_gens(transform_list, image)
+    dataset_dicts["image"] = torch.as_tensor(image.transpose(2, 0, 1).astype("float32"))
 
-#     annos = [
-#         utils.transform_instance_annotations(obj, transforms, image.shape[:2])
-#         for obj in dataset_dicts.pop("annotations")
-#         if obj.get("iscrowd", 0) == 0
-#     ]
+    annos = [
+        utils.transform_instance_annotations(obj, transforms, image.shape[:2])
+        for obj in dataset_dicts.pop("annotations")
+        if obj.get("iscrowd", 0) == 0
+    ]
   
-#     instances = utils.annotations_to_instances(annos, image.shape[:2])
-#     dataset_dicts["instances"] = utils.filter_empty_instances(instances)
-#     return dataset_dicts
+    instances = utils.annotations_to_instances(annos, image.shape[:2])
+    dataset_dicts["instances"] = utils.filter_empty_instances(instances)
+    return dataset_dicts
 
-# ## Replace default trainer, subs 2x 1D method
-# class CustomTrainer(DefaultTrainer):
-#     @classmethod
-#     def build_train_loader(cls, cfg):
-#         return build_detection_train_loader(cfg, mapper=custom_mapper)
+## Replace default trainer, subs 2x 1D method
+class CustomTrainer(DefaultTrainer):
+    @classmethod
+    def build_train_loader(cls, cfg):
+        return build_detection_train_loader(cfg, mapper=custom_mapper)
 
-# ## Load custom dataset
-# # Load detection classes  thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
+## Load custom dataset
+# Load detection classes  thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
-# with open('/home/deamoon_uw_nn/classes.csv', newline='') as f:
-#     reader = csv.reader(f)
-#     det_classes = list(reader)
+with open('/home/deamoon_uw_nn/classes.csv', newline='') as f:
+    reader = csv.reader(f)
+    det_classes = list(reader)
 
-# #Dataset load
-# keywords = ["Train", "Test"]
-# for d in keywords:
-#     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
-#     DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
-#                                                                                    "/home/deamoon_uw_nn/DATASET/" + d + "/"))
-#     MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
+#Dataset load
+keywords = ["Train", "Test"]
+for d in keywords:
+    #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
+    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
+                                                                                   "/home/deamoon_uw_nn/DATASET/" + d + "/"))
+    MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
   
-# multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
-# multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=det_classes)
+multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
+multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=det_classes)
 
 # ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # cfg = get_cfg()
