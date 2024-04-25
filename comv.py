@@ -58,7 +58,7 @@ from google.cloud import storage
 
 ## UPDATE DATASETS
 
-os.system("gsutil -m cp -r gs://uw-com-vision/DATASET /home/deamoon_uw_nn/DATASET")
+os.system("gsutil -m cp -r gs://uw-com-vision/DATASET /home/deamoon_uw_nn")
 # # Get data froom bucket
 # keywords = ["Train", "Test"]
 # client = storage.Client()
