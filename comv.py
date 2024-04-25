@@ -409,6 +409,7 @@ path = "./output/"  # the weight save path
 inpath = "/home/deamoon_uw_nn/DATASET/INFERENCE"
 images_name = listdir(inpath)
 images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
+print(images_name)
 
 Img_ID = []
 EncodedPixels = []
