@@ -361,6 +361,29 @@ def GetInference():
 
 ## count types
 
+def GetCounts(csv_file_path, predictor, im):
+    # Read class names from a CSV file
+    class_data = pd.read_csv(csv_file_path)
+    class_names = class_data['class_name'].tolist()  # Assuming the column is named 'class_name'
+
+    # Get predictions
+    outputs = predictor(im)
+    classes = outputs["instances"].pred_classes.to("cpu").numpy()
+
+    # Initialize a dictionary to store counts
+    counts = {name: 0 for name in class_names}
+
+    # Count each class
+    for class_id, class_name in enumerate(class_names):
+        counts[class_name] = np.sum(classes == class_id)
+
+    # Optionally append to lists if needed, or handle differently
+    # PList.append(counts['particle'])  # if 'particle' is a class name
+    # DList.append(counts['droplet'])
+    # BList.append(counts['bubble'])
+
+    return counts
+
 def GetCounts():
   outputs = predictor(im)
   classes = outputs["instances"].pred_classes.to("cpu").numpy()
