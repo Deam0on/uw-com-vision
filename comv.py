@@ -406,7 +406,7 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
 
 
 path = "./output/"  # the weight save path
-inpath = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
+inpath = "/home/deamoon_uw_nn/DATASET/INFERENCE"
 images_name = listdir(inpath)
 images_name = [f for f in os.listdir(inpath) if f.endswith('.png')]
 
