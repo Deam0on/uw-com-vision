@@ -401,10 +401,10 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
     return masks
 
 
-## load for analysis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! PATH
+## load for analysis
 
 path = "./output/"  # the weight save path
-inpath = "/content/drive/MyDrive/Colab Notebooks/UW/COM_Vision/DATASETS/D_val/images/"
+inpath = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
 images_name = listdir(inpath)
 images_name = [f for f in os.listdir(inpath) if f.endswith('.png')]
 
@@ -452,28 +452,28 @@ plt.show()
 
 
 
-## single image inference, now obsolete, but rewrite to standalone function
+# ## single image inference, now obsolete, but rewrite to standalone function
 
-image_path = "/content/drive/MyDrive/Colab Notebooks/UW/COM_Vision/DATASETS/D_train/images/01213_A.000006.tif"
-
-
-def on_image(image_path, predictor):
-    im = cv2.imread(image_path)
-    outputs = predictor(im)
-    v = Visualizer(im[:, :, ::-1],
-                   metadata=multiclass_test_metadata,
-                   scale=0.5,
-                   instance_mode=ColorMode.IMAGE_BW)
-    v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-
-    plt.figure(figsize=(15, 20))
-    #plt.imshow(v.get_image())
-    plt.imshow(cv2.cvtColor(v.get_image()[:, :, ::-1], cv2.COLOR_BGR2RGB))
-    plt.show()
+# image_path = "/content/drive/MyDrive/Colab Notebooks/UW/COM_Vision/DATASETS/D_train/images/01213_A.000006.tif"
 
 
+# def on_image(image_path, predictor):
+#     im = cv2.imread(image_path)
+#     outputs = predictor(im)
+#     v = Visualizer(im[:, :, ::-1],
+#                    metadata=multiclass_test_metadata,
+#                    scale=0.5,
+#                    instance_mode=ColorMode.IMAGE_BW)
+#     v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
 
-on_image(image_path, predictor)
+#     plt.figure(figsize=(15, 20))
+#     #plt.imshow(v.get_image())
+#     plt.imshow(cv2.cvtColor(v.get_image()[:, :, ::-1], cv2.COLOR_BGR2RGB))
+#     plt.show()
+
+
+
+# on_image(image_path, predictor)
 
 
 
@@ -600,7 +600,7 @@ tBL = 0
 tDL = 0
 count = 0
 
-test_img_path = "/content/drive/MyDrive/Colab Notebooks/UW/COM_Vision/DATASETS/D_val/images"
+test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
 
 
 for test_img in os.listdir(test_img_path):
