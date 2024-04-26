@@ -55,11 +55,7 @@ from skimage.morphology import dilation, erosion
 from google.cloud import storage
 
 ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
-def get_superannotate_dicts(img_dir, label_dir, class_csv):
-    class_info = pd.read_csv(class_csv)
-    class_map = class_info.set_index('className')['categoryId'].to_dict()
-    # Creating a map for RGB values
-    rgb_map = class_info.set_index('className')[['red', 'green', 'blue']].apply(tuple, axis=1).to_dict()
+def get_superannotate_dicts(img_dir, label_dir):
     dataset_dicts = []
     idx = 0
     for r, d, f in os.walk(label_dir):
@@ -109,9 +105,14 @@ def get_superannotate_dicts(img_dir, label_dir, class_csv):
                     poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
                     poly = [p for x in poly for p in x]
 
-                    if categoryName in class_map:
-                        category_id = class_map[categoryName]
-                        color = rgb_map[categoryName]  # Fetch RGB tuple
+                    if "Scale bar" in categoryName :
+                        category_id = 0
+                    elif "Wall thickness of polyHIPEs" in categoryName :
+                        category_id = 1
+                    elif "Pore throats of polyHIPEs" in categoryName :
+                        category_id = 2
+                    elif "Pores of polyHIPEs" in categoryName :
+                        category_id = 3
                     else:
                         raise ValueError("Category Name Not Found: "+ categoryName)
 
@@ -179,17 +180,17 @@ with open(csv_file_path, newline='') as f:
         det_colors.append((red, green, blue))
 
 
+## Load custom dataset, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE THING CLASSES TO LOAD FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #Dataset load
 keywords = ["Train", "Test"]
 for d in keywords:
     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
     DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
-                                                                                   "/home/deamoon_uw_nn/DATASET/" + d + "/",csv_file_path))
-    MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
+                                                                                   "/home/deamoon_uw_nn/DATASET/" + d + "/"))
+    MetadataCatalog.get("multiclass_Train").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
   
-multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
-multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=det_classes)
-
+multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
+multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
