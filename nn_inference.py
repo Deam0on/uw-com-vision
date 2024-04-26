@@ -533,7 +533,7 @@ for P in range(0, len(PList)):
 values = list()
 values.append(tS)
 values.append(tWT)
-values.append(tPL)
+values.append(tPT)
 values.append(tP)
 values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
 # print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
