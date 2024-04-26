@@ -370,12 +370,25 @@ def GetCounts():
 # def GetMask_Contours():
 def GetMask_Contours(im, classes_of_interest):
   outputs = predictor(im)
-    
-  # Get the predicted classes and masks
-  pred_classes = outputs['instances'].pred_classes.to("cpu").numpy()
-  pred_masks = outputs['instances'].pred_masks.to("cpu").numpy()
 
-  mask_array = outputs['instances'].pred_masks.to("cpu").numpy()
+    # Extract class IDs and masks from the outputs
+    pred_classes = outputs['instances'].pred_classes.to("cpu").numpy()
+    pred_masks = outputs['instances'].pred_masks.to("cpu").numpy()
+
+    # Determine indices of instances belonging to the classes of interest
+    selected_indices = [i for i, cls in enumerate(pred_classes) if cls in classes_of_interest]
+    mask_array = pred_masks[selected_indices]
+
+    # If no relevant masks are found, handle gracefully
+    if mask_array.size == 0:
+        print("No instances found for the specified classes.")
+        return
+    
+  # # Get the predicted classes and masks
+  # pred_classes = outputs['instances'].pred_classes.to("cpu").numpy()
+  # pred_masks = outputs['instances'].pred_masks.to("cpu").numpy()
+
+  # mask_array = outputs['instances'].pred_masks.to("cpu").numpy()
   # mask_array = np.array([pred_masks[i] for i in range(len(pred_classes)) if pred_classes[i] in classes_of_interest])
     
   num_instances = mask_array.shape[0]
@@ -554,7 +567,7 @@ for k in keywds: # 0 scale
     
     df = pd.read_csv('ShapeDescriptor.csv', header=None)
     df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords']
-    df.to_csv('Results' + k + '_.csv', index=True)
+    df.to_csv('Results' + str(keywds[k]) + '_.csv', index=True)
     
     # sns.displot(df['Feret Diameter'])
     # sns.displot(df['Aspect Ratio'])
