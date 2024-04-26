@@ -55,11 +55,7 @@ from skimage.morphology import dilation, erosion
 from google.cloud import storage
 
 ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
-def get_superannotate_dicts(img_dir, label_dir, class_csv):
-    class_info = pd.read_csv(class_csv)
-    class_map = class_info.set_index('className')['categoryId'].to_dict()
-    # Creating a map for RGB values
-    rgb_map = class_info.set_index('className')[['red', 'green', 'blue']].apply(tuple, axis=1).to_dict()
+def get_superannotate_dicts(img_dir, label_dir):
     dataset_dicts = []
     idx = 0
     for r, d, f in os.walk(label_dir):
@@ -109,9 +105,14 @@ def get_superannotate_dicts(img_dir, label_dir, class_csv):
                     poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
                     poly = [p for x in poly for p in x]
 
-                    if categoryName in class_map:
-                        category_id = class_map[categoryName]
-                        color = rgb_map[categoryName]  # Fetch RGB tuple
+                    if "Scale bar" in categoryName :
+                        category_id = 0
+                    elif "Wall thickness of polyHIPEs" in categoryName :
+                        category_id = 1
+                    elif "Pore throats of polyHIPEs" in categoryName :
+                        category_id = 2
+                    elif "Pores of polyHIPEs" in categoryName :
+                        category_id = 3
                     else:
                         raise ValueError("Category Name Not Found: "+ categoryName)
 
@@ -159,35 +160,17 @@ class CustomTrainer(DefaultTrainer):
     def build_train_loader(cls, cfg):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
 
-## Load custom dataset
-# Load detection classes  thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
-
-csv_file_path = '/home/deamoon_uw_nn/classes.csv'
-
-# Lists to store class names and colors
-det_classes = []
-det_colors = []
-
-with open(csv_file_path, newline='') as f:
-    reader = csv.DictReader(f)
-    for row in reader:
-        det_classes.append(row['className'])
-        # Assuming red, green, blue are stored as separate columns
-        red = int(row['red'])
-        green = int(row['green'])
-        blue = int(row['blue'])
-        det_colors.append((red, green, blue))
-
-
+## Load custom dataset, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE THING CLASSES TO LOAD FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #Dataset load
 keywords = ["Train", "Test"]
 for d in keywords:
     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
-    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", "/home/deamoon_uw_nn/DATASET/" + d + "/", csv_file_path))
-    MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
+    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
+                                                                                   "/home/deamoon_uw_nn/DATASET/" + d + "/"))
+    MetadataCatalog.get("multiclass_Train").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
   
-multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
-multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=det_classes)
+multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
+multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
 ## Collect prediction masks
 # Convert binary_mask to RLE
@@ -243,12 +226,11 @@ cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
 cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.45   # set the testing threshold for this model
 predictor = DefaultPredictor(cfg)
 
-# REDO catalog, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!things classes from file, as above
 cfg.MODEL.DEVICE = "cuda"
 MetadataCatalog.get("multiclass_Train").set(
-         thing_classes=det_classes)
+         things_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 MetadataCatalog.get("multiclass_Train").set(
-         things_colors=det_colors)
+         things_colors=[(115, 254, 248), (239, 254, 21), (146, 19, 26), (47, 213, 218)])
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Train")
 
 ### Conversion from RLE to BitMask
@@ -369,24 +351,19 @@ def GetInference():
 
 ## count types
 
-def GetCounts(csv_file_path, predictor, im):
-    # Read class names and IDs from a CSV file
-    class_info = pd.read_csv(csv_file_path)
-    class_names = class_info['className'].tolist()  # Extract class names
-    class_ids = class_info.set_index('className')['categoryId'].to_dict()
+## count types
+def GetCounts():
+  outputs = predictor(im)
+  classes = outputs["instances"].pred_classes.to("cpu").numpy()
+  TotalCount = sum(classes==1)+sum(classes==2)+sum(classes==3)+sum(classes==4)
+  ParticleCount = sum(classes==1)
+  BubbleCount = sum(classes==2)
+  DropletCount = sum(classes==3)
+  PList.append(ParticleCount)
+  DList.append(DropletCount)
+  BList.append(BubbleCount)
+  # things_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
-    # Get predictions
-    outputs = predictor(im)
-    classes = outputs["instances"].pred_classes.to("cpu").numpy()
-
-    # Initialize a dictionary to store counts
-    counts = {name: 0 for name in class_names}
-
-    # Count each class
-    for class_name, class_id in class_ids.items():
-        counts[class_name] = np.sum(classes == class_id)
-
-    return counts
 
 def GetCounts():
   outputs = predictor(im)
