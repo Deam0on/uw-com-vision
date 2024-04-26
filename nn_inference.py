@@ -183,8 +183,7 @@ with open(csv_file_path, newline='') as f:
 keywords = ["Train", "Test"]
 for d in keywords:
     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
-    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
-                                                                                   "/home/deamoon_uw_nn/DATASET/" + d + "/"),csv_file_path)
+    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", "/home/deamoon_uw_nn/DATASET/" + d + "/", csv_file_path)
     MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
   
 multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
