@@ -55,7 +55,11 @@ from skimage.morphology import dilation, erosion
 from google.cloud import storage
 
 ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
-def get_superannotate_dicts(img_dir, label_dir):
+def get_superannotate_dicts(img_dir, label_dir, class_csv):
+    class_info = pd.read_csv(class_csv)
+    class_map = class_info.set_index('className')['categoryId'].to_dict()
+    # Creating a map for RGB values
+    rgb_map = class_info.set_index('className')[['red', 'green', 'blue']].apply(tuple, axis=1).to_dict()
     dataset_dicts = []
     idx = 0
     for r, d, f in os.walk(label_dir):
@@ -180,7 +184,7 @@ keywords = ["Train", "Test"]
 for d in keywords:
     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
     DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
-                                                                                   "/home/deamoon_uw_nn/DATASET/" + d + "/"))
+                                                                                   "/home/deamoon_uw_nn/DATASET/" + d + "/"),csv_file_path)
     MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
   
 multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=det_classes)
