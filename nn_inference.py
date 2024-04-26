@@ -356,32 +356,27 @@ def GetCounts():
   outputs = predictor(im)
   classes = outputs["instances"].pred_classes.to("cpu").numpy()
   TotalCount = sum(classes==1)+sum(classes==2)+sum(classes==3)+sum(classes==4)
-  ParticleCount = sum(classes==1)
-  BubbleCount = sum(classes==2)
-  DropletCount = sum(classes==3)
-  PList.append(ParticleCount)
-  DList.append(DropletCount)
-  BList.append(BubbleCount)
-  # things_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
-
-
-def GetCounts():
-  outputs = predictor(im)
-  classes = outputs["instances"].pred_classes.to("cpu").numpy()
-  TotalCount = sum(classes==1)+sum(classes==2)+sum(classes==3)+sum(classes==4)
-  ParticleCount = sum(classes==1)
-  BubbleCount = sum(classes==2)
-  DropletCount = sum(classes==3)
-  PList.append(ParticleCount)
-  DList.append(DropletCount)
-  BList.append(BubbleCount)
-  # things_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
-
+  SCount = sum(classes==1)
+  WTCount = sum(classes==2)
+  PTCount = sum(classes==3)
+  PCount = sum(classes==3)
+  SList.append(SCount)
+  WTList.append(WTCount)
+  PTList.append(PTCount)
+  PList.append(PCount)
+#  things_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
 ## get mask contours for outlines / ferret
 def GetMask_Contours():
   outputs = predictor(im)
-  mask_array = outputs['instances'].pred_masks.to("cpu").numpy()
+    
+  # Get the predicted classes and masks
+  pred_classes = outputs['instances'].pred_classes.to("cpu").numpy()
+  pred_masks = outputs['instances'].pred_masks.to("cpu").numpy()
+
+  # mask_array = outputs['instances'].pred_masks.to("cpu").numpy()
+  mask_array = np.array([pred_masks[i] for i in range(len(pred_classes)) if pred_classes[i] in classes_of_interest])
+    
   num_instances = mask_array.shape[0]
   mask_array = np.moveaxis(mask_array, 0, -1)
   mask_array_instance = []
@@ -460,9 +455,10 @@ chordsList = list()
 ferretList = list()
 roundList = list()
 sphereList = list()
+SList = list()
+WTList = list()
+PTList = list()
 PList = list()
-DList = list()
-BList = list()
 tPL = 0
 tBL = 0
 tDL = 0
@@ -473,7 +469,7 @@ x_th = len(test_img_path)
 x_c = 0
 
 for test_img in os.listdir(test_img_path):
-
+    classes_of_interest = [2,3]
     input_path = os.path.join(test_img_path, test_img)
     im = cv2.imread(input_path)
     GetInference()
@@ -535,9 +531,9 @@ values.append(tPL)
 values.append(tBL)
 values.append(tDL)
 values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
-print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
-print("No. (Total) of Particles, Bubbles, Droplets:  " + repr(tPL) + ",  "+ repr(tBL)+ ",  "+ repr(tDL))
-print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
+# print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
+# print("No. (Total) of Particles, Bubbles, Droplets:  " + repr(tPL) + ",  "+ repr(tBL)+ ",  "+ repr(tDL))
+# print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
 
 rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList)
 
@@ -550,17 +546,17 @@ df = pd.read_csv('ShapeDescriptor.csv', header=None)
 df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords']
 df.to_csv('Results.csv', index=True)
 
-sns.displot(df['Feret Diameter'])
-sns.displot(df['Aspect Ratio'])
-sns.displot(df['Roundness'])
-sns.displot(df['Circularity'])
-sns.displot(df['Sphericity'])
-sns.displot(df['CircularED'])
-sns.displot(df['Chords'])
-sns.displot(df['Feret Diameter'], kind='kde')
-sns.displot(df['Aspect Ratio'], kind='kde')
-sns.displot(df['Roundness'], kind='kde')
-sns.displot(df['Circularity'], kind='kde')
-sns.displot(df['Sphericity'], kind='kde')
-sns.displot(df['CircularED'], kind='kde')
-sns.displot(df['Chords'], kind='kde')
+# sns.displot(df['Feret Diameter'])
+# sns.displot(df['Aspect Ratio'])
+# sns.displot(df['Roundness'])
+# sns.displot(df['Circularity'])
+# sns.displot(df['Sphericity'])
+# sns.displot(df['CircularED'])
+# sns.displot(df['Chords'])
+# sns.displot(df['Feret Diameter'], kind='kde')
+# sns.displot(df['Aspect Ratio'], kind='kde')
+# sns.displot(df['Roundness'], kind='kde')
+# sns.displot(df['Circularity'], kind='kde')
+# sns.displot(df['Sphericity'], kind='kde')
+# sns.displot(df['CircularED'], kind='kde')
+# sns.displot(df['Chords'], kind='kde')
