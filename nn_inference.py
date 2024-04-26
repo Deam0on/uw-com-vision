@@ -480,7 +480,7 @@ for k in keywds: # 0 scale
         GetInference()
         GetCounts()
         # GetMask_Contours()
-        GetMask_Contours(im, classes_of_interest=classes_of_interest):
+        GetMask_Contours(im, classes_of_interest=classes_of_interest)
     
         count = count+1
     
