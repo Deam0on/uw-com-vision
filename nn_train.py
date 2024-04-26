@@ -158,9 +158,22 @@ class CustomTrainer(DefaultTrainer):
 ## Load custom dataset
 # Load detection classes  thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
-with open('/home/deamoon_uw_nn/classes.csv', newline='') as f:
-    reader = csv.reader(f)
-    det_classes = list(reader)
+csv_file_path = '/home/deamoon_uw_nn/classes.csv'
+
+# Lists to store class names and colors
+det_classes = []
+det_colors = []
+
+with open(csv_file_path, newline='') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        det_classes.append(row['className'])
+        # Assuming red, green, blue are stored as separate columns
+        red = int(row['red'])
+        green = int(row['green'])
+        blue = int(row['blue'])
+        det_colors.append((red, green, blue))
+
 
 #Dataset load
 keywords = ["Train", "Test"]
