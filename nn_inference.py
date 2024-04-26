@@ -375,8 +375,8 @@ def GetMask_Contours(im, classes_of_interest):
   pred_classes = outputs['instances'].pred_classes.to("cpu").numpy()
   pred_masks = outputs['instances'].pred_masks.to("cpu").numpy()
 
-  # mask_array = outputs['instances'].pred_masks.to("cpu").numpy()
-  mask_array = np.array([pred_masks[i] for i in range(len(pred_classes)) if pred_classes[i] in classes_of_interest])
+  mask_array = outputs['instances'].pred_masks.to("cpu").numpy()
+  # mask_array = np.array([pred_masks[i] for i in range(len(pred_classes)) if pred_classes[i] in classes_of_interest])
     
   num_instances = mask_array.shape[0]
   mask_array = np.moveaxis(mask_array, 0, -1)
