@@ -459,9 +459,10 @@ SList = list()
 WTList = list()
 PTList = list()
 PList = list()
-tPL = 0
-tBL = 0
-tDL = 0
+tS = 0
+tWT = 0
+tPT = 0
+tP = 0
 count = 0
 
 test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
@@ -519,20 +520,24 @@ ferretBins = np.histogram(np.asarray(MA_ferretList))
 roundBins = np.histogram(np.asarray(MA_roundList))
 sphereBins = np.histogram(np.asarray(MA_sphereList))
 
-for PL in range(0, len(PList)):
-    tPL = tPL + PList[PL]
-for DL in range(0, len(DList)):
-    tDL = tDL + DList[DL]
-for BL in range(0, len(BList)):
-    tBL = tBL + BList[BL]
+for S in range(0, len(SList)):
+    tS = tS + SList[S]
+for WT in range(0, len(WTList)):
+    tWT = tWT + WTList[WT]
+for PT in range(0, len(PTList)):
+    tPT = tPT + PTList[PT]
+for P in range(0, len(PList)):
+    tP = tP + PList[P]
+
 
 values = list()
+values.append(tS)
+values.append(tWT)
 values.append(tPL)
-values.append(tBL)
-values.append(tDL)
+values.append(tP)
 values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
 # print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
-# print("No. (Total) of Particles, Bubbles, Droplets:  " + repr(tPL) + ",  "+ repr(tBL)+ ",  "+ repr(tDL))
+print("No. (Total) of Pores & Pore Throath:  " + repr(tP) + ",  "+ repr(tPT))
 # print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
 
 rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList)
