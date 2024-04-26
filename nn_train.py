@@ -105,14 +105,9 @@ def get_superannotate_dicts(img_dir, label_dir):
                     poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
                     poly = [p for x in poly for p in x]
 
-                    if "Scale bar" in categoryName :
-                        category_id = 0
-                    elif "Wall thickness of polyHIPEs" in categoryName :
-                        category_id = 1
-                    elif "Pore throats of polyHIPEs" in categoryName :
-                        category_id = 2
-                    elif "Pores of polyHIPEs" in categoryName :
-                        category_id = 3
+                    if categoryName in class_map:
+                        category_id = class_map[categoryName]
+                        color = rgb_map[categoryName]  # Fetch RGB tuple
                     else:
                         raise ValueError("Category Name Not Found: "+ categoryName)
 
