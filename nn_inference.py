@@ -367,7 +367,8 @@ def GetCounts():
 #  things_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
 ## get mask contours for outlines / ferret
-def GetMask_Contours():
+# def GetMask_Contours():
+def GetMask_Contours(im, classes_of_interest=[1, 3]):
   outputs = predictor(im)
     
   # Get the predicted classes and masks
@@ -473,12 +474,13 @@ keywds = ["Scale", "WThick", "PThroat", "Pore"]
 for k in keywds: # 0 scale
 
     for test_img in os.listdir(test_img_path):
-        classes_of_interest = keywds.index(k)
+        classes_of_interest = [keywds.index(k)]
         input_path = os.path.join(test_img_path, test_img)
         im = cv2.imread(input_path)
         GetInference()
         GetCounts()
-        GetMask_Contours()
+        # GetMask_Contours()
+        GetMask_Contours(im, classes_of_interest=classes_of_interest):
     
         count = count+1
     
