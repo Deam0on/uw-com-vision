@@ -368,7 +368,7 @@ def GetCounts():
 
 ## get mask contours for outlines / ferret
 # def GetMask_Contours():
-def GetMask_Contours(im, classes_of_interest=[1, 3]):
+def GetMask_Contours(im, classes_of_interest):
   outputs = predictor(im)
     
   # Get the predicted classes and masks
