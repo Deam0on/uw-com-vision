@@ -468,100 +468,103 @@ count = 0
 test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
 x_th = len(test_img_path)
 x_c = 0
+keywds = ["Scale", "WThick", "PThroat", "Pore"]
 
-for test_img in os.listdir(test_img_path):
-    classes_of_interest = [2,3]
-    input_path = os.path.join(test_img_path, test_img)
-    im = cv2.imread(input_path)
-    GetInference()
-    GetCounts()
-    GetMask_Contours()
+for k in keywds: # 0 scale
 
-    count = count+1
-
-# #moving avgs
-window_size = 3
-i = 0
-k = 0
-
-MA_lengthList = []
-MA_widthList = []
-MA_circularEDList = []
-MA_aspectRatioList = []
-MA_circularityList = []
-MA_chordsList = []
-MA_ferretList = []
-MA_roundList = []
-MA_sphereList = []
-
-lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList]
-listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList']
-
-for lst in lists:
-
-  listname_str = 'MA_' + listnames[k]
-  k = k+1
-
-  while i < (len(lst) - window_size + 1):
-      window = lst[i : i + window_size]
-      window_average = round(sum(window) / window_size, 2)
-      vars()[listname_str].append(window_average)
-      i = i+1
-
-  i = 0
-
-lengthBins = np.histogram(np.asarray(MA_lengthList))
-widthBins = np.histogram(np.asarray(MA_widthList))
-circularEDBins = np.histogram(np.asarray(MA_circularEDList))
-aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
-circularityBins = np.histogram(np.asarray(MA_circularityList))
-chordsBins = np.histogram(np.asarray(MA_chordsList))
-ferretBins = np.histogram(np.asarray(MA_ferretList))
-roundBins = np.histogram(np.asarray(MA_roundList))
-sphereBins = np.histogram(np.asarray(MA_sphereList))
-
-for S in range(0, len(SList)):
-    tS = tS + SList[S]
-for WT in range(0, len(WTList)):
-    tWT = tWT + WTList[WT]
-for PT in range(0, len(PTList)):
-    tPT = tPT + PTList[PT]
-for P in range(0, len(PList)):
-    tP = tP + PList[P]
-
-
-values = list()
-values.append(tS)
-values.append(tWT)
-values.append(tPT)
-values.append(tP)
-values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
-# print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
-print("No. (Total) of Pores & Pore Throath, SB, WT:  " + repr(tP) + ",  "+ repr(tPT)+ ",  "+ repr(tS)+ ",  "+ repr(tWT))
-# print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
-
-rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList)
-
-with open('ShapeDescriptor.csv', "w") as f:
-    writer = csv.writer(f)
-    for row in rows:
-        writer.writerow(row)
-
-df = pd.read_csv('ShapeDescriptor.csv', header=None)
-df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords']
-df.to_csv('Results.csv', index=True)
-
-# sns.displot(df['Feret Diameter'])
-# sns.displot(df['Aspect Ratio'])
-# sns.displot(df['Roundness'])
-# sns.displot(df['Circularity'])
-# sns.displot(df['Sphericity'])
-# sns.displot(df['CircularED'])
-# sns.displot(df['Chords'])
-# sns.displot(df['Feret Diameter'], kind='kde')
-# sns.displot(df['Aspect Ratio'], kind='kde')
-# sns.displot(df['Roundness'], kind='kde')
-# sns.displot(df['Circularity'], kind='kde')
-# sns.displot(df['Sphericity'], kind='kde')
-# sns.displot(df['CircularED'], kind='kde')
-# sns.displot(df['Chords'], kind='kde')
+    for test_img in os.listdir(test_img_path):
+        classes_of_interest = keywds.index(k)
+        input_path = os.path.join(test_img_path, test_img)
+        im = cv2.imread(input_path)
+        GetInference()
+        GetCounts()
+        GetMask_Contours()
+    
+        count = count+1
+    
+    # #moving avgs
+    window_size = 3
+    i = 0
+    k = 0
+    
+    MA_lengthList = []
+    MA_widthList = []
+    MA_circularEDList = []
+    MA_aspectRatioList = []
+    MA_circularityList = []
+    MA_chordsList = []
+    MA_ferretList = []
+    MA_roundList = []
+    MA_sphereList = []
+    
+    lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList]
+    listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList']
+    
+    for lst in lists:
+    
+      listname_str = 'MA_' + listnames[k]
+      k = k+1
+    
+      while i < (len(lst) - window_size + 1):
+          window = lst[i : i + window_size]
+          window_average = round(sum(window) / window_size, 2)
+          vars()[listname_str].append(window_average)
+          i = i+1
+    
+      i = 0
+    
+    lengthBins = np.histogram(np.asarray(MA_lengthList))
+    widthBins = np.histogram(np.asarray(MA_widthList))
+    circularEDBins = np.histogram(np.asarray(MA_circularEDList))
+    aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
+    circularityBins = np.histogram(np.asarray(MA_circularityList))
+    chordsBins = np.histogram(np.asarray(MA_chordsList))
+    ferretBins = np.histogram(np.asarray(MA_ferretList))
+    roundBins = np.histogram(np.asarray(MA_roundList))
+    sphereBins = np.histogram(np.asarray(MA_sphereList))
+    
+    for S in range(0, len(SList)):
+        tS = tS + SList[S]
+    for WT in range(0, len(WTList)):
+        tWT = tWT + WTList[WT]
+    for PT in range(0, len(PTList)):
+        tPT = tPT + PTList[PT]
+    for P in range(0, len(PList)):
+        tP = tP + PList[P]
+    
+    
+    values = list()
+    values.append(tS)
+    values.append(tWT)
+    values.append(tPT)
+    values.append(tP)
+    values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
+    # print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
+    print("No. (Total) of Pores & Pore Throath, SB, WT:  " + repr(tP) + ",  "+ repr(tPT)+ ",  "+ repr(tS)+ ",  "+ repr(tWT))
+    # print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
+    
+    rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList)
+    
+    with open('ShapeDescriptor.csv', "w") as f:
+        writer = csv.writer(f)
+        for row in rows:
+            writer.writerow(row)
+    
+    df = pd.read_csv('ShapeDescriptor.csv', header=None)
+    df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords']
+    df.to_csv('Results' + k + '_.csv', index=True)
+    
+    # sns.displot(df['Feret Diameter'])
+    # sns.displot(df['Aspect Ratio'])
+    # sns.displot(df['Roundness'])
+    # sns.displot(df['Circularity'])
+    # sns.displot(df['Sphericity'])
+    # sns.displot(df['CircularED'])
+    # sns.displot(df['Chords'])
+    # sns.displot(df['Feret Diameter'], kind='kde')
+    # sns.displot(df['Aspect Ratio'], kind='kde')
+    # sns.displot(df['Roundness'], kind='kde')
+    # sns.displot(df['Circularity'], kind='kde')
+    # sns.displot(df['Sphericity'], kind='kde')
+    # sns.displot(df['CircularED'], kind='kde')
+    # sns.displot(df['Chords'], kind='kde')
