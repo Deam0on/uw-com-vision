@@ -537,7 +537,7 @@ values.append(tPT)
 values.append(tP)
 values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
 # print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
-print("No. (Total) of Pores & Pore Throath:  " + repr(tP) + ",  "+ repr(tPT))
+print("No. (Total) of Pores & Pore Throath, SB, WT:  " + repr(tP) + ",  "+ repr(tPT)+ ",  "+ repr(tS)+ ",  "+ repr(tWT))
 # print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
 
 rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList)
