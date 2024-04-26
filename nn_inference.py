@@ -105,14 +105,9 @@ def get_superannotate_dicts(img_dir, label_dir):
                     poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
                     poly = [p for x in poly for p in x]
 
-                    if "Scale bar" in categoryName :
-                        category_id = 0
-                    elif "Wall thickness of polyHIPEs" in categoryName :
-                        category_id = 1
-                    elif "Pore throats of polyHIPEs" in categoryName :
-                        category_id = 2
-                    elif "Pores of polyHIPEs" in categoryName :
-                        category_id = 3
+                    if categoryName in class_map:
+                        category_id = class_map[categoryName]
+                        color = rgb_map[categoryName]  # Fetch RGB tuple
                     else:
                         raise ValueError("Category Name Not Found: "+ categoryName)
 
@@ -362,9 +357,10 @@ def GetInference():
 ## count types
 
 def GetCounts(csv_file_path, predictor, im):
-    # Read class names from a CSV file
-    class_data = pd.read_csv(csv_file_path)
-    class_names = class_data['class_name'].tolist()  # Assuming the column is named 'class_name'
+    # Read class names and IDs from a CSV file
+    class_info = pd.read_csv(csv_file_path)
+    class_names = class_info['className'].tolist()  # Extract class names
+    class_ids = class_info.set_index('className')['categoryId'].to_dict()
 
     # Get predictions
     outputs = predictor(im)
@@ -374,13 +370,8 @@ def GetCounts(csv_file_path, predictor, im):
     counts = {name: 0 for name in class_names}
 
     # Count each class
-    for class_id, class_name in enumerate(class_names):
+    for class_name, class_id in class_ids.items():
         counts[class_name] = np.sum(classes == class_id)
-
-    # Optionally append to lists if needed, or handle differently
-    # PList.append(counts['particle'])  # if 'particle' is a class name
-    # DList.append(counts['droplet'])
-    # BList.append(counts['bubble'])
 
     return counts
 
