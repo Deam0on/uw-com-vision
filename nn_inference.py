@@ -105,13 +105,13 @@ def get_superannotate_dicts(img_dir, label_dir):
                     poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
                     poly = [p for x in poly for p in x]
 
-                    if "Scale bar" in categoryName :
+                    if "scale" in categoryName :
                         category_id = 0
-                    elif "Wall thickness of polyHIPEs" in categoryName :
+                    elif "wall" in categoryName :
                         category_id = 1
-                    elif "Pore throats of polyHIPEs" in categoryName :
+                    elif "throat" in categoryName :
                         category_id = 2
-                    elif "Pores of polyHIPEs" in categoryName :
+                    elif "pore" in categoryName :
                         category_id = 3
                     else:
                         raise ValueError("Category Name Not Found: "+ categoryName)
@@ -167,10 +167,10 @@ for d in keywords:
     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
     DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
                                                                                    "/home/deamoon_uw_nn/DATASET/" + d + "/"))
-    MetadataCatalog.get("multiclass_Train").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
+    MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
   
-multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
-multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
+multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
+multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["scale","wall","throat","pore"])
 
 ## Collect prediction masks
 # Convert binary_mask to RLE
@@ -228,7 +228,7 @@ predictor = DefaultPredictor(cfg)
 
 cfg.MODEL.DEVICE = "cuda"
 MetadataCatalog.get("multiclass_Train").set(
-         things_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
+         things_classes=["scale","wall","throat","pore"])
 MetadataCatalog.get("multiclass_Train").set(
          things_colors=[(115, 254, 248), (239, 254, 21), (146, 19, 26), (47, 213, 218)])
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Train")
