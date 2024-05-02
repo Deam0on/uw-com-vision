@@ -368,29 +368,9 @@ def GetCounts():
 
 ## get mask contours for outlines / ferret
 # def GetMask_Contours():
-def GetMask_Contours(im, classes_of_interest):
+def GetMask_Contours():
   outputs = predictor(im)
-
-  # Extract class IDs and masks from the outputs
-  pred_classes = outputs['instances'].pred_classes.to("cpu").numpy()
-  pred_masks = outputs['instances'].pred_masks.to("cpu").numpy()
-
-  # Determine indices of instances belonging to the classes of interest
-  selected_indices = [i for i, cls in enumerate(pred_classes) if cls in classes_of_interest]
-  mask_array = pred_masks[selected_indices]
- 
-  # If no relevant masks are found, handle gracefully
-  if mask_array.size == 0:
-      print("No instances found for the specified classes.")
-      return
-    
-  # # Get the predicted classes and masks
-  # pred_classes = outputs['instances'].pred_classes.to("cpu").numpy()
-  # pred_masks = outputs['instances'].pred_masks.to("cpu").numpy()
-
-  # mask_array = outputs['instances'].pred_masks.to("cpu").numpy()
-  # mask_array = np.array([pred_masks[i] for i in range(len(pred_classes)) if pred_classes[i] in classes_of_interest])
-    
+  mask_array = outputs['instances'].pred_masks.to("cpu").numpy()
   num_instances = mask_array.shape[0]
   mask_array = np.moveaxis(mask_array, 0, -1)
   mask_array_instance = []
@@ -492,8 +472,8 @@ for k in keywds: # 0 scale
         im = cv2.imread(input_path)
         GetInference()
         GetCounts()
-        # GetMask_Contours()
-        GetMask_Contours(im, classes_of_interest=classes_of_interest)
+        GetMask_Contours()
+        # GetMask_Contours(im, classes_of_interest=classes_of_interest)
     
         count = count+1
     
