@@ -547,7 +547,7 @@ for k in keywds: # 0 scale
     
     df = pd.read_csv('ShapeDescriptor.csv', header=None)
     df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords']
-    df.to_csv('Results' + str(keywds[k]) + '_.csv', index=True)
+    df.to_csv('Results.csv', index=True)
     
     # sns.displot(df['Feret Diameter'])
     # sns.displot(df['Aspect Ratio'])
