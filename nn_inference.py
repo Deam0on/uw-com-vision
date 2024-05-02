@@ -347,8 +347,8 @@ def GetInference():
                   scale=1,
                   instance_mode=ColorMode.SEGMENTATION)
   out = v.draw_instance_predictions(outputs["instances"].to("cpu"))  
-  v.save("test.png")
-# cv2.imwrite("test.png",v.get_image()[:, :, ::-1])
+  # v.save("test.png")
+  cv2.imwrite("test.png",v.get_image()[:, :, ::-1])
 
 ## count types
 
