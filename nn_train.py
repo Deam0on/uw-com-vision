@@ -55,6 +55,7 @@ from skimage.morphology import dilation, erosion
 from google.cloud import storage
 
 ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
+
 def get_superannotate_dicts(img_dir, label_dir):
     dataset_dicts = []
     idx = 0
