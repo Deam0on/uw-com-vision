@@ -7,6 +7,7 @@ import random
 import copy
 import json
 import datetime
+import fiftyone as fo
 from datetime import timedelta
 import shutil
 from distutils import file_util, dir_util
@@ -97,14 +98,30 @@ def get_superannotate_dicts(img_dir, label_dir):
                         ellr = shapely.affinity.rotate(ell, ellipse[2])
 
                         px, py = ellr.exterior.coords.xy
+
+                        poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
+                        poly = [p for x in poly for p in x]
+                        
                     elif type == "polygon":
                         px = anno["points"][0:-1:2]  #0 -1 2
                         py = anno["points"][1:-1:2] # 1 -1 2
                         px.append(anno["points"][0])    # 0
                         py.append(anno["points"][-1])   # -1
+
+                        poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
+                        poly = [p for x in poly for p in x]
+                        
+                    elif type == "polyline":
+                        
+                        height = imgs_anns["metadata"]["height"]
+                        width = imgs_anns["metadata"]["width"]
+                        
+                        fo_poly = anno.to_polyline()
+                        poly = [(x*width, y*height) for x, y in fo_poly.points[0]]
+                        poly = [p for x in poly for p in x]
                       
-                    poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-                    poly = [p for x in poly for p in x]
+                    # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
+                    # poly = [p for x in poly for p in x]
 
                     if "scale" in categoryName :
                         category_id = 0
