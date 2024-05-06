@@ -169,74 +169,74 @@ def get_fiftyone_dicts(img_dir, label_dir):
                 width = imgs_anns["metadata"]["width"]
                 objs = []
                 
-                for sample in annos.select_fields(["id", "filepath", "metadata", "segmentations"]):
-                    for det in sample.segmentations.detections:
-                        categoryName = det["className"]
-                        type = det["type"]
-                        tlx, tly, w, h = det.bounding_box
-                        bbox = [int(tlx*width), int(tly*height), int(w*width), int(h*height)]
-            
-                        if type == "ellipse":
-                            cx = det["cx"]
-                            cy = det["cy"]
-                            rx = det["rx"]
-                            ry = det["ry"]
-                            theta = det["angle"]
-                            ellipse = ((cx, cy), (rx, ry), theta)
-                            # Create a circle of radius 1 around the centre point:
-                            circ = shapely.geometry.Point(ellipse[0]).buffer(1)
-                            # Create ellipse along x and y:
-                            ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
-                            # rotate the ellipse(clockwise, x axis pointing right):
-                            ellr = shapely.affinity.rotate(ell, ellipse[2])
-            
-                            px, py = ellr.exterior.coords.xy
-            
-                            poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-                            poly = [p for x in poly for p in x]
-                            
-                        elif type == "polygon":
-                            px = det["points"][0:-1:2]  #0 -1 2
-                            py = det["points"][1:-1:2] # 1 -1 2
-                            px.append(det["points"][0])    # 0
-                            py.append(det["points"][-1])   # -1
-            
-                            poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-                            poly = [p for x in poly for p in x]
-                            
-                        elif type == "polyline":
-                            
-                            height = imgs_anns["metadata"]["height"]
-                            width = imgs_anns["metadata"]["width"]
-                            
-                            fo_poly = det.to_polyline()
-                            poly = [(x*width, y*height) for x, y in fo_poly.points[0]]
-                            poly = [p for x in poly for p in x]
-                          
-                        # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-                        # poly = [p for x in poly for p in x]
-            
-                        if "scale" in categoryName :
-                            category_id = 0
-                        elif "wall" in categoryName :
-                            category_id = 1
-                        elif "throat" in categoryName :
-                            category_id = 2
-                        elif "pore" in categoryName :
-                            category_id = 3
-                        else:
-                            raise ValueError("Category Name Not Found: "+ categoryName)
-            
-                        obj = {
-                            "bbox":bbox,
-                            "bbox_mode": BoxMode.XYXY_ABS,
-                            "segmentation": [poly],
-                            "category_id": category_id,
-                        }
-                        objs.append(obj)
-            
-                    record["annotations"] = objs
-                    dataset_dicts.append(record)
+                # for sample in annos.select_fields(["id", "filepath", "metadata", "segmentations"]):
+                for det in imgs_anns.segmentations.detections:
+                    categoryName = det["className"]
+                    type = det["type"]
+                    tlx, tly, w, h = det.bounding_box
+                    bbox = [int(tlx*width), int(tly*height), int(w*width), int(h*height)]
+        
+                    if type == "ellipse":
+                        cx = det["cx"]
+                        cy = det["cy"]
+                        rx = det["rx"]
+                        ry = det["ry"]
+                        theta = det["angle"]
+                        ellipse = ((cx, cy), (rx, ry), theta)
+                        # Create a circle of radius 1 around the centre point:
+                        circ = shapely.geometry.Point(ellipse[0]).buffer(1)
+                        # Create ellipse along x and y:
+                        ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
+                        # rotate the ellipse(clockwise, x axis pointing right):
+                        ellr = shapely.affinity.rotate(ell, ellipse[2])
+        
+                        px, py = ellr.exterior.coords.xy
+        
+                        poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
+                        poly = [p for x in poly for p in x]
+                        
+                    elif type == "polygon":
+                        px = det["points"][0:-1:2]  #0 -1 2
+                        py = det["points"][1:-1:2] # 1 -1 2
+                        px.append(det["points"][0])    # 0
+                        py.append(det["points"][-1])   # -1
+        
+                        poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
+                        poly = [p for x in poly for p in x]
+                        
+                    elif type == "polyline":
+                        
+                        height = imgs_anns["metadata"]["height"]
+                        width = imgs_anns["metadata"]["width"]
+                        
+                        fo_poly = det.to_polyline()
+                        poly = [(x*width, y*height) for x, y in fo_poly.points[0]]
+                        poly = [p for x in poly for p in x]
+                      
+                    # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
+                    # poly = [p for x in poly for p in x]
+        
+                    if "scale" in categoryName :
+                        category_id = 0
+                    elif "wall" in categoryName :
+                        category_id = 1
+                    elif "throat" in categoryName :
+                        category_id = 2
+                    elif "pore" in categoryName :
+                        category_id = 3
+                    else:
+                        raise ValueError("Category Name Not Found: "+ categoryName)
+        
+                    obj = {
+                        "bbox":bbox,
+                        "bbox_mode": BoxMode.XYXY_ABS,
+                        "segmentation": [poly],
+                        "category_id": category_id,
+                    }
+                    objs.append(obj)
+        
+                record["annotations"] = objs
+                dataset_dicts.append(record)
 
     return dataset_dicts
 
