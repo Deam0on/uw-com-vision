@@ -173,7 +173,7 @@ def get_fiftyone_dicts(img_dir, label_dir):
                 width = imgs_anns["metadata"]["width"]
                 objs = []
                 
-                for sample in imgs_anns.select_fields(["id", "filepath", "metadata", "segmentations"]):
+                for sample in annos.select_fields(["id", "filepath", "metadata", "segmentations"]):
                     for det in sample.segmentations.detections:
                         categoryName = det["className"]
                         type = det["type"]
