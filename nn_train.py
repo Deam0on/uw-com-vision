@@ -111,21 +111,21 @@ def get_superannotate_dicts(img_dir, label_dir):
                         poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
                         poly = [p for x in poly for p in x]
                         
-                    elif type == "polyline":
+                    # elif type == "polyline":
                         
-                        height = imgs_anns["metadata"]["height"]
-                        width = imgs_anns["metadata"]["width"]
+                    #     height = imgs_anns["metadata"]["height"]
+                    #     width = imgs_anns["metadata"]["width"]
 
-                        px = anno["points"][0:-1:2]  #0 -1 2
-                        py = anno["points"][1:-1:2] # 1 -1 2
-                        px.append(anno["points"][0])    # 0
-                        py.append(anno["points"][-1])   # -1
+                    #     px = anno["points"][0:-1:2]  #0 -1 2
+                    #     py = anno["points"][1:-1:2] # 1 -1 2
+                    #     px.append(anno["points"][0])    # 0
+                    #     py.append(anno["points"][-1])   # -1
 
-                        # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-                        # poly = [p for x in poly for p in x]
+                    #     # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
+                    #     # poly = [p for x in poly for p in x]
                         
-                        poly = [(x*width, y*height) for x, y in zip(px,py) ]
-                        poly = [p for x in poly for p in x]
+                    #     poly = [(x*width, y*height) for x, y in zip(px,py) ]
+                    #     poly = [p for x in poly for p in x]
                       
 
                     if "scale" in categoryName :
