@@ -459,11 +459,18 @@ def midpoint(ptA, ptB):
 ## sub inference from mask
 def GetInference():
   outputs = predictor(im)
+
+  # Get all instances
+  inst_out = outputs['instances']
+
+  # Filter instances where predicted class is 3
+  filtered_instances = inst_out[inst_out.pred_classes == 3]
+    
   v = Visualizer(im[:, :, ::-1],
                   metadata=multiclass_test_metadata,
                   scale=1,
                   instance_mode=ColorMode.SEGMENTATION)
-  out = v.draw_instance_predictions(outputs["instances"].to("cpu"))  
+  out = v.draw_instance_predictions(filtered_instances.to("cpu"))  
   # v.save("test.png")
   cv2.imwrite(test_img + "__pred.png",out.get_image()[:, :, ::-1])
 
@@ -493,7 +500,7 @@ def GetMask_Contours():
   inst_out = outputs['instances']
 
   # Filter instances where predicted class is 3
-  filtered_instances = inst_out[inst_out.pred_classes == 4]
+  filtered_instances = inst_out[inst_out.pred_classes == 3]
     
   # Now extract the masks for these filtered instances
   mask_array = filtered_instances.pred_masks.to("cpu").numpy()
