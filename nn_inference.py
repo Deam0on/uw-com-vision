@@ -125,14 +125,10 @@ def get_superannotate_dicts(img_dir, label_dir):
                     # # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
                     # # poly = [p for x in poly for p in x]
 
-                    if "scale" in categoryName :
+                    if "throat" in categoryName :
                         category_id = 0
-                    elif "wall" in categoryName :
-                        category_id = 1
-                    elif "throat" in categoryName :
-                        category_id = 2
                     elif "pore" in categoryName :
-                        category_id = 3
+                        category_id = 1
                     else:
                         raise ValueError("Category Name Not Found: "+ categoryName)
 
@@ -284,10 +280,10 @@ for d in keywords:
     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
     DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
                                                                                    "/home/deamoon_uw_nn/DATASET/" + d + "/"))
-    MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
+    MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
   
-multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
-multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["scale","wall","throat","pore"])
+multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
+multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["throat","pore"])
 
 ## Collect prediction masks
 # Convert binary_mask to RLE
@@ -345,9 +341,9 @@ predictor = DefaultPredictor(cfg)
 
 cfg.MODEL.DEVICE = "cuda"
 MetadataCatalog.get("multiclass_Train").set(
-         things_classes=["scale","wall","throat","pore"])
+         things_classes=["throat","pore"])
 MetadataCatalog.get("multiclass_Train").set(
-         things_colors=[(115, 254, 248), (239, 254, 21), (146, 19, 26), (47, 213, 218)])
+         things_colors=[(146, 19, 26), (47, 213, 218)])
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Train")
 
 ### Conversion from RLE to BitMask
@@ -480,16 +476,11 @@ def GetInference():
 def GetCounts():
   outputs = predictor(im)
   classes = outputs["instances"].pred_classes.to("cpu").numpy()
-  TotalCount = sum(classes==1)+sum(classes==2)+sum(classes==3)+sum(classes==4)
-  SCount = sum(classes==1)
-  WTCount = sum(classes==2)
-  PTCount = sum(classes==3)
-  PCount = sum(classes==4)
-  SList.append(SCount)
-  WTList.append(WTCount)
-  PTList.append(PTCount)
+  TotalCount = sum(classes==0)+sum(classes==1)
+  TCount = sum(classes==0)
+  PCount = sum(classes==1)
+  TList.append(PTCount)
   PList.append(PCount)
-#  things_classes=["Scale bar","Wall thickness of polyHIPEs","Pore throats of polyHIPEs","Pores of polyHIPEs"])
 
 ## get mask contours for outlines / ferret
 # def GetMask_Contours():
@@ -605,7 +596,7 @@ def GetMask_Contours():
 # keywds = ["Scale", "WThick", "PThroat", "Pore"]
 
 # for k in keywds: # 0 scale
-for x_pred in [2, 3]
+for x_pred in [0, 1]
 
     ## create and append lists
     lengthList = list()
@@ -617,13 +608,9 @@ for x_pred in [2, 3]
     ferretList = list()
     roundList = list()
     sphereList = list()
-    SList = list()
-    WTList = list()
-    PTList = list()
+    TList = list()
     PList = list()
-    tS = 0
-    tWT = 0
-    tPT = 0
+    tT = 0
     tP = 0
     count = 0
     
@@ -725,24 +712,19 @@ for x_pred in [2, 3]
     roundBins = np.histogram(np.asarray(MA_roundList))
     sphereBins = np.histogram(np.asarray(MA_sphereList))
     
-    for S in range(0, len(SList)):
-        tS = tS + SList[S]
-    for WT in range(0, len(WTList)):
-        tWT = tWT + WTList[WT]
-    for PT in range(0, len(PTList)):
-        tPT = tPT + PTList[PT]
+    for T in range(0, len(TList)):
+        tT = tT + TList[T]
     for P in range(0, len(PList)):
         tP = tP + PList[P]
     
     
     values = list()
-    values.append(tS)
-    values.append(tWT)
-    values.append(tPT)
+    values.append(tT)
     values.append(tP)
     values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
     # print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
-    print("No. (Total) of Pores & Pore Throath, SB, WT:  " + repr(tP) + ",  "+ repr(tPT)+ ",  "+ repr(tS)+ ",  "+ repr(tWT))
+    print("No. (Total) of Pores:  " + repr(tP))
+    print("No. (Total) of Pore Throats:  " + repr(tT))
     # print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
     
     rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList)
