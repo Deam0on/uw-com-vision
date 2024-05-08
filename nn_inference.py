@@ -488,8 +488,18 @@ def GetCounts():
 # def GetMask_Contours():
 def GetMask_Contours():
   outputs = predictor(im)
+
+  # Get all instances
+  instances = outputs['instances']
+
+  # Filter instances where predicted class is 3
+  filtered_instances = instances[instances.pred_classes == 3]
+    
+  # Now extract the masks for these filtered instances
+  mask_array = filtered_instances.pred_masks.to("cpu").numpy()
+    
   # instances = instances[instances.pred_classes == 3]
-  mask_array = outputs['instances'].pred_masks==3.to("cpu").numpy()
+  # mask_array = outputs['instances'].pred_masks==3.to("cpu").numpy()
   num_instances = mask_array.shape[0]
   mask_array = np.moveaxis(mask_array, 0, -1)
   mask_array_instance = []
