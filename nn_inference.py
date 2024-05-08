@@ -596,7 +596,7 @@ for k in keywds: # 0 scale
         count = count+1
 
         # Convert image to grayscale
-        gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
         
         # Use canny edge detection
         edges = cv2.Canny(gray,50,150,apertureSize=3)
@@ -625,7 +625,7 @@ for k in keywds: # 0 scale
             x1,y1,x2,y2=points[0]
             # Draw the lines joing the points
             # On the original image
-            cv2.line(image,(x1,y1),(x2,y2),(0,255,0),2)
+            cv2.line(im,(x1,y1),(x2,y2),(0,255,0),2)
             # Maintain a simples lookup list for points
             lines_list.append([(x1,y1),(x2,y2)])
             scale_len = sqrt((x2-x1)**2+(y2-y1)**2)
