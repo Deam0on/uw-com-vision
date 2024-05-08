@@ -115,13 +115,18 @@ def get_superannotate_dicts(img_dir, label_dir):
                         
                         height = imgs_anns["metadata"]["height"]
                         width = imgs_anns["metadata"]["width"]
+
+                        px = anno["points"][0:-1:2]  #0 -1 2
+                        py = anno["points"][1:-1:2] # 1 -1 2
+                        px.append(anno["points"][0])    # 0
+                        py.append(anno["points"][-1])   # -1
+
+                        # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
+                        # poly = [p for x in poly for p in x]
                         
-                        # fo_poly = anno.to_polyline()
-                        poly = [(x*width, y*height) for x, y in anno["points"][0]]
+                        poly = [(x*width, y*height) for x, y in zip(px,py) ]
                         poly = [p for x in poly for p in x]
                       
-                    # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-                    # poly = [p for x in poly for p in x]
 
                     if "scale" in categoryName :
                         category_id = 0
