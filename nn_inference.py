@@ -597,7 +597,7 @@ x_c = 0
 # for k in keywds: # 0 scale
 
 for test_img in os.listdir(test_img_path):
-    classes_of_interest = [keywds.index(k)]
+    # classes_of_interest = [keywds.index(k)]
     input_path = os.path.join(test_img_path, test_img)
     im = cv2.imread(input_path)
     # GetInference()
