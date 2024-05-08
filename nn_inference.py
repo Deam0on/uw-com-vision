@@ -596,7 +596,7 @@ def GetMask_Contours():
 # keywds = ["Scale", "WThick", "PThroat", "Pore"]
 
 # for k in keywds: # 0 scale
-for x_pred in [1,2]:
+for x_pred in [0,1]:
 
     ## create and append lists
     lengthList = list()
@@ -736,9 +736,9 @@ for x_pred in [1,2]:
     
     df = pd.read_csv('ShapeDescriptor.csv', header=None)
     df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords']
-    if x_pred == 1:
+    if x_pred == 0:
         df.to_csv('Results_throats.csv', index=True)
-    elif x_pred == 2:
+    elif x_pred == 1:
         df.to_csv('Results_pores.csv', index=True)
     
     # sns.displot(df['Feret Diameter'])
