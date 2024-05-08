@@ -464,7 +464,7 @@ def GetInference():
   inst_out = outputs['instances']
 
   # Filter instances where predicted class is 3
-  filtered_instances = inst_out[inst_out.pred_classes == 2]
+  filtered_instances = inst_out[inst_out.pred_classes == x_pred]
     
   v = Visualizer(im[:, :, ::-1],
                   metadata=multiclass_test_metadata,
@@ -500,7 +500,7 @@ def GetMask_Contours():
   inst_out = outputs['instances']
 
   # Filter instances where predicted class is 3
-  filtered_instances = inst_out[inst_out.pred_classes == 2]
+  filtered_instances = inst_out[inst_out.pred_classes == x_pred]
     
   # Now extract the masks for these filtered instances
   mask_array = filtered_instances.pred_masks.to("cpu").numpy()
@@ -578,157 +578,186 @@ def GetMask_Contours():
           sphereList.append(Sphericity)
 
 
-## create and append lists
-lengthList = list()
-widthList = list()
-circularEDList = list()
-aspectRatioList = list()
-circularityList = list()
-chordsList = list()
-ferretList = list()
-roundList = list()
-sphereList = list()
-SList = list()
-WTList = list()
-PTList = list()
-PList = list()
-tS = 0
-tWT = 0
-tPT = 0
-tP = 0
-count = 0
+# ## create and append lists
+# lengthList = list()
+# widthList = list()
+# circularEDList = list()
+# aspectRatioList = list()
+# circularityList = list()
+# chordsList = list()
+# ferretList = list()
+# roundList = list()
+# sphereList = list()
+# SList = list()
+# WTList = list()
+# PTList = list()
+# PList = list()
+# tS = 0
+# tWT = 0
+# tPT = 0
+# tP = 0
+# count = 0
 
-test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
-x_th = len(test_img_path)
-x_c = 0
+# test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
+# x_th = len(test_img_path)
+# x_c = 0
 
 # keywds = ["Scale", "WThick", "PThroat", "Pore"]
 
 # for k in keywds: # 0 scale
+for x_pred in [2, 3]
 
-for test_img in os.listdir(test_img_path):
-    # classes_of_interest = [keywds.index(k)]
-    input_path = os.path.join(test_img_path, test_img)
-    im = cv2.imread(input_path)
-    # GetInference()
-    # GetCounts()
-    # GetMask_Contours()
-    # GetMask_Contours(im, classes_of_interest=classes_of_interest)
-
-    count = count+1
-
-    # Convert image to grayscale
-    gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+    ## create and append lists
+    lengthList = list()
+    widthList = list()
+    circularEDList = list()
+    aspectRatioList = list()
+    circularityList = list()
+    chordsList = list()
+    ferretList = list()
+    roundList = list()
+    sphereList = list()
+    SList = list()
+    WTList = list()
+    PTList = list()
+    PList = list()
+    tS = 0
+    tWT = 0
+    tPT = 0
+    tP = 0
+    count = 0
     
-    # Use canny edge detection
-    edges = cv2.Canny(gray,50,150,apertureSize=3)
+    test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
+    x_th = len(test_img_path)
+    x_c = 0
+
     
-    reader = easyocr.Reader(['en'])
-    result = reader.readtext(gray, detail = 0)
-    pxum_r = result[0]
-    psum = re.sub("[^0-9]", "", pxum_r)
-    # print(psum)
+    for test_img in os.listdir(test_img_path):
+        # classes_of_interest = [keywds.index(k)]
+        input_path = os.path.join(test_img_path, test_img)
+        im = cv2.imread(input_path)
+        # GetInference()
+        # GetCounts()
+        # GetMask_Contours()
+        # GetMask_Contours(im, classes_of_interest=classes_of_interest)
     
-    # Apply HoughLinesP method to
-    # to directly obtain line end points
-    lines_list =[]
-    lines = cv2.HoughLinesP(
-                edges, # Input edge image
-                1, # Distance resolution in pixels
-                np.pi/180, # Angle resolution in radians
-                threshold=100, # Min number of votes for valid line
-                minLineLength=100, # Min allowed length of line
-                maxLineGap=1 # Max allowed gap between line for joining them
-                )
+        count = count+1
     
-    # Iterate over points
-    for points in lines:
-        # Extracted points nested in the list
-        x1,y1,x2,y2=points[0]
-        # Draw the lines joing the points
-        # On the original image
-        cv2.line(im,(x1,y1),(x2,y2),(0,255,0),2)
-        # Maintain a simples lookup list for points
-        lines_list.append([(x1,y1),(x2,y2)])
-        scale_len = sqrt((x2-x1)**2+(y2-y1)**2)
-        um_pix = float(psum)/scale_len    
-    # um_pix = 1
-
-    GetInference()
-    GetCounts()
-    GetMask_Contours()
-
-# #moving avgs
-window_size = 3
-i = 0
-k = 0
-
-MA_lengthList = []
-MA_widthList = []
-MA_circularEDList = []
-MA_aspectRatioList = []
-MA_circularityList = []
-MA_chordsList = []
-MA_ferretList = []
-MA_roundList = []
-MA_sphereList = []
-
-lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList]
-listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList']
-
-for lst in lists:
-
-  listname_str = 'MA_' + listnames[k]
-  k = k+1
-
-  while i < (len(lst) - window_size + 1):
-      window = lst[i : i + window_size]
-      window_average = round(sum(window) / window_size, 2)
-      vars()[listname_str].append(window_average)
-      i = i+1
-
-  i = 0
-
-lengthBins = np.histogram(np.asarray(MA_lengthList))
-widthBins = np.histogram(np.asarray(MA_widthList))
-circularEDBins = np.histogram(np.asarray(MA_circularEDList))
-aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
-circularityBins = np.histogram(np.asarray(MA_circularityList))
-chordsBins = np.histogram(np.asarray(MA_chordsList))
-ferretBins = np.histogram(np.asarray(MA_ferretList))
-roundBins = np.histogram(np.asarray(MA_roundList))
-sphereBins = np.histogram(np.asarray(MA_sphereList))
-
-for S in range(0, len(SList)):
-    tS = tS + SList[S]
-for WT in range(0, len(WTList)):
-    tWT = tWT + WTList[WT]
-for PT in range(0, len(PTList)):
-    tPT = tPT + PTList[PT]
-for P in range(0, len(PList)):
-    tP = tP + PList[P]
-
-
-values = list()
-values.append(tS)
-values.append(tWT)
-values.append(tPT)
-values.append(tP)
-values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
-# print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
-print("No. (Total) of Pores & Pore Throath, SB, WT:  " + repr(tP) + ",  "+ repr(tPT)+ ",  "+ repr(tS)+ ",  "+ repr(tWT))
-# print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
-
-rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList)
-
-with open('ShapeDescriptor.csv', "w") as f:
-    writer = csv.writer(f)
-    for row in rows:
-        writer.writerow(row)
-
-df = pd.read_csv('ShapeDescriptor.csv', header=None)
-df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords']
-df.to_csv('Results.csv', index=True)
+        # Convert image to grayscale
+        gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+        
+        # Use canny edge detection
+        edges = cv2.Canny(gray,50,150,apertureSize=3)
+        
+        reader = easyocr.Reader(['en'])
+        result = reader.readtext(gray, detail = 0)
+        pxum_r = result[0]
+        psum = re.sub("[^0-9]", "", pxum_r)
+        # print(psum)
+        
+        # Apply HoughLinesP method to
+        # to directly obtain line end points
+        lines_list =[]
+        lines = cv2.HoughLinesP(
+                    edges, # Input edge image
+                    1, # Distance resolution in pixels
+                    np.pi/180, # Angle resolution in radians
+                    threshold=100, # Min number of votes for valid line
+                    minLineLength=100, # Min allowed length of line
+                    maxLineGap=1 # Max allowed gap between line for joining them
+                    )
+        
+        # Iterate over points
+        for points in lines:
+            # Extracted points nested in the list
+            x1,y1,x2,y2=points[0]
+            # Draw the lines joing the points
+            # On the original image
+            cv2.line(im,(x1,y1),(x2,y2),(0,255,0),2)
+            # Maintain a simples lookup list for points
+            lines_list.append([(x1,y1),(x2,y2)])
+            scale_len = sqrt((x2-x1)**2+(y2-y1)**2)
+            um_pix = float(psum)/scale_len    
+        # um_pix = 1
+    
+        GetInference()
+        GetCounts()
+        GetMask_Contours()
+    
+    # #moving avgs
+    window_size = 3
+    i = 0
+    k = 0
+    
+    MA_lengthList = []
+    MA_widthList = []
+    MA_circularEDList = []
+    MA_aspectRatioList = []
+    MA_circularityList = []
+    MA_chordsList = []
+    MA_ferretList = []
+    MA_roundList = []
+    MA_sphereList = []
+    
+    lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList]
+    listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList']
+    
+    for lst in lists:
+    
+      listname_str = 'MA_' + listnames[k]
+      k = k+1
+    
+      while i < (len(lst) - window_size + 1):
+          window = lst[i : i + window_size]
+          window_average = round(sum(window) / window_size, 2)
+          vars()[listname_str].append(window_average)
+          i = i+1
+    
+      i = 0
+    
+    lengthBins = np.histogram(np.asarray(MA_lengthList))
+    widthBins = np.histogram(np.asarray(MA_widthList))
+    circularEDBins = np.histogram(np.asarray(MA_circularEDList))
+    aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
+    circularityBins = np.histogram(np.asarray(MA_circularityList))
+    chordsBins = np.histogram(np.asarray(MA_chordsList))
+    ferretBins = np.histogram(np.asarray(MA_ferretList))
+    roundBins = np.histogram(np.asarray(MA_roundList))
+    sphereBins = np.histogram(np.asarray(MA_sphereList))
+    
+    for S in range(0, len(SList)):
+        tS = tS + SList[S]
+    for WT in range(0, len(WTList)):
+        tWT = tWT + WTList[WT]
+    for PT in range(0, len(PTList)):
+        tPT = tPT + PTList[PT]
+    for P in range(0, len(PList)):
+        tP = tP + PList[P]
+    
+    
+    values = list()
+    values.append(tS)
+    values.append(tWT)
+    values.append(tPT)
+    values.append(tP)
+    values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
+    # print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
+    print("No. (Total) of Pores & Pore Throath, SB, WT:  " + repr(tP) + ",  "+ repr(tPT)+ ",  "+ repr(tS)+ ",  "+ repr(tWT))
+    # print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
+    
+    rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList)
+    
+    with open('ShapeDescriptor.csv', "w") as f:
+        writer = csv.writer(f)
+        for row in rows:
+            writer.writerow(row)
+    
+    df = pd.read_csv('ShapeDescriptor.csv', header=None)
+    df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords']
+    if x_pred = 2:
+        df.to_csv('Results_throats.csv', index=True)
+    elif x_pred = 3:
+        df.to_csv('Results_pores.csv', index=True)
     
     # sns.displot(df['Feret Diameter'])
     # sns.displot(df['Aspect Ratio'])
