@@ -488,6 +488,7 @@ def GetCounts():
 # def GetMask_Contours():
 def GetMask_Contours():
   outputs = predictor(im)
+  instances = instances[instances.pred_classes == 3]
   mask_array = outputs['instances'].pred_masks.to("cpu").numpy()
   num_instances = mask_array.shape[0]
   mask_array = np.moveaxis(mask_array, 0, -1)
@@ -580,6 +581,7 @@ count = 0
 test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
 x_th = len(test_img_path)
 x_c = 0
+
 keywds = ["Scale", "WThick", "PThroat", "Pore"]
 
 for k in keywds: # 0 scale
