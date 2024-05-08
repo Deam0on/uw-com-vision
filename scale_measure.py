@@ -22,7 +22,7 @@ for test_img in os.listdir(test_img_path):
     result = reader.readtext(gray, detail = 0)
     pxum_r = result[0]
     psum = re.sub("[^0-9]", "", pxum_r)
-    print(psum)
+    # print(psum)
     
     # Apply HoughLinesP method to
     # to directly obtain line end points
@@ -48,8 +48,8 @@ for test_img in os.listdir(test_img_path):
         scale_len = sqrt((x2-x1)**2+(y2-y1)**2)
         um_pix = float(psum)/scale_len
     
-    print (um_pix)
+    # print (um_pix)
     
     # Save the result image
-    cv2.imwrite('detectedLines.png',image)
-    cv2_imshow(image)
+    # cv2.imwrite('detectedLines.png',image)
+    # cv2_imshow(image)
