@@ -128,14 +128,10 @@ def get_superannotate_dicts(img_dir, label_dir):
                     #     poly = [p for x in poly for p in x]
                       
 
-                    if "scale" in categoryName :
+                    if "throat" in categoryName :
                         category_id = 0
-                    elif "wall" in categoryName :
-                        category_id = 1
-                    elif "throat" in categoryName :
-                        category_id = 2
                     elif "pore" in categoryName :
-                        category_id = 3
+                        category_id = 1
                     else:
                         raise ValueError("Category Name Not Found: "+ categoryName)
 
@@ -256,10 +252,10 @@ for d in keywords:
     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
     DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
                                                                                    "/home/deamoon_uw_nn/DATASET/" + d + "/"))
-    MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
+    MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
   
-multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
-multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["scale","wall","throat","pore"])
+multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
+multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["throat","pore"])
 
 ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 cfg = get_cfg()
