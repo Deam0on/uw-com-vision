@@ -116,8 +116,8 @@ def get_superannotate_dicts(img_dir, label_dir):
                         height = imgs_anns["metadata"]["height"]
                         width = imgs_anns["metadata"]["width"]
                         
-                        fo_poly = anno.to_polyline()
-                        poly = [(x*width, y*height) for x, y in fo_poly.points[0]]
+                        # fo_poly = anno.to_polyline()
+                        poly = [(x*width, y*height) for x, y in anno["points"][0]]
                         poly = [p for x in poly for p in x]
                       
                     # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
@@ -236,24 +236,26 @@ with open(csv_file_path, newline='') as f:
 
 ## Load custom dataset, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE THING CLASSES TO LOAD FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #Dataset load
+
+# keywords = ["Train", "Test"]
+# for d in keywords:
+#     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
+#     DatasetCatalog.register("multiclass_" + d, lambda d=d: get_fiftyone_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/"))
+#     MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
+  
+# multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
+# multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["scale","wall","throat","pore"])
+
 keywords = ["Train", "Test"]
 for d in keywords:
     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
-    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_fiftyone_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/"))
+    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
+                                                                                   "/home/deamoon_uw_nn/DATASET/" + d + "/"))
     MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
   
 multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["scale","wall","throat","pore"])
 
-# keywords = ["Train", "Test"]
-# for d in keywords:
-#     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
-#     DatasetCatalog.register("multiclass_" + d, lambda d=d: get_fiftyone_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
-#                                                                                    "/home/deamoon_uw_nn/DATASET/" + d + "/"))
-#     MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
-  
-# multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["scale","wall","throat","pore"])
-# multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["scale","wall","throat","pore"])
 ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
