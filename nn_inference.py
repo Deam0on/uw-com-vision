@@ -468,7 +468,7 @@ def GetInference():
                   instance_mode=ColorMode.SEGMENTATION)
   out = v.draw_instance_predictions(filtered_instances.to("cpu"))  
   # v.save("test.png")
-  cv2.imwrite(test_img + x_pred + "__pred.png",out.get_image()[:, :, ::-1])
+  cv2.imwrite(test_img + '_' + x_pred + "__pred.png",out.get_image()[:, :, ::-1])
 
 ## count types
 
@@ -479,7 +479,7 @@ def GetCounts():
   TotalCount = sum(classes==0)+sum(classes==1)
   TCount = sum(classes==0)
   PCount = sum(classes==1)
-  TList.append(PTCount)
+  TList.append(TCount)
   PList.append(PCount)
 
 ## get mask contours for outlines / ferret
