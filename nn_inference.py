@@ -596,7 +596,7 @@ def GetMask_Contours():
 # keywds = ["Scale", "WThick", "PThroat", "Pore"]
 
 # for k in keywds: # 0 scale
-for x_pred in [0, 1]
+for x_pred in [0, 1]:
 
     ## create and append lists
     lengthList = list()
