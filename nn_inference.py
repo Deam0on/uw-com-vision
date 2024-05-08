@@ -736,9 +736,9 @@ for x_pred in [0, 1]:
     
     df = pd.read_csv('ShapeDescriptor.csv', header=None)
     df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords']
-    if x_pred = 2:
+    if x_pred == 2:
         df.to_csv('Results_throats.csv', index=True)
-    elif x_pred = 3:
+    elif x_pred == 3:
         df.to_csv('Results_pores.csv', index=True)
     
     # sns.displot(df['Feret Diameter'])
