@@ -490,10 +490,10 @@ def GetMask_Contours():
   outputs = predictor(im)
 
   # Get all instances
-  instances = outputs['instances']
+  inst_out = outputs['instances']
 
   # Filter instances where predicted class is 3
-  filtered_instances = instances[instances.pred_classes == 3]
+  filtered_instances = inst_out[inst_out.pred_classes == 2]
     
   # Now extract the masks for these filtered instances
   mask_array = filtered_instances.pred_masks.to("cpu").numpy()
