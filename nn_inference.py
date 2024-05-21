@@ -14,6 +14,7 @@ from distutils.dir_util import copy_tree
 from contextlib import redirect_stdout
 import tempfile
 import statistics
+import scipy
 from scipy.spatial import distance as dist
 import imutils
 from imutils import perspective
