@@ -615,7 +615,7 @@ for x_pred in [0,1]:
     tP = 0
     count = 0
     
-    test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/UPLOAD/"
+    test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
     x_th = len(test_img_path)
     x_c = 0
 
