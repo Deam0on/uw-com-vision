@@ -736,28 +736,35 @@ for x_pred in [0,1]:
     lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list,name_list]
     listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list','name_list']
     
-    # for lst in lists:
+    for lst in lists:
     
-    #   listname_str = 'MA_' + listnames[k]
-    #   k = k+1
+      listname_str = 'MA_' + listnames[k]
+      k = k+1
     
-    #   while i < (len(lst) - window_size + 1):
-    #       window = lst[i : i + window_size]
-    #       window_average = round(sum(window) / window_size, 2)
-    #       vars()[listname_str].append(window_average)
-    #       i = i+1
+      while i < len(lst):
+          window = lst[i]
+          vars()[listname_str].append(window)
+          i = i+1
     
-    #   i = 0
+      i = 0
+
+      # while i < (len(lst) - window_size + 1):
+      #     window = lst[i : i + window_size]
+      #     window_average = round(sum(window) / window_size, 2)
+      #     vars()[listname_str].append(window_average)
+      #     i = i+1
     
-    # lengthBins = np.histogram(np.asarray(MA_lengthList))
-    # widthBins = np.histogram(np.asarray(MA_widthList))
-    # circularEDBins = np.histogram(np.asarray(MA_circularEDList))
-    # aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
-    # circularityBins = np.histogram(np.asarray(MA_circularityList))
-    # chordsBins = np.histogram(np.asarray(MA_chordsList))
-    # ferretBins = np.histogram(np.asarray(MA_ferretList))
-    # roundBins = np.histogram(np.asarray(MA_roundList))
-    # sphereBins = np.histogram(np.asarray(MA_sphereList))
+      # i = 0
+    
+    lengthBins = np.histogram(np.asarray(MA_lengthList))
+    widthBins = np.histogram(np.asarray(MA_widthList))
+    circularEDBins = np.histogram(np.asarray(MA_circularEDList))
+    aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
+    circularityBins = np.histogram(np.asarray(MA_circularityList))
+    chordsBins = np.histogram(np.asarray(MA_chordsList))
+    ferretBins = np.histogram(np.asarray(MA_ferretList))
+    roundBins = np.histogram(np.asarray(MA_roundList))
+    sphereBins = np.histogram(np.asarray(MA_sphereList))
     
     for T in range(0, len(TList)):
         tT = tT + TList[T]
@@ -774,8 +781,8 @@ for x_pred in [0,1]:
     print("No. (Total) of Pore Throats:  " + repr(tT))
     # print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
     
-    # rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList,MA_psum_list,MA_name_list)
-    rows = zip(ferretList,aspectRatioList,roundList,circularityList,sphereList,lengthList,widthList,circularEDList,chordsList,psum_list,name_list)
+    rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList,MA_psum_list,MA_name_list)
+    # rows = zip(ferretList,aspectRatioList,roundList,circularityList,sphereList,lengthList,widthList,circularEDList,chordsList,psum_list,name_list)
     
     with open('ShapeDescriptor.csv', "w") as f:
         writer = csv.writer(f)
