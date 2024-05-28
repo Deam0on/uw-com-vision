@@ -677,8 +677,8 @@ for x_pred in [0,1]:
         pxum_r = result[0]
         psum = re.sub("[^0-9]", "", pxum_r)
 
-        psum_list.append(psum)
-        name_list.append(input_path)
+        psum_list.append(float(psum))
+        # name_list.append(input_path)
         
         # print(psum)
         
@@ -744,15 +744,15 @@ for x_pred in [0,1]:
     
       i = 0
     
-    # lengthBins = np.histogram(np.asarray(MA_lengthList))
-    # widthBins = np.histogram(np.asarray(MA_widthList))
-    # circularEDBins = np.histogram(np.asarray(MA_circularEDList))
-    # aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
-    # circularityBins = np.histogram(np.asarray(MA_circularityList))
-    # chordsBins = np.histogram(np.asarray(MA_chordsList))
-    # ferretBins = np.histogram(np.asarray(MA_ferretList))
-    # roundBins = np.histogram(np.asarray(MA_roundList))
-    # sphereBins = np.histogram(np.asarray(MA_sphereList))
+    lengthBins = np.histogram(np.asarray(MA_lengthList))
+    widthBins = np.histogram(np.asarray(MA_widthList))
+    circularEDBins = np.histogram(np.asarray(MA_circularEDList))
+    aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
+    circularityBins = np.histogram(np.asarray(MA_circularityList))
+    chordsBins = np.histogram(np.asarray(MA_chordsList))
+    ferretBins = np.histogram(np.asarray(MA_ferretList))
+    roundBins = np.histogram(np.asarray(MA_roundList))
+    sphereBins = np.histogram(np.asarray(MA_sphereList))
     
     for T in range(0, len(TList)):
         tT = tT + TList[T]
