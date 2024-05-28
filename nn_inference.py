@@ -223,7 +223,7 @@ cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
 cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
 cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
-cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.45   # set the testing threshold for this model
+cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.80   # set the testing threshold for this model
 predictor = DefaultPredictor(cfg)
 
 cfg.MODEL.DEVICE = "cuda"
