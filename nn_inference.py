@@ -597,6 +597,39 @@ def GetMask_Contours():
 # keywds = ["Scale", "WThick", "PThroat", "Pore"]
 
 # for k in keywds: # 0 scale
+
+
+def get_image_folder_path(base_path='/home/deamoon_uw_nn/DATASET/INFERENCE'):
+    """
+    This function checks whether the images are in the base folder or in the UPLOAD subfolder.
+    It returns the path to the folder containing the images.
+
+    Parameters:
+    base_path (str): The base path where the INFERENCE folder is located.
+
+    Returns:
+    str: The path to the folder containing the images.
+    """
+    # Define the two possible paths
+    inference_path = os.path.join(base_path)
+    upload_path = os.path.join(base_path, 'UPLOAD')
+
+    # Check if the INFERENCE folder contains images
+    if any(os.path.isfile(os.path.join(inference_path, f)) for f in os.listdir(inference_path)):
+        return inference_path
+
+    # Check if the UPLOAD subfolder contains images
+    elif os.path.exists(upload_path) and any(os.path.isfile(os.path.join(upload_path, f)) for f in os.listdir(upload_path)):
+        return upload_path
+
+    # If no images found in either folder, return None or raise an exception
+    else:
+        raise FileNotFoundError("No images found in INFERENCE or INFERENCE/UPLOAD folders.")
+
+# Example usage:
+# Assuming you are running the script from the same directory where the INFERENCE folder is located
+image_folder_path = get_image_folder_path()
+
 for x_pred in [0,1]:
 
     ## create and append lists
@@ -613,9 +646,9 @@ for x_pred in [0,1]:
     PList = list()
     tT = 0
     tP = 0
-    count = 0
+    count = 0    
     
-    test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
+    test_img_path = image_folder_path
     x_th = len(test_img_path)
     x_c = 0
 
