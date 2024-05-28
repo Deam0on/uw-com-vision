@@ -769,7 +769,7 @@ for x_pred in [0,1]:
     print("No. (Total) of Pore Throats:  " + repr(tT))
     # print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
     
-    rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList,MA_name,MA_psum)
+    rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList,MA_psum_list)
     
     with open('ShapeDescriptor.csv', "w") as f:
         writer = csv.writer(f)
