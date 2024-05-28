@@ -728,7 +728,7 @@ for x_pred in [0,1]:
     MA_name = []
     MA_psum = []
     
-    lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,name_list,psum_list]
+    lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list]
     listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list']
     
     for lst in lists:
@@ -777,7 +777,7 @@ for x_pred in [0,1]:
             writer.writerow(row)
     
     df = pd.read_csv('ShapeDescriptor.csv', header=None)
-    df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords']
+    df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords', 'Scale length']
     if x_pred == 0:
         df.to_csv('Results_throats.csv', index=True)
     elif x_pred == 1:
