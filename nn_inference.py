@@ -659,7 +659,7 @@ for x_pred in [0,1]:
         # classes_of_interest = [keywds.index(k)]
         input_path = os.path.join(test_img_path, test_img)
         im = cv2.imread(input_path)
-        source_image_filename = input_path
+        source_image_filename = test_img
         # GetInference()
         # GetCounts()
         # GetMask_Contours()
@@ -679,6 +679,7 @@ for x_pred in [0,1]:
         psum = re.sub("[^0-9]", "", pxum_r)
 
         psum_list.append(float(psum))
+        name_list.append(source_image_filename)
         # name_list.append(input_path)
         
         # print(psum)
@@ -729,8 +730,8 @@ for x_pred in [0,1]:
     MA_psum_list = []
     MA_name_list = []
     
-    lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list]
-    listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list']
+    lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list,name_list]
+    listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list','name_list']
     
     for lst in lists:
     
