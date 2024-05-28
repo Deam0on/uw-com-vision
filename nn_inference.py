@@ -762,10 +762,10 @@ for x_pred in [0,1]:
         tP = tP + PList[P]
     
     
-    values = list()
-    values.append(tT)
-    values.append(tP)
-    values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
+    # values = list()
+    # values.append(tT)
+    # values.append(tP)
+    # values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
     # print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
     print("No. (Total) of Pores:  " + repr(tP))
     print("No. (Total) of Pore Throats:  " + repr(tT))
