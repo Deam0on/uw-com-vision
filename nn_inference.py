@@ -729,7 +729,7 @@ for x_pred in [0,1]:
     MA_psum = []
     
     lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,name_list,psum_list]
-    listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','name_list','psum_list']
+    listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list']
     
     for lst in lists:
     
