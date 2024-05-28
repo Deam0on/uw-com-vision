@@ -726,7 +726,7 @@ for x_pred in [0,1]:
     MA_roundList = []
     MA_sphereList = []
     MA_name = []
-    MA_psum = []
+    MA_psum_list = []
     
     lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list]
     listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list']
