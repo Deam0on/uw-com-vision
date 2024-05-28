@@ -645,6 +645,7 @@ for x_pred in [0,1]:
     TList = list()
     PList = list()
     psum_list = list()
+    name_list = list()
     tT = 0
     tP = 0
     count = 0    
@@ -658,6 +659,7 @@ for x_pred in [0,1]:
         # classes_of_interest = [keywds.index(k)]
         input_path = os.path.join(test_img_path, test_img)
         im = cv2.imread(input_path)
+        source_image_filename = input_path
         # GetInference()
         # GetCounts()
         # GetMask_Contours()
@@ -725,6 +727,7 @@ for x_pred in [0,1]:
     MA_roundList = []
     MA_sphereList = []
     MA_psum_list = []
+    MA_name_list = []
     
     lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list]
     listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list']
@@ -767,7 +770,7 @@ for x_pred in [0,1]:
     print("No. (Total) of Pore Throats:  " + repr(tT))
     # print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
     
-    rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList,MA_psum_list)
+    rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList,MA_psum_list,MA_name_list)
     
     with open('ShapeDescriptor.csv', "w") as f:
         writer = csv.writer(f)
@@ -775,7 +778,8 @@ for x_pred in [0,1]:
             writer.writerow(row)
     
     df = pd.read_csv('ShapeDescriptor.csv', header=None)
-    df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords', 'Scale length']
+    df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords', 'Scale length', 'File name']
+    
     if x_pred == 0:
         df.to_csv('Results_throats.csv', index=True)
     elif x_pred == 1:
