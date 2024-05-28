@@ -644,7 +644,6 @@ for x_pred in [0,1]:
     sphereList = list()
     TList = list()
     PList = list()
-    name_list = list()
     psum_list = list()
     tT = 0
     tP = 0
@@ -725,7 +724,6 @@ for x_pred in [0,1]:
     MA_ferretList = []
     MA_roundList = []
     MA_sphereList = []
-    MA_name = []
     MA_psum_list = []
     
     lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list]
