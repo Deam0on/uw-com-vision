@@ -713,40 +713,49 @@ for x_pred in [0,1]:
         GetCounts()
         GetMask_Contours()
 
-        print(ferretList)
-        print(name_list)
+    # Create a CSV file at the end of each iteration of the outer loop
+    csv_filename = f'results_x_pred_{x_pred}.csv'
+    with open(csv_filename, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        # Write the header
+        csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
+        # Write the data rows
+        for row in zip(lengthList, widthList, circularEDList, aspectRatioList, circularityList, chordsList, ferretList, roundList, sphereList, psum_list, name_list):
+            csvwriter.writerow(row)
+
+    print(f'Data for x_pred={x_pred} written to {csv_filename}')
     
-    # #moving avgs
-    window_size = 3
-    i = 0
-    k = 0
+    # # #moving avgs
+    # window_size = 3
+    # i = 0
+    # k = 0
     
-    MA_lengthList = []
-    MA_widthList = []
-    MA_circularEDList = []
-    MA_aspectRatioList = []
-    MA_circularityList = []
-    MA_chordsList = []
-    MA_ferretList = []
-    MA_roundList = []
-    MA_sphereList = []
-    MA_psum_list = []
-    MA_name_list = []
+    # MA_lengthList = []
+    # MA_widthList = []
+    # MA_circularEDList = []
+    # MA_aspectRatioList = []
+    # MA_circularityList = []
+    # MA_chordsList = []
+    # MA_ferretList = []
+    # MA_roundList = []
+    # MA_sphereList = []
+    # MA_psum_list = []
+    # MA_name_list = []
     
-    lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list,name_list]
-    listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list','name_list']
+    # lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list,name_list]
+    # listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list','name_list']
     
-    for lst in lists:
+    # for lst in lists:
     
-      listname_str = 'MA_' + listnames[k]
-      k = k+1
+    #   listname_str = 'MA_' + listnames[k]
+    #   k = k+1
     
-      while i < len(lst):
-          window = lst[i]
-          vars()[listname_str].append(window)
-          i = i+1
+    #   while i < len(lst):
+    #       window = lst[i]
+    #       vars()[listname_str].append(window)
+    #       i = i+1
     
-      i = 0
+    #   i = 0
 
       # while i < (len(lst) - window_size + 1):
       #     window = lst[i : i + window_size]
@@ -756,15 +765,15 @@ for x_pred in [0,1]:
     
       # i = 0
     
-    lengthBins = np.histogram(np.asarray(MA_lengthList))
-    widthBins = np.histogram(np.asarray(MA_widthList))
-    circularEDBins = np.histogram(np.asarray(MA_circularEDList))
-    aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
-    circularityBins = np.histogram(np.asarray(MA_circularityList))
-    chordsBins = np.histogram(np.asarray(MA_chordsList))
-    ferretBins = np.histogram(np.asarray(MA_ferretList))
-    roundBins = np.histogram(np.asarray(MA_roundList))
-    sphereBins = np.histogram(np.asarray(MA_sphereList))
+    # lengthBins = np.histogram(np.asarray(MA_lengthList))
+    # widthBins = np.histogram(np.asarray(MA_widthList))
+    # circularEDBins = np.histogram(np.asarray(MA_circularEDList))
+    # aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
+    # circularityBins = np.histogram(np.asarray(MA_circularityList))
+    # chordsBins = np.histogram(np.asarray(MA_chordsList))
+    # ferretBins = np.histogram(np.asarray(MA_ferretList))
+    # roundBins = np.histogram(np.asarray(MA_roundList))
+    # sphereBins = np.histogram(np.asarray(MA_sphereList))
     
     for T in range(0, len(TList)):
         tT = tT + TList[T]
@@ -772,30 +781,30 @@ for x_pred in [0,1]:
         tP = tP + PList[P]
     
     
-    values = list()
-    values.append(tT)
-    values.append(tP)
-    values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
+    # values = list()
+    # values.append(tT)
+    # values.append(tP)
+    # values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
     # print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
     print("No. (Total) of Pores:  " + repr(tP))
     print("No. (Total) of Pore Throats:  " + repr(tT))
     # print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
     
-    rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList,MA_psum_list,MA_name_list)
-    # rows = zip(ferretList,aspectRatioList,roundList,circularityList,sphereList,lengthList,widthList,circularEDList,chordsList,psum_list,name_list)
+    # rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList,MA_psum_list,MA_name_list)
+    # # rows = zip(ferretList,aspectRatioList,roundList,circularityList,sphereList,lengthList,widthList,circularEDList,chordsList,psum_list,name_list)
     
-    with open('ShapeDescriptor.csv', "w") as f:
-        writer = csv.writer(f)
-        for row in rows:
-            writer.writerow(row)
+    # with open('ShapeDescriptor.csv', "w") as f:
+    #     writer = csv.writer(f)
+    #     for row in rows:
+    #         writer.writerow(row)
     
-    df = pd.read_csv('ShapeDescriptor.csv', header=None)
-    df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords', 'Scale length', 'File name']
+    # df = pd.read_csv('ShapeDescriptor.csv', header=None)
+    # df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords', 'Scale length', 'File name']
     
-    if x_pred == 0:
-        df.to_csv('Results_throats.csv', index=True)
-    elif x_pred == 1:
-        df.to_csv('Results_pores.csv', index=True)
+    # if x_pred == 0:
+    #     df.to_csv('Results_throats.csv', index=True)
+    # elif x_pred == 1:
+    #     df.to_csv('Results_pores.csv', index=True)
     
     # sns.displot(df['Feret Diameter'])
     # sns.displot(df['Aspect Ratio'])
