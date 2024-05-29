@@ -715,7 +715,7 @@ for x_pred in [0,1]:
 
         # Create a CSV file at the end of each iteration of the outer loop
         csv_filename = f'results_x_pred_{x_pred}.csv'
-        with open(csv_filename, 'w', newline='') as csvfile:
+        with open(csv_filename, 'a', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
             # Write the header
             csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
