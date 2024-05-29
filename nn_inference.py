@@ -713,7 +713,7 @@ for x_pred in [0,1]:
         GetCounts()
         GetMask_Contours()
 
-        print(Feret_diam)
+        print(ferretList)
         print(name_list)
     
     # #moving avgs
