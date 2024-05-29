@@ -712,6 +712,9 @@ for x_pred in [0,1]:
         GetInference()
         GetCounts()
         GetMask_Contours()
+
+        print(Feret_diam)
+        print(name_list)
     
     # #moving avgs
     window_size = 3
