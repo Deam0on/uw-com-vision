@@ -286,6 +286,38 @@ for d in keywords:
 multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["throat","pore"])
 
+
+def get_image_folder_path(base_path='/home/deamoon_uw_nn/DATASET/INFERENCE'):
+    """
+    This function checks whether the images are in the base folder or in the UPLOAD subfolder.
+    It returns the path to the folder containing the images.
+
+    Parameters:
+    base_path (str): The base path where the INFERENCE folder is located.
+
+    Returns:
+    str: The path to the folder containing the images.
+    """
+    # Define the two possible paths
+    inference_path = os.path.join(base_path)
+    upload_path = os.path.join(base_path, 'UPLOAD')
+
+    # Check if the INFERENCE folder contains images
+    if any(os.path.isfile(os.path.join(inference_path, f)) for f in os.listdir(inference_path)):
+        return inference_path
+
+    # Check if the UPLOAD subfolder contains images
+    elif os.path.exists(upload_path) and any(os.path.isfile(os.path.join(upload_path, f)) for f in os.listdir(upload_path)):
+        return upload_path
+
+    # If no images found in either folder, return None or raise an exception
+    else:
+        raise FileNotFoundError("No images found in INFERENCE or INFERENCE/UPLOAD folders.")
+
+# Example usage:
+# Assuming you are running the script from the same directory where the INFERENCE folder is located
+image_folder_path = get_image_folder_path()
+
 ## Collect prediction masks
 # Convert binary_mask to RLE
 def binary_mask_to_rle(binary_mask):
@@ -420,7 +452,7 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
     return masks
 
 path = "./output/"  # the weight save path
-inpath = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
+inpath = image_folder_path
 images_name = listdir(inpath)
 images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
 print(images_name)
@@ -597,38 +629,6 @@ def GetMask_Contours():
 # keywds = ["Scale", "WThick", "PThroat", "Pore"]
 
 # for k in keywds: # 0 scale
-
-
-def get_image_folder_path(base_path='/home/deamoon_uw_nn/DATASET/INFERENCE'):
-    """
-    This function checks whether the images are in the base folder or in the UPLOAD subfolder.
-    It returns the path to the folder containing the images.
-
-    Parameters:
-    base_path (str): The base path where the INFERENCE folder is located.
-
-    Returns:
-    str: The path to the folder containing the images.
-    """
-    # Define the two possible paths
-    inference_path = os.path.join(base_path)
-    upload_path = os.path.join(base_path, 'UPLOAD')
-
-    # Check if the INFERENCE folder contains images
-    if any(os.path.isfile(os.path.join(inference_path, f)) for f in os.listdir(inference_path)):
-        return inference_path
-
-    # Check if the UPLOAD subfolder contains images
-    elif os.path.exists(upload_path) and any(os.path.isfile(os.path.join(upload_path, f)) for f in os.listdir(upload_path)):
-        return upload_path
-
-    # If no images found in either folder, return None or raise an exception
-    else:
-        raise FileNotFoundError("No images found in INFERENCE or INFERENCE/UPLOAD folders.")
-
-# Example usage:
-# Assuming you are running the script from the same directory where the INFERENCE folder is located
-image_folder_path = get_image_folder_path()
 
 for x_pred in [0,1]:
 
