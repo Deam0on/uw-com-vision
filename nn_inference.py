@@ -463,7 +463,7 @@ num = 0
 conv = lambda l: ' '.join(map(str, l))
 
 for name in images_name:
-    image = cv2.imread(inpath + name)
+    image = cv2.imread(inpath + "/" + name)
     outputs = predictor(image)
     print(num)
     num += 1
