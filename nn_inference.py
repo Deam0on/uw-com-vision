@@ -713,17 +713,17 @@ for x_pred in [0,1]:
         GetCounts()
         GetMask_Contours()
 
-    # Create a CSV file at the end of each iteration of the outer loop
-    csv_filename = f'results_x_pred_{x_pred}.csv'
-    with open(csv_filename, 'w', newline='') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        # Write the header
-        csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
-        # Write the data rows
-        for row in zip(lengthList, widthList, circularEDList, aspectRatioList, circularityList, chordsList, ferretList, roundList, sphereList, psum_list, name_list):
-            csvwriter.writerow(row)
-
-    print(f'Data for x_pred={x_pred} written to {csv_filename}')
+        # Create a CSV file at the end of each iteration of the outer loop
+        csv_filename = f'results_x_pred_{x_pred}.csv'
+        with open(csv_filename, 'w', newline='') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            # Write the header
+            csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
+            # Write the data rows
+            for row in zip(lengthList, widthList, circularEDList, aspectRatioList, circularityList, chordsList, ferretList, roundList, sphereList, psum_list, name_list):
+                csvwriter.writerow(row)
+    
+        print(f'Data for x_pred={x_pred} written to {csv_filename}')
     
     # # #moving avgs
     # window_size = 3
