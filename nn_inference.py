@@ -732,9 +732,6 @@ for x_pred in [0,1]:
     MA_sphereList = []
     MA_psum_list = []
     MA_name_list = []
-
-    print(len(test_img_path))
-    print(name_list)
     
     lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list,name_list]
     listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list','name_list']
