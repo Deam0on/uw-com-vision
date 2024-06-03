@@ -452,12 +452,14 @@ for x_pred in [0,1]:
         
             # Convert image to grayscale
             gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+            thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
             
             # Use canny edge detection
             edges = cv2.Canny(gray,50,150,apertureSize=3)
             
             reader = easyocr.Reader(['en'])
-            result = reader.readtext(gray, detail=0, paragraph=False, contrast_ths=0.7, adjust_contrast=0.5, add_margin=0.1, width_ths=0.8, decoder='wordbeamsearch')
+            result = reader.readtext(thresh, detail=0, paragraph=False, contrast_ths=0.7, adjust_contrast=0.6, add_margin=0.1, width_ths=0.8, decoder='beamsearch')
             pxum_r = result[0]
             psum = re.sub("[^0-9]", "", pxum_r)
     
