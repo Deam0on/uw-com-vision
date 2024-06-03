@@ -407,172 +407,171 @@ def GetCounts():
 
 ## get mask contours for outlines / ferret
 # def GetMask_Contours():
-def GetMask_Contours():
-  outputs = predictor(im)
-
-  # Get all instances
-  inst_out = outputs['instances']
-
-  # Filter instances where predicted class is 3
-  filtered_instances = inst_out[inst_out.pred_classes == x_pred]
-    
-  # Now extract the masks for these filtered instances
-  mask_array = filtered_instances.pred_masks.to("cpu").numpy()
-    
-  # instances = instances[instances.pred_classes == 3]
-  # mask_array = outputs['instances'].pred_masks==3.to("cpu").numpy()
-  num_instances = mask_array.shape[0]
-  mask_array = np.moveaxis(mask_array, 0, -1)
-  mask_array_instance = []
-  output = np.zeros_like(im)
-  fig = plt.figure(figsize=(15, 20))
-  for i in range(num_instances):
-      mask_array_instance.append(mask_array[:, :, i:(i+1)])
-      output = np.where(mask_array_instance[i] == True, 255, output)
-  imm = Image.fromarray(output)
-  imm.save('predicted_masks.jpg')
-  cv2.imwrite('Masks.jpg', output) #mask
-  im_mask = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
-  cnts = cv2.findContours(im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-  cnts = imutils.grab_contours(cnts)
-
-  if len(cnts) > 0:
-      
-      (cnts, _) = contours.sort_contours(cnts)
-      pixelsPerMetric = 0.85
-    
-      for c in cnts:
-          if cv2.contourArea(c) < 100:
-              continue
-          area = cv2.contourArea(c)
-          perimeter = cv2.arcLength(c, True)
-    
-          orig = im_mask.copy()
-          box = cv2.minAreaRect(c)
-          box = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
-          box = np.array(box, dtype="int")
-          box = perspective.order_points(box)
-          cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
-          for (x, y) in box:
-              cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
-          (tl, tr, br, bl) = box
-          (tltrX, tltrY) = midpoint(tl, tr)
-          (blbrX, blbrY) = midpoint(bl, br)
-          (tlblX, tlblY) = midpoint(tl, bl)
-          (trbrX, trbrY) = midpoint(tr, br)
-          dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
-          dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
-          if pixelsPerMetric is None:
-              pixelsPerMetric = dB / width
-          dimA = dA / pixelsPerMetric
-          dimB = dB / pixelsPerMetric
-          dimArea = area/pixelsPerMetric
-          dimPerimeter = perimeter/pixelsPerMetric
-          diaFeret = max(dimA, dimB)
-          if (dimA and dimB) !=0:
-              Aspect_Ratio = max(dimB,dimA)/min(dimA,dimB)
-          else:
-              Aspect_Ratio = 0
-          Length = min(dimA, dimB)*um_pix
-          Width = max(dimA, dimB)*um_pix
-          CircularED = np.sqrt(4*area/np.pi)*um_pix
-          Chords = cv2.arcLength(c,True)*um_pix
-          Roundness = 1/(Aspect_Ratio) if Aspect_Ratio != 0 else 0
-          Sphericity = (2*np.sqrt(np.pi*dimArea))/dimPerimeter*um_pix
-          Circularity = 4*np.pi*(dimArea/(dimPerimeter)**2)*um_pix
-          Feret_diam = diaFeret*um_pix
+          
 for x_pred in [0,1]:
 
     ## create and append lists
-    lengthList = list()
-    widthList = list()
-    circularEDList = list()
-    aspectRatioList = list()
-    circularityList = list()
-    chordsList = list()
-    ferretList = list()
-    roundList = list()
-    sphereList = list()
-    TList = list()
-    PList = list()
-    psum_list = list()
-    name_list = list()
+    # lengthList = list()
+    # widthList = list()
+    # circularEDList = list()
+    # aspectRatioList = list()
+    # circularityList = list()
+    # chordsList = list()
+    # ferretList = list()
+    # roundList = list()
+    # sphereList = list()
+    # TList = list()
+    # PList = list()
+    # psum_list = list()
+    # name_list = list()
     tT = 0
     tP = 0
     count = 0    
-    
+    csv_filename = f'results_x_pred_{x_pred}.csv'
     test_img_path = image_folder_path
     x_th = len(test_img_path)
     x_c = 0
 
+
+
+    # Open CSV file before processing images
+    with open(csv_filename, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        # Write the header row (adjust this as per your data)
+        csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
     
-
-import csv
-
-# Open CSV file before processing images
-with open('measurements.csv', 'w', newline='') as csvfile:
-    csvwriter = csv.writer(csvfile)
-    # Write the header row (adjust this as per your data)
-    csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
-
-    for test_img in os.listdir(test_img_path):
-
-        # Write the measurements and descriptors to the CSV file
-        csvwriter.writerow([length, width, circularED, aspectRatio, circularity, chords, ferret, round, sphere, psum, name])
-        # classes_of_interest = [keywds.index(k)]
-        input_path = os.path.join(test_img_path, test_img)
-        im = cv2.imread(input_path)
-        source_image_filename = test_img
+        for test_img in os.listdir(test_img_path):
     
-        count = count+1
-    
-        # Convert image to grayscale
-        gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+            # Write the measurements and descriptors to the CSV file
+            # classes_of_interest = [keywds.index(k)]
+            input_path = os.path.join(test_img_path, test_img)
+            im = cv2.imread(input_path)
+            source_image_filename = test_img
         
-        # Use canny edge detection
-        edges = cv2.Canny(gray,50,150,apertureSize=3)
+            count = count+1
         
-        reader = easyocr.Reader(['en'])
-        result = reader.readtext(gray, detail = 0)
-        pxum_r = result[0]
-        psum = re.sub("[^0-9]", "", pxum_r)
-
-        psum_list.append(float(psum))
-                    1, # Distance resolution in pixels
-                    np.pi/180, # Angle resolution in radians
-                    threshold=100, # Min number of votes for valid line
-                    minLineLength=100, # Min allowed length of line
-                    maxLineGap=1 # Max allowed gap between line for joining them
-                    )
+            # Convert image to grayscale
+            gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
+            
+            # Use canny edge detection
+            edges = cv2.Canny(gray,50,150,apertureSize=3)
+            
+            reader = easyocr.Reader(['en'])
+            result = reader.readtext(gray, detail = 0)
+            pxum_r = result[0]
+            psum = re.sub("[^0-9]", "", pxum_r)
+    
+            psum_list.append(float(psum))
+                        1, # Distance resolution in pixels
+                        np.pi/180, # Angle resolution in radians
+                        threshold=100, # Min number of votes for valid line
+                        minLineLength=100, # Min allowed length of line
+                        maxLineGap=1 # Max allowed gap between line for joining them
+                        )
+            
+            # Iterate over points
+            for points in lines:
+                # Extracted points nested in the list
+                x1,y1,x2,y2=points[0]
+                # Draw the lines joing the points
+                # On the original image
+                cv2.line(im,(x1,y1),(x2,y2),(0,255,0),2)
+                # Maintain a simples lookup list for points
+                lines_list.append([(x1,y1),(x2,y2)])
+                scale_len = sqrt((x2-x1)**2+(y2-y1)**2)
+                um_pix = float(psum)/scale_len    
+            # um_pix = 1
         
-        # Iterate over points
-        for points in lines:
-            # Extracted points nested in the list
-            x1,y1,x2,y2=points[0]
-            # Draw the lines joing the points
-            # On the original image
-            cv2.line(im,(x1,y1),(x2,y2),(0,255,0),2)
-            # Maintain a simples lookup list for points
-            lines_list.append([(x1,y1),(x2,y2)])
-            scale_len = sqrt((x2-x1)**2+(y2-y1)**2)
-            um_pix = float(psum)/scale_len    
-        # um_pix = 1
-    
-        GetInference()
-        GetCounts()
-        GetMask_Contours()
+            GetInference()
+            GetCounts()
 
-        # Create a CSV file at the end of each iteration of the outer loop
-        csv_filename = f'results_x_pred_{x_pred}.csv'
-        with open(csv_filename, 'a', newline='') as csvfile:
-            csvwriter = csv.writer(csvfile)
-            # Write the header
-            csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
-            # Write the data rows
-            for row in zip(lengthList, widthList, circularEDList, aspectRatioList, circularityList, chordsList, ferretList, roundList, sphereList, psum_list, name_list):
-                csvwriter.writerow(row)
+            outputs = predictor(im)
+            
+            # Get all instances
+            inst_out = outputs['instances']
+            
+            # Filter instances where predicted class is 3
+            filtered_instances = inst_out[inst_out.pred_classes == x_pred]
+            
+            # Now extract the masks for these filtered instances
+            mask_array = filtered_instances.pred_masks.to("cpu").numpy()
+            
+            # instances = instances[instances.pred_classes == 3]
+            # mask_array = outputs['instances'].pred_masks==3.to("cpu").numpy()
+            num_instances = mask_array.shape[0]
+            mask_array = np.moveaxis(mask_array, 0, -1)
+            mask_array_instance = []
+            output = np.zeros_like(im)
+            fig = plt.figure(figsize=(15, 20))
+            for i in range(num_instances):
+                mask_array_instance.append(mask_array[:, :, i:(i+1)])
+                output = np.where(mask_array_instance[i] == True, 255, output)
+            imm = Image.fromarray(output)
+            imm.save('predicted_masks.jpg')
+            cv2.imwrite('Masks.jpg', output) #mask
+            im_mask = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
+            cnts = cv2.findContours(im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cnts = imutils.grab_contours(cnts)
+            
+            if len(cnts) > 0:
+              
+            (cnts, _) = contours.sort_contours(cnts)
+            pixelsPerMetric = 0.85
+            
+            for c in cnts:
+                if cv2.contourArea(c) < 100:
+                    continue
+                area = cv2.contourArea(c)
+                perimeter = cv2.arcLength(c, True)
+                
+                orig = im_mask.copy()
+                box = cv2.minAreaRect(c)
+                box = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
+                box = np.array(box, dtype="int")
+                box = perspective.order_points(box)
+                cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
+                for (x, y) in box:
+                    cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
+                (tl, tr, br, bl) = box
+                (tltrX, tltrY) = midpoint(tl, tr)
+                (blbrX, blbrY) = midpoint(bl, br)
+                (tlblX, tlblY) = midpoint(tl, bl)
+                (trbrX, trbrY) = midpoint(tr, br)
+                dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
+                dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
+                if pixelsPerMetric is None:
+                    pixelsPerMetric = dB / width
+                dimA = dA / pixelsPerMetric
+                dimB = dB / pixelsPerMetric
+                dimArea = area/pixelsPerMetric
+                dimPerimeter = perimeter/pixelsPerMetric
+                diaFeret = max(dimA, dimB)
+                if (dimA and dimB) !=0:
+                    Aspect_Ratio = max(dimB,dimA)/min(dimA,dimB)
+                else:
+                    Aspect_Ratio = 0
+                Length = min(dimA, dimB)*um_pix
+                Width = max(dimA, dimB)*um_pix
+                CircularED = np.sqrt(4*area/np.pi)*um_pix
+                Chords = cv2.arcLength(c,True)*um_pix
+                Roundness = 1/(Aspect_Ratio) if Aspect_Ratio != 0 else 0
+                Sphericity = (2*np.sqrt(np.pi*dimArea))/dimPerimeter*um_pix
+                Circularity = 4*np.pi*(dimArea/(dimPerimeter)**2)*um_pix
+                Feret_diam = diaFeret*um_pix
+
+                csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
     
-        print(f'Data for x_pred={x_pred} written to {csv_filename}')
+            # Create a CSV file at the end of each iteration of the outer loop
+            # csv_filename = f'results_x_pred_{x_pred}.csv'
+            # with open(csv_filename, 'a', newline='') as csvfile:
+            #     csvwriter = csv.writer(csvfile)
+            #     # Write the header
+            #     csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
+            #     # Write the data rows
+            #     for row in zip(lengthList, widthList, circularEDList, aspectRatioList, circularityList, chordsList, ferretList, roundList, sphereList, psum_list, name_list):
+            #         csvwriter.writerow(row)
+        
+            # print(f'Data for x_pred={x_pred} written to {csv_filename}')
     
     
     for T in range(0, len(TList)):
