@@ -461,7 +461,8 @@ for x_pred in [0,1]:
             pxum_r = result[0]
             psum = re.sub("[^0-9]", "", pxum_r)
     
-            psum_list.append(float(psum))
+            lines_list =[]
+            lines = cv2.HoughLinesP(
                         1, # Distance resolution in pixels
                         np.pi/180, # Angle resolution in radians
                         threshold=100, # Min number of votes for valid line
