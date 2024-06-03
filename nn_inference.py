@@ -516,51 +516,51 @@ for x_pred in [0,1]:
             
             if len(cnts) > 0:
               
-            (cnts, _) = contours.sort_contours(cnts)
-            pixelsPerMetric = 0.85
-            
-            for c in cnts:
-                if cv2.contourArea(c) < 100:
-                    continue
-                area = cv2.contourArea(c)
-                perimeter = cv2.arcLength(c, True)
+                (cnts, _) = contours.sort_contours(cnts)
+                pixelsPerMetric = 0.85
                 
-                orig = im_mask.copy()
-                box = cv2.minAreaRect(c)
-                box = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
-                box = np.array(box, dtype="int")
-                box = perspective.order_points(box)
-                cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
-                for (x, y) in box:
-                    cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
-                (tl, tr, br, bl) = box
-                (tltrX, tltrY) = midpoint(tl, tr)
-                (blbrX, blbrY) = midpoint(bl, br)
-                (tlblX, tlblY) = midpoint(tl, bl)
-                (trbrX, trbrY) = midpoint(tr, br)
-                dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
-                dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
-                if pixelsPerMetric is None:
-                    pixelsPerMetric = dB / width
-                dimA = dA / pixelsPerMetric
-                dimB = dB / pixelsPerMetric
-                dimArea = area/pixelsPerMetric
-                dimPerimeter = perimeter/pixelsPerMetric
-                diaFeret = max(dimA, dimB)
-                if (dimA and dimB) !=0:
-                    Aspect_Ratio = max(dimB,dimA)/min(dimA,dimB)
-                else:
-                    Aspect_Ratio = 0
-                Length = min(dimA, dimB)*um_pix
-                Width = max(dimA, dimB)*um_pix
-                CircularED = np.sqrt(4*area/np.pi)*um_pix
-                Chords = cv2.arcLength(c,True)*um_pix
-                Roundness = 1/(Aspect_Ratio) if Aspect_Ratio != 0 else 0
-                Sphericity = (2*np.sqrt(np.pi*dimArea))/dimPerimeter*um_pix
-                Circularity = 4*np.pi*(dimArea/(dimPerimeter)**2)*um_pix
-                Feret_diam = diaFeret*um_pix
-
-                csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
+                for c in cnts:
+                    if cv2.contourArea(c) < 100:
+                        continue
+                    area = cv2.contourArea(c)
+                    perimeter = cv2.arcLength(c, True)
+                    
+                    orig = im_mask.copy()
+                    box = cv2.minAreaRect(c)
+                    box = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
+                    box = np.array(box, dtype="int")
+                    box = perspective.order_points(box)
+                    cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
+                    for (x, y) in box:
+                        cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
+                    (tl, tr, br, bl) = box
+                    (tltrX, tltrY) = midpoint(tl, tr)
+                    (blbrX, blbrY) = midpoint(bl, br)
+                    (tlblX, tlblY) = midpoint(tl, bl)
+                    (trbrX, trbrY) = midpoint(tr, br)
+                    dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
+                    dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
+                    if pixelsPerMetric is None:
+                        pixelsPerMetric = dB / width
+                    dimA = dA / pixelsPerMetric
+                    dimB = dB / pixelsPerMetric
+                    dimArea = area/pixelsPerMetric
+                    dimPerimeter = perimeter/pixelsPerMetric
+                    diaFeret = max(dimA, dimB)
+                    if (dimA and dimB) !=0:
+                        Aspect_Ratio = max(dimB,dimA)/min(dimA,dimB)
+                    else:
+                        Aspect_Ratio = 0
+                    Length = min(dimA, dimB)*um_pix
+                    Width = max(dimA, dimB)*um_pix
+                    CircularED = np.sqrt(4*area/np.pi)*um_pix
+                    Chords = cv2.arcLength(c,True)*um_pix
+                    Roundness = 1/(Aspect_Ratio) if Aspect_Ratio != 0 else 0
+                    Sphericity = (2*np.sqrt(np.pi*dimArea))/dimPerimeter*um_pix
+                    Circularity = 4*np.pi*(dimArea/(dimPerimeter)**2)*um_pix
+                    Feret_diam = diaFeret*um_pix
+    
+                    csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
     
             # Create a CSV file at the end of each iteration of the outer loop
             # csv_filename = f'results_x_pred_{x_pred}.csv'
