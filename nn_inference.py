@@ -113,18 +113,6 @@ def get_superannotate_dicts(img_dir, label_dir):
 
                         poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
                         poly = [p for x in poly for p in x]
-                        
-                    # elif type == "polyline":
-                        
-                    #     height = imgs_anns["metadata"]["height"]
-                    #     width = imgs_anns["metadata"]["width"]
-                        
-                    #     fo_poly = anno.to_polyline()
-                    #     poly = [(x*width, y*height) for x, y in fo_poly.points[0]]
-                    #     poly = [p for x in poly for p in x]
-                      
-                    # # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-                    # # poly = [p for x in poly for p in x]
 
                     if "throat" in categoryName :
                         category_id = 0
@@ -143,103 +131,6 @@ def get_superannotate_dicts(img_dir, label_dir):
                 record["annotations"] = objs
                 dataset_dicts.append(record)
     return dataset_dicts
-
-# def get_fiftyone_dicts(img_dir, label_dir):
-#     dataset_dicts = []
-#     idx = 0
-#     for r, d, f in os.walk(label_dir):
-#         for file in f:
-#             if file.endswith(".json"):
-#                 json_file = os.path.join(r, file)
-#                 print(json_file)
-
-#                 with open(json_file) as f:
-#                     imgs_anns = json.load(f)
-
-#                 record = {}
-#                 filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
-#                 record["file_name"] = filename
-#                 record["image_id"] = idx
-#                 record["height"] = imgs_anns["metadata"]["height"]
-#                 record["width"] = imgs_anns["metadata"]["width"]
-#                 idx = idx + 1
-#                 annos = imgs_anns["instances"]
-
-#                 dataset_dicts = []
-#                 height = imgs_anns["metadata"]["height"]
-#                 width = imgs_anns["metadata"]["width"]
-#                 objs = []
-                
-#                 # for sample in annos.select_fields(["id", "filepath", "metadata", "segmentations"]):
-#                 for det in imgs_anns.segmentations.detections:
-#                     categoryName = det["className"]
-#                     type = det["type"]
-#                     tlx, tly, w, h = det.bounding_box
-#                     bbox = [int(tlx*width), int(tly*height), int(w*width), int(h*height)]
-        
-#                     if type == "ellipse":
-#                         cx = det["cx"]
-#                         cy = det["cy"]
-#                         rx = det["rx"]
-#                         ry = det["ry"]
-#                         theta = det["angle"]
-#                         ellipse = ((cx, cy), (rx, ry), theta)
-#                         # Create a circle of radius 1 around the centre point:
-#                         circ = shapely.geometry.Point(ellipse[0]).buffer(1)
-#                         # Create ellipse along x and y:
-#                         ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
-#                         # rotate the ellipse(clockwise, x axis pointing right):
-#                         ellr = shapely.affinity.rotate(ell, ellipse[2])
-        
-#                         px, py = ellr.exterior.coords.xy
-        
-#                         poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-#                         poly = [p for x in poly for p in x]
-                        
-#                     elif type == "polygon":
-#                         px = det["points"][0:-1:2]  #0 -1 2
-#                         py = det["points"][1:-1:2] # 1 -1 2
-#                         px.append(det["points"][0])    # 0
-#                         py.append(det["points"][-1])   # -1
-        
-#                         poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-#                         poly = [p for x in poly for p in x]
-                        
-#                     elif type == "polyline":
-                        
-#                         height = imgs_anns["metadata"]["height"]
-#                         width = imgs_anns["metadata"]["width"]
-                        
-#                         fo_poly = det.to_polyline()
-#                         poly = [(x*width, y*height) for x, y in fo_poly.points[0]]
-#                         poly = [p for x in poly for p in x]
-                      
-#                     # poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-#                     # poly = [p for x in poly for p in x]
-        
-#                     if "scale" in categoryName :
-#                         category_id = 0
-#                     elif "wall" in categoryName :
-#                         category_id = 1
-#                     elif "throat" in categoryName :
-#                         category_id = 2
-#                     elif "pore" in categoryName :
-#                         category_id = 3
-#                     else:
-#                         raise ValueError("Category Name Not Found: "+ categoryName)
-        
-#                     obj = {
-#                         "bbox":bbox,
-#                         "bbox_mode": BoxMode.XYXY_ABS,
-#                         "segmentation": [poly],
-#                         "category_id": category_id,
-#                     }
-#                     objs.append(obj)
-        
-#                 record["annotations"] = objs
-#                 dataset_dicts.append(record)
-
-#     return dataset_dicts
 
 ## Def custom mapper, rand changes to dataset imgs, induce variability to dataset
 def custom_mapper(dataset_dicts):
@@ -274,7 +165,6 @@ class CustomTrainer(DefaultTrainer):
     def build_train_loader(cls, cfg):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
 
-## Load custom dataset, !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE THING CLASSES TO LOAD FROM FILE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #Dataset load
 keywords = ["Train", "Test"]
 for d in keywords:
@@ -601,35 +491,6 @@ def GetMask_Contours():
           roundList.append(Roundness)
           sphereList.append(Sphericity)
 
-
-# ## create and append lists
-# lengthList = list()
-# widthList = list()
-# circularEDList = list()
-# aspectRatioList = list()
-# circularityList = list()
-# chordsList = list()
-# ferretList = list()
-# roundList = list()
-# sphereList = list()
-# SList = list()
-# WTList = list()
-# PTList = list()
-# PList = list()
-# tS = 0
-# tWT = 0
-# tPT = 0
-# tP = 0
-# count = 0
-
-# test_img_path = "/home/deamoon_uw_nn/DATASET/INFERENCE/"
-# x_th = len(test_img_path)
-# x_c = 0
-
-# keywds = ["Scale", "WThick", "PThroat", "Pore"]
-
-# for k in keywds: # 0 scale
-
 for x_pred in [0,1]:
 
     ## create and append lists
@@ -660,10 +521,6 @@ for x_pred in [0,1]:
         input_path = os.path.join(test_img_path, test_img)
         im = cv2.imread(input_path)
         source_image_filename = test_img
-        # GetInference()
-        # GetCounts()
-        # GetMask_Contours()
-        # GetMask_Contours(im, classes_of_interest=classes_of_interest)
     
         count = count+1
     
@@ -725,98 +582,11 @@ for x_pred in [0,1]:
     
         print(f'Data for x_pred={x_pred} written to {csv_filename}')
     
-    # # #moving avgs
-    # window_size = 3
-    # i = 0
-    # k = 0
-    
-    # MA_lengthList = []
-    # MA_widthList = []
-    # MA_circularEDList = []
-    # MA_aspectRatioList = []
-    # MA_circularityList = []
-    # MA_chordsList = []
-    # MA_ferretList = []
-    # MA_roundList = []
-    # MA_sphereList = []
-    # MA_psum_list = []
-    # MA_name_list = []
-    
-    # lists = [lengthList,widthList,circularEDList,aspectRatioList,circularityList,chordsList,ferretList,roundList,sphereList,psum_list,name_list]
-    # listnames = ['lengthList','widthList','circularEDList','aspectRatioList','circularityList','chordsList','ferretList','roundList','sphereList','psum_list','name_list']
-    
-    # for lst in lists:
-    
-    #   listname_str = 'MA_' + listnames[k]
-    #   k = k+1
-    
-    #   while i < len(lst):
-    #       window = lst[i]
-    #       vars()[listname_str].append(window)
-    #       i = i+1
-    
-    #   i = 0
-
-      # while i < (len(lst) - window_size + 1):
-      #     window = lst[i : i + window_size]
-      #     window_average = round(sum(window) / window_size, 2)
-      #     vars()[listname_str].append(window_average)
-      #     i = i+1
-    
-      # i = 0
-    
-    # lengthBins = np.histogram(np.asarray(MA_lengthList))
-    # widthBins = np.histogram(np.asarray(MA_widthList))
-    # circularEDBins = np.histogram(np.asarray(MA_circularEDList))
-    # aspectRatioBins = np.histogram(np.asarray(MA_aspectRatioList))
-    # circularityBins = np.histogram(np.asarray(MA_circularityList))
-    # chordsBins = np.histogram(np.asarray(MA_chordsList))
-    # ferretBins = np.histogram(np.asarray(MA_ferretList))
-    # roundBins = np.histogram(np.asarray(MA_roundList))
-    # sphereBins = np.histogram(np.asarray(MA_sphereList))
     
     for T in range(0, len(TList)):
         tT = tT + TList[T]
     for P in range(0, len(PList)):
         tP = tP + PList[P]
     
-    
-    # values = list()
-    # values.append(tT)
-    # values.append(tP)
-    # values = [*values, *lengthBins, *widthBins, *circularEDBins, *circularityBins, *chordsBins]
-    # print("No. (AVG) of Particles, Bubbles, Droplets:  " + repr(tPL/count) + ",  "+ repr(tBL/count)+ ",  "+ repr(tDL/count))
     print("No. (Total) of Pores:  " + repr(tP))
     print("No. (Total) of Pore Throats:  " + repr(tT))
-    # print("No. of images / no. of images used:  " + repr(x_c) + "  /  "+ repr(count))
-    
-    # rows = zip(MA_ferretList,MA_aspectRatioList,MA_roundList,MA_circularityList,MA_sphereList,MA_lengthList,MA_widthList,MA_circularEDList,MA_chordsList,MA_psum_list,MA_name_list)
-    # # rows = zip(ferretList,aspectRatioList,roundList,circularityList,sphereList,lengthList,widthList,circularEDList,chordsList,psum_list,name_list)
-    
-    # with open('ShapeDescriptor.csv', "w") as f:
-    #     writer = csv.writer(f)
-    #     for row in rows:
-    #         writer.writerow(row)
-    
-    # df = pd.read_csv('ShapeDescriptor.csv', header=None)
-    # df.columns = ['Feret Diameter', 'Aspect Ratio', 'Roundness', 'Circularity', 'Sphericity', 'Length', 'Width', 'CircularED', 'Chords', 'Scale length', 'File name']
-    
-    # if x_pred == 0:
-    #     df.to_csv('Results_throats.csv', index=True)
-    # elif x_pred == 1:
-    #     df.to_csv('Results_pores.csv', index=True)
-    
-    # sns.displot(df['Feret Diameter'])
-    # sns.displot(df['Aspect Ratio'])
-    # sns.displot(df['Roundness'])
-    # sns.displot(df['Circularity'])
-    # sns.displot(df['Sphericity'])
-    # sns.displot(df['CircularED'])
-    # sns.displot(df['Chords'])
-    # sns.displot(df['Feret Diameter'], kind='kde')
-    # sns.displot(df['Aspect Ratio'], kind='kde')
-    # sns.displot(df['Roundness'], kind='kde')
-    # sns.displot(df['Circularity'], kind='kde')
-    # sns.displot(df['Sphericity'], kind='kde')
-    # sns.displot(df['CircularED'], kind='kde')
-    # sns.displot(df['Chords'], kind='kde')
