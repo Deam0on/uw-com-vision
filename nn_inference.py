@@ -467,6 +467,9 @@ for x_pred in [0,1]:
             result = reader.readtext(gray, detail = 0)
             pxum_r = result[0]
             psum = re.sub("[^0-9]", "", pxum_r)
+
+            print(psunm_r)
+            print(psum)
         
             lines_list =[]
             lines = cv2.HoughLinesP(
