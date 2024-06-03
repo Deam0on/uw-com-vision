@@ -420,8 +420,8 @@ for x_pred in [0,1]:
     # ferretList = list()
     # roundList = list()
     # sphereList = list()
-    # TList = list()
-    # PList = list()
+    TList = list()
+    PList = list()
     # psum_list = list()
     # name_list = list()
     tT = 0
