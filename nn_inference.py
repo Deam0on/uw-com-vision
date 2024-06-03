@@ -452,8 +452,6 @@ for x_pred in [0,1]:
         
             # Convert image to grayscale
             gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
-            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-            thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
             
             # Use canny edge detection
             edges = cv2.Canny(gray,50,150,apertureSize=3)
@@ -462,10 +460,10 @@ for x_pred in [0,1]:
             result = reader.readtext(gray, 
                          detail=0,             # Return only the text
                          paragraph=False,       # Treat each line separately
-                         contrast_ths=0.7,      # Increase contrast threshold
-                         adjust_contrast=0.6,   # Adjust contrast
-                         add_margin=0.1,        # Add margin around text
-                         width_ths=0.8,         # Width threshold for text boxes
+                         contrast_ths=0.85,      # Increase contrast threshold
+                         adjust_contrast=0.85,   # Adjust contrast
+                         add_margin=0.25,        # Add margin around text
+                         width_ths=0.25,         # Width threshold for text boxes
                          decoder='beamsearch')  # Use beamsearch for decoding
             pxum_r = result[0]
             psum = re.sub("[^0-9]", "", pxum_r)
