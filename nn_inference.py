@@ -457,7 +457,7 @@ for x_pred in [0,1]:
             edges = cv2.Canny(gray,50,150,apertureSize=3)
             
             reader = easyocr.Reader(['en'])
-            result = reader.readtext(gray, detail = 0)
+            result = reader.readtext(im, detail = 0)
             pxum_r = result[0]
             psum = re.sub("[^0-9]", "", pxum_r)
     
