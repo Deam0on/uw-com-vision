@@ -458,15 +458,15 @@ for x_pred in [0,1]:
             # Use canny edge detection
             edges = cv2.Canny(gray,50,150,apertureSize=3)
             
-            # reader = easyocr.Reader(['en'])
-            # result = reader.readtext(thresh, detail=0, paragraph=False, contrast_ths=0.7, adjust_contrast=0.6, add_margin=0.1, width_ths=0.8, decoder='beamsearch')
-            # pxum_r = result[0]
-            # psum = re.sub("[^0-9]", "", pxum_r)
-
             reader = easyocr.Reader(['en'])
-            result = reader.readtext(gray, detail = 0)
+            result = reader.readtext(thresh, detail=0, paragraph=False, contrast_ths=0.85, adjust_contrast=0.85, add_margin=0.25, width_ths=0.3, decoder='wordbeamsearch')
             pxum_r = result[0]
             psum = re.sub("[^0-9]", "", pxum_r)
+
+            # reader = easyocr.Reader(['en'])
+            # result = reader.readtext(gray, detail = 0)
+            # pxum_r = result[0]
+            # psum = re.sub("[^0-9]", "", pxum_r)
 
             print(result)
             print(pxum_r)
