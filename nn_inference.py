@@ -67,7 +67,6 @@ def get_superannotate_dicts(img_dir, label_dir):
         for file in f:
             if file.endswith(".json"):
                 json_file = os.path.join(r, file)
-                print(json_file)
 
                 with open(json_file) as f:
                     imgs_anns = json.load(f)
@@ -345,7 +344,6 @@ path = "./output/"  # the weight save path
 inpath = image_folder_path
 images_name = listdir(inpath)
 images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
-print(images_name)
 
 Img_ID = []
 EncodedPixels = []
@@ -355,7 +353,6 @@ conv = lambda l: ' '.join(map(str, l))
 for name in images_name:
     image = cv2.imread(inpath + "/" + name)
     outputs = predictor(image)
-    print(num)
     num += 1
     # print(np.asarray(outputs["instances"].to('cpu')._fields['pred_masks'][0]).shape)
     masks = postprocess_masks(
@@ -472,10 +469,6 @@ for x_pred in [0,1]:
             # result = reader.readtext(gray, detail = 0)
             # pxum_r = result[0]
             # psum = re.sub("[^0-9]", "", pxum_r)
-
-            print(result)
-            print(pxum_r)
-            print(psum)
         
             lines_list =[]
             lines = cv2.HoughLinesP(
