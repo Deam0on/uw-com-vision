@@ -463,7 +463,7 @@ for x_pred in [0,1]:
     
             lines_list =[]
             lines = cv2.HoughLinesP(
-                        im, # Input edge image
+                        edges, # Input edge image
                         1, # Distance resolution in pixels
                         np.pi/180, # Angle resolution in radians
                         threshold=100, # Min number of votes for valid line
