@@ -459,7 +459,7 @@ for x_pred in [0,1]:
             edges = cv2.Canny(gray,50,150,apertureSize=3)
             
             reader = easyocr.Reader(['en'])
-            result = reader.readtext(thresh, 
+            result = reader.readtext(gray, 
                          detail=0,             # Return only the text
                          paragraph=False,       # Treat each line separately
                          contrast_ths=0.7,      # Increase contrast threshold
