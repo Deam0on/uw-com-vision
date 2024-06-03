@@ -459,7 +459,14 @@ for x_pred in [0,1]:
             edges = cv2.Canny(gray,50,150,apertureSize=3)
             
             reader = easyocr.Reader(['en'])
-            result = reader.readtext(thresh, detail=0, paragraph=False, contrast_ths=0.85, adjust_contrast=0.85, decoder='beamsearch')
+            result = reader.readtext(thresh, 
+                         detail=0,             # Return only the text
+                         paragraph=False,       # Treat each line separately
+                         contrast_ths=0.7,      # Increase contrast threshold
+                         adjust_contrast=0.6,   # Adjust contrast
+                         add_margin=0.1,        # Add margin around text
+                         width_ths=0.8,         # Width threshold for text boxes
+                         decoder='beamsearch')  # Use beamsearch for decoding
             pxum_r = result[0]
             psum = re.sub("[^0-9]", "", pxum_r)
 
