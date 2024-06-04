@@ -261,7 +261,7 @@ multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_cla
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
 cfg.DATASETS.TRAIN = ("multiclass_Train",)
-cfg.DATASETS.TEST = ("multiclass_Test")   # no metrics implemented for this dataset
+cfg.DATASETS.TEST = ()   # no metrics implemented for this dataset
 cfg.DATALOADER.NUM_WORKERS = 2
 cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
 cfg.SOLVER.IMS_PER_BATCH = 2
