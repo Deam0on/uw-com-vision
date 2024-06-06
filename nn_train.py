@@ -258,22 +258,89 @@ multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes
 multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["throat","pore"])
 
 ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# cfg = get_cfg()
+# cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+# cfg.DATASETS.TRAIN = ("multiclass_Train",)
+# cfg.DATASETS.TEST = ()   # no metrics implemented for this dataset
+# cfg.DATALOADER.NUM_WORKERS = 2
+# cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
+# cfg.SOLVER.IMS_PER_BATCH = 2
+# cfg.SOLVER.BASE_LR = 0.00025
+# cfg.SOLVER.MAX_ITER = 1000
+# cfg.SOLVER.STEPS = []
+# cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
+# cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
+# cfg.MODEL.DEVICE = "cuda"
+
+# ## Train model
+# os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
+# trainer = CustomTrainer(cfg)
+# trainer.resume_or_load(resume=False)
+# trainer.train()
+
+def objective(trial):
+    cfg = get_cfg()
+    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+    cfg.DATASETS.TRAIN = ("multiclass_Train",)
+    cfg.DATASETS.TEST = ("multiclass_Test",)
+    cfg.DATALOADER.NUM_WORKERS = 2
+    cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
+
+    ims_per_batch_options = [8, 16, 32, 64, 128, 256, 512, 1024]
+    batch_size_per_image_options = [8, 16, 32, 64, 128, 256, 512, 1024]
+    
+    # Hyperparameters to optimize
+    cfg.SOLVER.IMS_PER_BATCH = trial.suggest_categorical("IMS_PER_BATCH", ims_per_batch_options)
+    cfg.SOLVER.BASE_LR = trial.suggest_loguniform("BASE_LR", 1e-5, 1e-3)
+    cfg.SOLVER.MAX_ITER = trial.suggest_int("MAX_ITER", 500, 2000)
+    cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = trial.suggest_categorical("BATCH_SIZE_PER_IMAGE", batch_size_per_image_options)
+    cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
+    cfg.MODEL.DEVICE = "cuda"
+
+    os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
+    trainer = CustomTrainer(cfg)
+    trainer.resume_or_load(resume=False)
+    trainer.train()
+
+   # Evaluate the model
+    evaluator = COCOEvaluator("multiclass_Test", cfg, False, output_dir=cfg.OUTPUT_DIR, use_fast_impl=False)
+    val_loader = build_detection_test_loader(cfg, "multiclass_Test")
+    results = inference_on_dataset(trainer.model, val_loader, evaluator)
+    
+    # Return the segmentation AP metric
+    return results["segm"]["AP"]
+
+# Run Optuna optimization
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=10)
+
+# Print best hyperparameters
+print("Best hyperparameters: ", study.best_params)
+
+# Use the best hyperparameters to train the final model
+best_params = study.best_params
+
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
 cfg.DATASETS.TRAIN = ("multiclass_Train",)
-cfg.DATASETS.TEST = ()   # no metrics implemented for this dataset
+cfg.DATASETS.TEST = ("multiclass_Test",)
 cfg.DATALOADER.NUM_WORKERS = 2
 cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
-cfg.SOLVER.IMS_PER_BATCH = 2
-cfg.SOLVER.BASE_LR = 0.00025
-cfg.SOLVER.MAX_ITER = 1000
-cfg.SOLVER.STEPS = []
-cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
+
+cfg.SOLVER.IMS_PER_BATCH = best_params["IMS_PER_BATCH"]
+cfg.SOLVER.BASE_LR = best_params["BASE_LR"]
+cfg.SOLVER.MAX_ITER = best_params["MAX_ITER"]
+cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = best_params["BATCH_SIZE_PER_IMAGE"]
 cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
 cfg.MODEL.DEVICE = "cuda"
 
-## Train model
 os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 trainer = CustomTrainer(cfg)
 trainer.resume_or_load(resume=False)
 trainer.train()
+
+# Evaluate the final model
+evaluator = COCOEvaluator("multiclass_Test", cfg, False, output_dir=cfg.OUTPUT_DIR, use_fast_impl=False)
+val_loader = build_detection_test_loader(cfg, "multiclass_Test")
+final_results = inference_on_dataset(trainer.model, val_loader, evaluator)
+print("Final evaluation metrics: ", final_results["segm"]["AP"])
