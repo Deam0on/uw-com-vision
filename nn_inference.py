@@ -280,10 +280,10 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
 # images_name = listdir(inpath)
 # images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
 
-# Img_ID = []
-# EncodedPixels = []
-# num = 0
-# conv = lambda l: ' '.join(map(str, l))
+Img_ID = []
+EncodedPixels = []
+num = 0
+conv = lambda l: ' '.join(map(str, l))
 
 path = "./output/"
 inpath = image_folder_path
