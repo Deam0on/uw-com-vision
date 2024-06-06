@@ -135,80 +135,80 @@ class CustomTrainer(DefaultTrainer):
     def build_train_loader(cls, cfg):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
 
-# keywords = ["Train", "Test"]
-# for d in keywords:
-#     #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
-#     DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
-#                                                                                    "/home/deamoon_uw_nn/DATASET/" + d + "/"))
-#     MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
+keywords = ["Train", "Test"]
+for d in keywords:
+    #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
+    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
+                                                                                   "/home/deamoon_uw_nn/DATASET/" + d + "/"))
+    MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
   
-# multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
-# multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["throat","pore"])
+multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
+multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["throat","pore"])
 
-def register_datasets(dataset_paths):
-    for dataset_name, paths in dataset_paths.items():
-        img_dir, label_dir = paths
-        DatasetCatalog.register(dataset_name, lambda d=dataset_name: get_superannotate_dicts(img_dir, label_dir))
-        MetadataCatalog.get(dataset_name).set(thing_classes=["throat", "pore"])
+# def register_datasets(dataset_paths):
+#     for dataset_name, paths in dataset_paths.items():
+#         img_dir, label_dir = paths
+#         DatasetCatalog.register(dataset_name, lambda d=dataset_name: get_superannotate_dicts(img_dir, label_dir))
+#         MetadataCatalog.get(dataset_name).set(thing_classes=["throat", "pore"])
 
-# Example usage:
-dataset_paths = {
-    "dataset1": ("/path/to/dataset1/images", "/path/to/dataset1/labels"),
-    "dataset2": ("/path/to/dataset2/images", "/path/to/dataset2/labels"),
-    "dataset3": ("/path/to/dataset3/images", "/path/to/dataset3/labels"),
-}
+# # Example usage:
+# dataset_paths = {
+#     "dataset1": ("/path/to/dataset1/images", "/path/to/dataset1/labels"),
+#     "dataset2": ("/path/to/dataset2/images", "/path/to/dataset2/labels"),
+#     "dataset3": ("/path/to/dataset3/images", "/path/to/dataset3/labels"),
+# }
 
-register_datasets(dataset_paths)
+# register_datasets(dataset_paths)
 
-# ## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# cfg = get_cfg()
-# cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
-# cfg.DATASETS.TRAIN = ("multiclass_Train",)
-# cfg.DATASETS.TEST = ()   # no metrics implemented for this dataset
-# cfg.DATALOADER.NUM_WORKERS = 2
-# cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
-# cfg.SOLVER.IMS_PER_BATCH = 2
-# cfg.SOLVER.BASE_LR = 0.00025
-# cfg.SOLVER.MAX_ITER = 1000
-# cfg.SOLVER.STEPS = []
-# cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
-# cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
-# cfg.MODEL.DEVICE = "cuda"
+## Def det2 hyperparameters !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO OPTUNA OPTIMIZATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+cfg = get_cfg()
+cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+cfg.DATASETS.TRAIN = ("multiclass_Train",)
+cfg.DATASETS.TEST = ()   # no metrics implemented for this dataset
+cfg.DATALOADER.NUM_WORKERS = 2
+cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
+cfg.SOLVER.IMS_PER_BATCH = 2
+cfg.SOLVER.BASE_LR = 0.00025
+cfg.SOLVER.MAX_ITER = 1000
+cfg.SOLVER.STEPS = []
+cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
+cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
+cfg.MODEL.DEVICE = "cuda"
 
-# ## Train model
-# os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
-# trainer = CustomTrainer(cfg)
-# trainer.resume_or_load(resume=False)
-# trainer.train()
+## Train model
+os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
+trainer = CustomTrainer(cfg)
+trainer.resume_or_load(resume=False)
+trainer.train()
 
-def train_and_save_models(datasets, output_dir):
-    for dataset_name in datasets:
-        cfg = get_cfg()
-        cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
-        cfg.DATASETS.TRAIN = (dataset_name,)
-        cfg.DATASETS.TEST = ()
-        cfg.DATALOADER.NUM_WORKERS = 2
-        cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
-        cfg.SOLVER.IMS_PER_BATCH = 8
-        cfg.SOLVER.BASE_LR = 0.00025
-        cfg.SOLVER.MAX_ITER = 1000
-        cfg.SOLVER.STEPS = []
-        cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
-        cfg.MODEL.ROI_HEADS.NUM_CLASSES = 2  # Assuming 2 classes (throat, pore)
-        cfg.MODEL.DEVICE = "cuda"
+# def train_and_save_models(datasets, output_dir):
+#     for dataset_name in datasets:
+#         cfg = get_cfg()
+#         cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+#         cfg.DATASETS.TRAIN = (dataset_name,)
+#         cfg.DATASETS.TEST = ()
+#         cfg.DATALOADER.NUM_WORKERS = 2
+#         cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
+#         cfg.SOLVER.IMS_PER_BATCH = 8
+#         cfg.SOLVER.BASE_LR = 0.00025
+#         cfg.SOLVER.MAX_ITER = 1000
+#         cfg.SOLVER.STEPS = []
+#         cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
+#         cfg.MODEL.ROI_HEADS.NUM_CLASSES = 2  # Assuming 2 classes (throat, pore)
+#         cfg.MODEL.DEVICE = "cuda"
         
-        dataset_output_dir = os.path.join(output_dir, dataset_name)
-        os.makedirs(dataset_output_dir, exist_ok=True)
-        cfg.OUTPUT_DIR = dataset_output_dir
+#         dataset_output_dir = os.path.join(output_dir, dataset_name)
+#         os.makedirs(dataset_output_dir, exist_ok=True)
+#         cfg.OUTPUT_DIR = dataset_output_dir
         
-        trainer = CustomTrainer(cfg)
-        trainer.resume_or_load(resume=False)
-        trainer.train()
+#         trainer = CustomTrainer(cfg)
+#         trainer.resume_or_load(resume=False)
+#         trainer.train()
         
-        # Save the model
-        model_path = os.path.join(dataset_output_dir, "model_final.pth")
-        torch.save(trainer.model.state_dict(), model_path)
-        print(f"Model trained on {dataset_name} saved to {model_path}")
+#         # Save the model
+#         model_path = os.path.join(dataset_output_dir, "model_final.pth")
+#         torch.save(trainer.model.state_dict(), model_path)
+#         print(f"Model trained on {dataset_name} saved to {model_path}")
 
-# Example usage:
-train_and_save_models(dataset_paths.keys(), "./trained_models")
+# # Example usage:
+# train_and_save_models(dataset_paths.keys(), "./trained_models")
