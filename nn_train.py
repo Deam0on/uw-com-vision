@@ -54,6 +54,7 @@ from skimage.measure import label
 from scipy.ndimage import binary_fill_holes
 from skimage.morphology import dilation, erosion
 from google.cloud import storage
+import optuna
 
 ## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
 
