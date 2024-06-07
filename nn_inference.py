@@ -32,6 +32,7 @@ from scipy.stats import norm
 from PIL import Image
 import seaborn as sns
 import shapely
+import copy
 from shapely.geometry import Point
 from shapely.affinity import scale, rotate
 import matplotlib.pyplot as plt
@@ -59,122 +60,188 @@ import easyocr
 import re
 from numpy import sqrt
 
-## Def for dataset build, SA annotated data, SA format, WARNING, NO POLYLINES
-def get_superannotate_dicts(img_dir, label_dir):
-    dataset_dicts = []
-    idx = 0
-    for r, d, f in os.walk(label_dir):
-        for file in f:
-            if file.endswith(".json"):
-                json_file = os.path.join(r, file)
+# def split_dataset(img_dir, label_dir, test_size=0.2, seed=42):
+#     random.seed(seed)
+#     label_files = [f for f in os.listdir(label_dir) if f.endswith('.json')]
+#     train_files, test_files = train_test_split(label_files, test_size=test_size, random_state=seed)
 
-                with open(json_file) as f:
-                    imgs_anns = json.load(f)
+#     return train_files, test_files
 
-                record = {}
-                filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
-                record["file_name"] = filename
-                record["image_id"] = idx
-                record["height"] = imgs_anns["metadata"]["height"]
-                record["width"] = imgs_anns["metadata"]["width"]
-                idx = idx + 1
-                annos = imgs_anns["instances"]
-                objs = []
-                
-                for anno in annos:
-                    categoryName = anno["className"]
-                    type = anno["type"]
+# def register_datasets(dataset_info, test_size=0.2):
+#     for dataset_name, info in dataset_info.items():
+#         img_dir, label_dir, thing_classes = info
 
-                    if type == "ellipse":
-                        cx = anno["cx"]
-                        cy = anno["cy"]
-                        rx = anno["rx"]
-                        ry = anno["ry"]
-                        theta = anno["angle"]
-                        ellipse = ((cx, cy), (rx, ry), theta)
-                        # Create a circle of radius 1 around the centre point:
-                        circ = shapely.geometry.Point(ellipse[0]).buffer(1)
-                        # Create ellipse along x and y:
-                        ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
-                        # rotate the ellipse(clockwise, x axis pointing right):
-                        ellr = shapely.affinity.rotate(ell, ellipse[2])
+#         # Split the dataset
+#         train_files, test_files = split_dataset(img_dir, label_dir, test_size)
 
-                        px, py = ellr.exterior.coords.xy
+#         # Register training dataset
+#         DatasetCatalog.register(
+#             f"{dataset_name}_train",
+#             lambda d=dataset_name, img_dir=img_dir, label_dir=label_dir, files=train_files:
+#             get_split_dicts(img_dir, label_dir, files)
+#         )
+#         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
 
-                        poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-                        poly = [p for x in poly for p in x]
-                        
-                    elif type == "polygon":
-                        px = anno["points"][0:-1:2]  #0 -1 2
-                        py = anno["points"][1:-1:2] # 1 -1 2
-                        px.append(anno["points"][0])    # 0
-                        py.append(anno["points"][-1])   # -1
+#         # Register testing dataset
+#         DatasetCatalog.register(
+#             f"{dataset_name}_test",
+#             lambda d=dataset_name, img_dir=img_dir, label_dir=label_dir, files=test_files:
+#             get_split_dicts(img_dir, label_dir, files)
+#         )
+#         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
 
-                        poly = [(x + 0.5, y + 0.5) for x, y in zip(px,py) ]
-                        poly = [p for x in poly for p in x]
+# # Utility function to handle the split dictionaries
+# def get_split_dicts(img_dir, label_dir, files):
+#     dataset_dicts = []
+#     idx = 0
+#     for file in files:
+#         json_file = os.path.join(label_dir, file)
+#         with open(json_file) as f:
+#             imgs_anns = json.load(f)
 
-                    if "throat" in categoryName :
-                        category_id = 0
-                    elif "pore" in categoryName :
-                        category_id = 1
-                    else:
-                        raise ValueError("Category Name Not Found: "+ categoryName)
+#         record = {}
+#         filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
+#         record["file_name"] = filename
+#         record["image_id"] = idx
+#         record["height"] = imgs_anns["metadata"]["height"]
+#         record["width"] = imgs_anns["metadata"]["width"]
+#         idx = idx + 1
+#         annos = imgs_anns["instances"]
+#         objs = []
 
-                    obj = {
-                        "bbox":[np.min(px), np.min(py), np.max(px), np.max(py)],
-                        "bbox_mode": BoxMode.XYXY_ABS,
-                        "segmentation": [poly],
-                        "category_id": category_id,
-                    }
-                    objs.append(obj)
-                record["annotations"] = objs
-                dataset_dicts.append(record)
-    return dataset_dicts
+#         for anno in annos:
+#             categoryName = anno["className"]
+#             type = anno["type"]
 
-## Def custom mapper, rand changes to dataset imgs, induce variability to dataset
-def custom_mapper(dataset_dicts):
-    dataset_dicts = copy.deepcopy(dataset_dicts)  # it will be modified by code below
-    image = utils.read_image(dataset_dicts["file_name"], format="BGR")
-    transform_list = [
-        T.Resize((800,800)),
-        T.RandomBrightness(0.8, 1.8),
-        T.RandomContrast(0.6, 1.3),
-        T.RandomSaturation(0.8, 1.4),
-        T.RandomRotation(angle=[90, 90]),
-        T.RandomLighting(0.7),
-        T.RandomFlip(prob=0.4, horizontal=False, vertical=True),
-    ]
-  
-    image, transforms = T.apply_transform_gens(transform_list, image)
-    dataset_dicts["image"] = torch.as_tensor(image.transpose(2, 0, 1).astype("float32"))
+#             if type == "ellipse":
+#                 cx = anno["cx"]
+#                 cy = anno["cy"]
+#                 rx = anno["rx"]
+#                 ry = anno["ry"]
+#                 theta = anno["angle"]
+#                 ellipse = ((cx, cy), (rx, ry), theta)
+#                 circ = shapely.geometry.Point(ellipse[0]).buffer(1)
+#                 ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
+#                 ellr = shapely.affinity.rotate(ell, ellipse[2])
+#                 px, py = ellr.exterior.coords.xy
+#                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+#                 poly = [p for x in poly for p in x]
+#             elif type == "polygon":
+#                 px = anno["points"][0:-1:2]
+#                 py = anno["points"][1:-1:2]
+#                 px.append(anno["points"][0])
+#                 py.append(anno["points"][-1])
+#                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+#                 poly = [p for x in poly for p in x]
 
-    annos = [
-        utils.transform_instance_annotations(obj, transforms, image.shape[:2])
-        for obj in dataset_dicts.pop("annotations")
-        if obj.get("iscrowd", 0) == 0
-    ]
-  
-    instances = utils.annotations_to_instances(annos, image.shape[:2])
-    dataset_dicts["instances"] = utils.filter_empty_instances(instances)
-    return dataset_dicts
+#             if "throat" in categoryName:
+#                 category_id = 0
+#             elif "pore" in categoryName:
+#                 category_id = 1
+#             else:
+#                 raise ValueError("Category Name Not Found: " + categoryName)
 
-## Replace default trainer, subs 2x 1D method
-class CustomTrainer(DefaultTrainer):
-    @classmethod
-    def build_train_loader(cls, cfg):
-        return build_detection_train_loader(cfg, mapper=custom_mapper)
+#             obj = {
+#                 "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
+#                 "bbox_mode": BoxMode.XYXY_ABS,
+#                 "segmentation": [poly],
+#                 "category_id": category_id,
+#             }
+#             objs.append(obj)
+#         record["annotations"] = objs
+#         dataset_dicts.append(record)
+#     return dataset_dicts
 
-#Dataset load
-keywords = ["Train", "Test"]
-for d in keywords:
-    #DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("dataset/multiclass/" + d, "dataset/multiclass/train/*.json"))
-    DatasetCatalog.register("multiclass_" + d, lambda d=d: get_superannotate_dicts("/home/deamoon_uw_nn/DATASET/" + d + "/", 
-                                                                                   "/home/deamoon_uw_nn/DATASET/" + d + "/"))
-    MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
-  
-multiclass_metadata = MetadataCatalog.get("multiclass_Train").set( thing_classes=["throat","pore"])
-multiclass_test_metadata = MetadataCatalog.get("multiclass_Test").set( thing_classes=["throat","pore"])
+# def custom_mapper(dataset_dicts):
+#     dataset_dicts = copy.deepcopy(dataset_dicts)  # it will be modified by code below
+#     image = utils.read_image(dataset_dicts["file_name"], format="BGR")
+#     transform_list = [
+#         T.Resize((800,800)),
+#         T.RandomBrightness(0.8, 1.8),
+#         T.RandomContrast(0.6, 1.3),
+#         T.RandomSaturation(0.8, 1.4),
+#         T.RandomRotation(angle=[90, 90]),
+#         T.RandomLighting(0.7),
+#         T.RandomFlip(prob=0.4, horizontal=False, vertical=True),
+#     ]
 
+#     image, transforms = T.apply_transform_gens(transform_list, image)
+#     dataset_dicts["image"] = torch.as_tensor(image.transpose(2, 0, 1).astype("float32"))
+
+#     annos = [
+#         utils.transform_instance_annotations(obj, transforms, image.shape[:2])
+#         for obj in dataset_dicts.pop("annotations")
+#         if obj.get("iscrowd", 0) == 0
+#     ]
+
+#     instances = utils.annotations_to_instances(annos, image.shape[:2])
+#     dataset_dicts["instances"] = utils.filter_empty_instances(instances)
+#     return dataset_dicts
+
+# ## Replace default trainer, subs 2x 1D method
+# class CustomTrainer(DefaultTrainer):
+#     @classmethod
+#     def build_train_loader(cls, cfg):
+#         return build_detection_train_loader(cfg, mapper=custom_mapper)
+
+# # Example dataset info with specific classes
+# dataset_info = {
+#     "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+# }
+
+# register_datasets(dataset_info)
+# def load_model(cfg, model_path):
+#     cfg.MODEL.WEIGHTS = model_path
+#     predictor = DefaultPredictor(cfg)
+#     return predictor
+
+def get_trained_model_paths(base_dir):
+    model_paths = {}
+    for dataset_name in os.listdir(base_dir):
+        model_dir = os.path.join(base_dir, dataset_name)
+        model_path = os.path.join(model_dir, "model_final.pth")
+        if os.path.exists(model_path):
+            model_paths[dataset_name] = model_path
+    return model_paths
+
+def choose_and_use_model(model_paths, dataset_name):
+    if dataset_name not in model_paths:
+        print(f"No model found for dataset {dataset_name}")
+        return
+
+    model_path = model_paths[dataset_name]
+    cfg = get_cfg()
+    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+    cfg.MODEL.ROI_HEADS.NUM_CLASSES = 2
+    cfg.MODEL.DEVICE = "cuda"
+    
+    predictor = load_model(cfg, model_path)
+    return predictor
+    
+def load_model(cfg, model_path, dataset_name):
+    cfg.MODEL.WEIGHTS = model_path
+    thing_classes = MetadataCatalog.get(f"{dataset_name}_train").thing_classes
+    cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
+    predictor = DefaultPredictor(cfg)
+    return predictor
+
+def choose_and_use_model(model_paths, dataset_name):
+    if dataset_name not in model_paths:
+        print(f"No model found for dataset {dataset_name}")
+        return None
+
+    model_path = model_paths[dataset_name]
+    cfg = get_cfg()
+    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+    cfg.MODEL.DEVICE = "cuda"
+    
+    predictor = load_model(cfg, model_path, dataset_name)
+    return predictor
+
+# Example usage:
+trained_model_paths = get_trained_model_paths("./trained_models")
+selected_model_dataset = "polyhipes"  # User-selected model
+predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
 
 def get_image_folder_path(base_path='/home/deamoon_uw_nn/DATASET/INFERENCE'):
     """
