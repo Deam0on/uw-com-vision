@@ -10,6 +10,7 @@ import numpy as np
 import itertools
 import pandas as pd
 import random
+import copy
 from datetime import datetime, timedelta
 from matplotlib import pyplot as plt
 from PIL import Image
@@ -34,28 +35,28 @@ def split_dataset(img_dir, label_dir, test_size=0.2, seed=42):
     random.seed(seed)
     label_files = [f for f in os.listdir(label_dir) if f.endswith('.json')]
     train_files, test_files = train_test_split(label_files, test_size=test_size, random_state=seed)
-    
+
     return train_files, test_files
-    
+
 def register_datasets(dataset_info, test_size=0.2):
     for dataset_name, info in dataset_info.items():
         img_dir, label_dir, thing_classes = info
-        
+
         # Split the dataset
         train_files, test_files = split_dataset(img_dir, label_dir, test_size)
-        
+
         # Register training dataset
         DatasetCatalog.register(
-            f"{dataset_name}_train", 
-            lambda d=dataset_name, img_dir=img_dir, label_dir=label_dir, files=train_files: 
+            f"{dataset_name}_train",
+            lambda d=dataset_name, img_dir=img_dir, label_dir=label_dir, files=train_files:
             get_split_dicts(img_dir, label_dir, files)
         )
         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
-        
+
         # Register testing dataset
         DatasetCatalog.register(
-            f"{dataset_name}_test", 
-            lambda d=dataset_name, img_dir=img_dir, label_dir=label_dir, files=test_files: 
+            f"{dataset_name}_test",
+            lambda d=dataset_name, img_dir=img_dir, label_dir=label_dir, files=test_files:
             get_split_dicts(img_dir, label_dir, files)
         )
         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
@@ -78,7 +79,7 @@ def get_split_dicts(img_dir, label_dir, files):
         idx = idx + 1
         annos = imgs_anns["instances"]
         objs = []
-        
+
         for anno in annos:
             categoryName = anno["className"]
             type = anno["type"]
@@ -134,7 +135,7 @@ def custom_mapper(dataset_dicts):
         T.RandomLighting(0.7),
         T.RandomFlip(prob=0.4, horizontal=False, vertical=True),
     ]
-  
+
     image, transforms = T.apply_transform_gens(transform_list, image)
     dataset_dicts["image"] = torch.as_tensor(image.transpose(2, 0, 1).astype("float32"))
 
@@ -143,7 +144,7 @@ def custom_mapper(dataset_dicts):
         for obj in dataset_dicts.pop("annotations")
         if obj.get("iscrowd", 0) == 0
     ]
-  
+
     instances = utils.annotations_to_instances(annos, image.shape[:2])
     dataset_dicts["instances"] = utils.filter_empty_instances(instances)
     return dataset_dicts
@@ -156,8 +157,7 @@ class CustomTrainer(DefaultTrainer):
 
 # Example dataset info with specific classes
 dataset_info = {
-    "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"]),
-    "diana_elipse": ("/home/deamoon_uw_nn/DATASET/diana_elipse/","/home/deamoon_uw_nn/DATASET/diana_elipse/", ["fibre"])
+    "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
 }
 
 register_datasets(dataset_info)
@@ -174,19 +174,19 @@ def train_on_dataset(dataset_name, output_dir):
     cfg.SOLVER.MAX_ITER = 1000
     cfg.SOLVER.STEPS = []
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
-    
+
     thing_classes = MetadataCatalog.get(f"{dataset_name}_train").thing_classes
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
     cfg.MODEL.DEVICE = "cuda"
-    
+
     dataset_output_dir = os.path.join(output_dir, dataset_name)
     os.makedirs(dataset_output_dir, exist_ok=True)
     cfg.OUTPUT_DIR = dataset_output_dir
-    
+
     trainer = CustomTrainer(cfg)
     trainer.resume_or_load(resume=False)
     trainer.train()
-    
+
     model_path = os.path.join(dataset_output_dir, "model_final.pth")
     torch.save(trainer.model.state_dict(), model_path)
     print(f"Model trained on {dataset_name} saved to {model_path}")
@@ -194,6 +194,3 @@ def train_on_dataset(dataset_name, output_dir):
 # Example usage:
 selected_dataset = "polyhipes"  # User-selected dataset
 train_on_dataset(selected_dataset, "./trained_models")
-
-
-
