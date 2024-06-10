@@ -259,6 +259,13 @@ class CustomTrainer(DefaultTrainer):
     def build_train_loader(cls, cfg):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
 
+def read_dataset_info(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+        # Convert list values back to tuples for consistency with the original data
+        dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
+    return dataset_info
+
 def train_on_dataset(dataset_name, output_dir):
     """
     Trains a model on the specified dataset.
@@ -267,7 +274,10 @@ def train_on_dataset(dataset_name, output_dir):
     - dataset_name: Name of the dataset to train on.
     - output_dir: Directory to save the trained model.
     """
-    img_dir = os.path.join("/path/to/images")  # Set the fixed path for image directory
+
+    # Example usage
+    dataset_info = read_dataset_info('dataset_info.json')
+    register_datasets(dataset_info)
 
     # Load configuration
     cfg = get_cfg()
