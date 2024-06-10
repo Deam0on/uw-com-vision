@@ -259,7 +259,7 @@ class CustomTrainer(DefaultTrainer):
     def build_train_loader(cls, cfg):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
 
-def train_on_dataset(dataset_info, dataset_name):
+def train_on_dataset(dataset_name, dataset_info):
     """
     Configures and trains a Detectron2 model on a specific dataset.
     
@@ -267,16 +267,8 @@ def train_on_dataset(dataset_info, dataset_name):
     - dataset_name: Name of the dataset to train on.
     - output_dir: Directory to save the trained model.
     """
-
-    #  # Available datasets
-    # dataset_info = {
-    #     "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
-    # }
-
-    # # Call training
-    # selected_dataset = "polyhipes"  # User-selected dataset
-    output_dir = "/home/deamoon_uw_nn/splits/"
     
+    output_dir = "./trained_models"
     register_datasets(dataset_info)
     
     cfg = get_cfg()
@@ -306,7 +298,6 @@ def train_on_dataset(dataset_info, dataset_name):
     model_path = os.path.join(dataset_output_dir, "model_final.pth")
     torch.save(trainer.model.state_dict(), model_path)
     print(f"Model trained on {dataset_name} saved to {model_path}")
-
 
 # Main exec.
 # if __name__ == "__main__":
