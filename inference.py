@@ -567,7 +567,7 @@ def GetCounts():
 
 
 
-def run_inference(selected_dataset, dataset_info):
+def run_inference(img_dir, model_path, output_dir, visualize=False):
     """
     Runs inference on images in the specified directory using the provided model.
 
@@ -577,23 +577,23 @@ def run_inference(selected_dataset, dataset_info):
     - output_dir: Directory to save inference results.
     - visualize: Boolean, if True, save visualizations of predictions.
     """
-    # dataset_info = {
-    #     "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
-    # }
-    
-    output_dir = "/home/deamoon_uw_nn/splits/"
-    
+    # Register datasets and load model
+    dataset_info = {
+        "polyhipes": (img_dir, img_dir, ["throat", "pore"])  # Adjust dataset_info if necessary
+    }
     register_datasets(dataset_info)
     
     trained_model_paths = get_trained_model_paths("./trained_models")
-    selected_model_dataset = selected_dataset 
+    selected_model_dataset = "polyhipes"  # Update this with the appropriate dataset name
     predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
     
     metadata = MetadataCatalog.get(f"{selected_model_dataset}_train")
     
     image_folder_path = get_image_folder_path()
     
-    path = "./output/"  # Path to save outputs
+    # Path to save outputs
+    path = "./output/"
+    os.makedirs(path, exist_ok=True)
     inpath = image_folder_path
     images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
     
@@ -615,7 +615,7 @@ def run_inference(selected_dataset, dataset_info):
     
     # Save inference results
     df = pd.DataFrame({"ImageId": Img_ID, "EncodedPixels": EncodedPixels})
-    df.to_csv("./output/R50_flip_" + ".csv", index=False, sep=',')
+    df.to_csv(os.path.join(path, "R50_flip_results.csv"), index=False, sep=',')
     
     for x_pred in [0, 1]:
         TList = []
@@ -653,8 +653,8 @@ def run_inference(selected_dataset, dataset_info):
                     scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
                     um_pix = float(psum) / scale_len
     
-                GetInference()
-                GetCounts()
+                GetInference()  # Ensure this function is correctly defined elsewhere
+                GetCounts()  # Ensure this function is correctly defined elsewhere
     
                 outputs = predictor(im)
                 inst_out = outputs['instances']
@@ -668,8 +668,8 @@ def run_inference(selected_dataset, dataset_info):
                     mask = mask_array[:, :, i:(i + 1)]
                     output = np.where(mask == True, 255, output)
                 imm = Image.fromarray(output)
-                imm.save('predicted_masks.jpg')
-                cv2.imwrite('Masks.jpg', output)  # Save mask
+                imm.save(os.path.join(output_dir, 'predicted_masks.jpg'))
+                cv2.imwrite(os.path.join(output_dir, 'Masks.jpg'), output)  # Save mask
                 im_mask = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
                 cnts = cv2.findContours(im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 cnts = imutils.grab_contours(cnts)
@@ -725,5 +725,3 @@ def run_inference(selected_dataset, dataset_info):
         tP = sum(PList)
         print("No. (Total) of Pores:  " + repr(tP))
         print("No. (Total) of Pore Throats:  " + repr(tT))
-
-
