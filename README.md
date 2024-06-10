@@ -1,3 +1,5 @@
+README is under development and might be outdated as well as ahead of the actual functionality. Read with caution.
+
 Overview
 UW-Com-Vision is a project designed to perform computer vision tasks, including data preparation, model training, evaluation, and inference. This branch (multi_set_V1) focuses on handling multiple datasets and provides a flexible framework for experimenting with different model architectures and configurations.
 
