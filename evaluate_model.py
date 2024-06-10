@@ -47,6 +47,18 @@ def evaluate_model(dataset_name, model_path, output_dir, visualize=False):
     if visualize:
         visualize_predictions(predictor, dataset_name, output_dir)
 
+    # Save metrics to CSV
+    csv_path = os.path.join(output_dir, "metrics.csv")
+    with open(csv_path, mode='w', newline='') as csv_file:
+        fieldnames = ['metric', 'value']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        
+        writer.writeheader()
+        for key, value in metrics.items():
+            writer.writerow({'metric': key, 'value': value})
+    
+    print(f"Metrics saved to {csv_path}")
+
     return metrics
 
 def visualize_predictions(predictor, dataset_name, output_dir):
