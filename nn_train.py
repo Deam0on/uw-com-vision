@@ -31,10 +31,18 @@ from scipy.ndimage import binary_fill_holes
 from skimage.morphology import dilation, erosion
 from sklearn.model_selection import train_test_split
 
-def split_dataset(img_dir, label_dir, test_size=0.2, seed=42):
+def split_dataset(img_dir, label_dir, dataset_name, test_size=0.2, seed=42):
     random.seed(seed)
     label_files = [f for f in os.listdir(label_dir) if f.endswith('.json')]
     train_files, test_files = train_test_split(label_files, test_size=test_size, random_state=seed)
+
+    # Save the split
+    split_dir = os.path.join(label_dir, 'splits')
+    os.makedirs(split_dir, exist_ok=True)
+    split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+    split_data = {'train': train_files, 'test': test_files}
+    with open(split_file, 'w') as f:
+        json.dump(split_data, f)
 
     return train_files, test_files
 
@@ -42,13 +50,22 @@ def register_datasets(dataset_info, test_size=0.2):
     for dataset_name, info in dataset_info.items():
         img_dir, label_dir, thing_classes = info
 
-        # Split the dataset
-        train_files, test_files = split_dataset(img_dir, label_dir, test_size)
+        # Load or split the dataset
+        split_dir = os.path.join(label_dir, 'splits')
+        split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+        
+        if os.path.exists(split_file):
+            with open(split_file, 'r') as f:
+                split_data = json.load(f)
+            train_files = split_data['train']
+            test_files = split_data['test']
+        else:
+            train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, test_size)
 
         # Register training dataset
         DatasetCatalog.register(
             f"{dataset_name}_train",
-            lambda d=dataset_name, img_dir=img_dir, label_dir=label_dir, files=train_files:
+            lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
             get_split_dicts(img_dir, label_dir, files)
         )
         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
@@ -56,7 +73,7 @@ def register_datasets(dataset_info, test_size=0.2):
         # Register testing dataset
         DatasetCatalog.register(
             f"{dataset_name}_test",
-            lambda d=dataset_name, img_dir=img_dir, label_dir=label_dir, files=test_files:
+            lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
             get_split_dicts(img_dir, label_dir, files)
         )
         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
