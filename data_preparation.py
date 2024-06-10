@@ -54,11 +54,11 @@ def split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size=0.2, s
     return train_files, test_files
 
 # Example usage
-if __name__ == "__main__":
-    dataset_name = "polyhipes"  # Example dataset name
-    img_dir = "/home/deamoon_uw_nn/DATASET/polyhipes/images"  # Example image directory
-    label_dir = "/home/deamoon_uw_nn/DATASET/polyhipes/labels"  # Example label directory
-    output_dir = "./splits"  # Directory to save split CSV files
+# if __name__ == "__main__":
+#     dataset_name = "polyhipes"  # Example dataset name
+#     img_dir = "/home/deamoon_uw_nn/DATASET/polyhipes/images"  # Example image directory
+#     label_dir = "/home/deamoon_uw_nn/DATASET/polyhipes/labels"  # Example label directory
+#     output_dir = "./splits"  # Directory to save split CSV files
 
-    # Split the dataset
-    train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, output_dir)
+#     # Split the dataset
+#     train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, output_dir)
