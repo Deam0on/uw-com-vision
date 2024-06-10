@@ -54,30 +54,106 @@ from google.cloud import storage
 import easyocr
 import re
 from numpy import sqrt
+from data_preparation import split_dataset
 
 
-def register_datasets(dataset_info, test_size=0.2):
+# def register_datasets(dataset_info, test_size=0.2):
+#     """
+#     Registers datasets in Detectron2.
+
+#     Parameters:
+#     - dataset_info: Dictionary containing dataset names and their info.
+#     - test_size: Proportion of the dataset to include in the test split.
+#     """
+#     for dataset_name, info in dataset_info.items():
+#         img_dir, label_dir, thing_classes = info
+
+#         # Load split data if available
+#         split_dir = "/home/deamoon_uw_nn/split_dir/"
+#         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+
+#         if os.path.exists(split_file):
+#             with open(split_file, 'r') as f:
+#                 split_data = json.load(f)
+#             train_files = split_data['train']
+#             test_files = split_data['test']
+#         else:
+#             print("No split training data found!")
+
+#         # Register training dataset
+#         DatasetCatalog.register(
+#             f"{dataset_name}_train",
+#             lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
+#             get_split_dicts(img_dir, label_dir, files)
+#         )
+#         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
+
+#         # Register testing dataset
+#         DatasetCatalog.register(
+#             f"{dataset_name}_test",
+#             lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
+#             get_split_dicts(img_dir, label_dir, files)
+#         )
+#         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
+
+def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size=0.2):
     """
-    Registers datasets in Detectron2.
+    Loads the dataset splits from CSV files or creates new splits if they don't exist.
 
     Parameters:
-    - dataset_info: Dictionary containing dataset names and their info.
+    - img_dir: Directory containing images.
+    - label_dir: Directory containing labels.
+    - dataset_name: Name of the dataset.
+    - output_dir: Directory to save or load split CSV files.
     - test_size: Proportion of the dataset to include in the test split.
+
+    Returns:
+    - train_files: List of training label files.
+    - test_files: List of testing label files.
     """
+    train_csv_path = os.path.join(output_dir, f"{dataset_name}_train_split.csv")
+    test_csv_path = os.path.join(output_dir, f"{dataset_name}_test_split.csv")
+
+    if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
+        # Load splits from CSV
+        with open(train_csv_path, 'r') as train_csv:
+            reader = csv.reader(train_csv)
+            next(reader)  # Skip header
+            train_files = [row[0] for row in reader]
+
+        with open(test_csv_path, 'r') as test_csv:
+            reader = csv.reader(test_csv)
+            next(reader)  # Skip header
+            test_files = [row[0] for row in reader]
+        
+        print(f"Loaded training split from {train_csv_path}")
+        print(f"Loaded testing split from {test_csv_path}")
+    else:
+        # Create new splits and save them
+        train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size)
+    
+    return train_files, test_files
+
+def register_datasets(dataset_info, output_dir, test_size=0.2):
     for dataset_name, info in dataset_info.items():
         img_dir, label_dir, thing_classes = info
 
-        # Load split data if available
-        split_dir = "/home/deamoon_uw_nn/split_dir/"
-        split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+        train_csv_path = os.path.join(output_dir, f"{dataset_name}_train_split.csv")
+        test_csv_path = os.path.join(output_dir, f"{dataset_name}_test_split.csv")
 
-        if os.path.exists(split_file):
-            with open(split_file, 'r') as f:
-                split_data = json.load(f)
-            train_files = split_data['train']
-            test_files = split_data['test']
+        # Load train/test files from CSV
+        if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
+            with open(train_csv_path, 'r') as train_csv:
+                reader = csv.reader(train_csv)
+                next(reader)  # Skip header
+                train_files = [row[0] for row in reader]
+
+            with open(test_csv_path, 'r') as test_csv:
+                reader = csv.reader(test_csv)
+                next(reader)  # Skip header
+                test_files = [row[0] for row in reader]
         else:
-            print("No split training data found!")
+            train_files, test_files = load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size)
 
         # Register training dataset
         DatasetCatalog.register(
@@ -496,6 +572,8 @@ if __name__ == "__main__":
     dataset_info = {
         "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
     }
+    output_dir = "/home/deamoon_uw_nn/splits/"
+    
     register_datasets(dataset_info)
     
     trained_model_paths = get_trained_model_paths("./trained_models")
