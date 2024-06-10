@@ -252,13 +252,13 @@ def train_on_dataset(dataset_name, output_dir):
     torch.save(trainer.model.state_dict(), model_path)
     print(f"Model trained on {dataset_name} saved to {model_path}")
 
-# Example dataset info with specific classes
+# Available datasets
 dataset_info = {
     "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
 }
 
 register_datasets(dataset_info)
 
-# Example usage:
+# Call training
 selected_dataset = "polyhipes"  # User-selected dataset
 train_on_dataset(selected_dataset, "./trained_models")
