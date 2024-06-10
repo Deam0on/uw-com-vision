@@ -259,18 +259,17 @@ class CustomTrainer(DefaultTrainer):
     def build_train_loader(cls, cfg):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
 
-def train_on_dataset(dataset_name, dataset_info):
+def train_on_dataset(dataset_name, output_dir):
     """
-    Configures and trains a Detectron2 model on a specific dataset.
-    
+    Trains a model on the specified dataset.
+
     Parameters:
     - dataset_name: Name of the dataset to train on.
     - output_dir: Directory to save the trained model.
     """
-    
-    output_dir = "./trained_models"
-    register_datasets(dataset_info)
-    
+    img_dir = os.path.join("/path/to/images")  # Set the fixed path for image directory
+
+    # Load configuration
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.DATASETS.TRAIN = (f"{dataset_name}_train",)
@@ -285,30 +284,16 @@ def train_on_dataset(dataset_name, dataset_info):
 
     thing_classes = MetadataCatalog.get(f"{dataset_name}_train").thing_classes
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
-    cfg.MODEL.DEVICE = "cuda"
+    cfg.MODEL.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
     dataset_output_dir = os.path.join(output_dir, dataset_name)
     os.makedirs(dataset_output_dir, exist_ok=True)
     cfg.OUTPUT_DIR = dataset_output_dir
 
-    trainer = CustomTrainer(cfg)
+    trainer = DefaultTrainer(cfg)
     trainer.resume_or_load(resume=False)
     trainer.train()
 
     model_path = os.path.join(dataset_output_dir, "model_final.pth")
     torch.save(trainer.model.state_dict(), model_path)
     print(f"Model trained on {dataset_name} saved to {model_path}")
-
-# Main exec.
-# if __name__ == "__main__":
-#     # Available datasets
-#     dataset_info = {
-#         "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
-#     }
-
-#     # Call training
-#     selected_dataset = "polyhipes"  # User-selected dataset
-#     output_dir = "/home/deamoon_uw_nn/splits/"
-    
-#     register_datasets(dataset_info)
-#     train_on_dataset(selected_dataset, "./trained_models")
