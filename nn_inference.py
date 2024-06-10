@@ -60,6 +60,141 @@ import easyocr
 import re
 from numpy import sqrt
 
+
+def register_datasets(dataset_info, test_size=0.2):
+    for dataset_name, info in dataset_info.items():
+        img_dir, label_dir, thing_classes = info
+
+        # Load or split the dataset
+        split_dir = os.path.join(label_dir, 'splits')
+        split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+        
+        if os.path.exists(split_file):
+            with open(split_file, 'r') as f:
+                split_data = json.load(f)
+            train_files = split_data['train']
+            test_files = split_data['test']
+        else:
+            train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, test_size)
+
+        # Register training dataset
+        DatasetCatalog.register(
+            f"{dataset_name}_train",
+            lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
+            get_split_dicts(img_dir, label_dir, files)
+        )
+        MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
+
+        # Register testing dataset
+        DatasetCatalog.register(
+            f"{dataset_name}_test",
+            lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
+            get_split_dicts(img_dir, label_dir, files)
+        )
+        MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
+
+# Utility function to handle the split dictionaries
+def get_split_dicts(img_dir, label_dir, files):
+    dataset_dicts = []
+    idx = 0
+    for file in files:
+        json_file = os.path.join(label_dir, file)
+        with open(json_file) as f:
+            imgs_anns = json.load(f)
+
+        record = {}
+        filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
+        record["file_name"] = filename
+        record["image_id"] = idx
+        record["height"] = imgs_anns["metadata"]["height"]
+        record["width"] = imgs_anns["metadata"]["width"]
+        idx = idx + 1
+        annos = imgs_anns["instances"]
+        objs = []
+
+        for anno in annos:
+            categoryName = anno["className"]
+            type = anno["type"]
+
+            if type == "ellipse":
+                cx = anno["cx"]
+                cy = anno["cy"]
+                rx = anno["rx"]
+                ry = anno["ry"]
+                theta = anno["angle"]
+                ellipse = ((cx, cy), (rx, ry), theta)
+                circ = shapely.geometry.Point(ellipse[0]).buffer(1)
+                ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
+                ellr = shapely.affinity.rotate(ell, ellipse[2])
+                px, py = ellr.exterior.coords.xy
+                poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+                poly = [p for x in poly for p in x]
+            elif type == "polygon":
+                px = anno["points"][0:-1:2]
+                py = anno["points"][1:-1:2]
+                px.append(anno["points"][0])
+                py.append(anno["points"][-1])
+                poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+                poly = [p for x in poly for p in x]
+
+            if "throat" in categoryName:
+                category_id = 0
+            elif "pore" in categoryName:
+                category_id = 1
+            else:
+                raise ValueError("Category Name Not Found: " + categoryName)
+
+            obj = {
+                "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
+                "bbox_mode": BoxMode.XYXY_ABS,
+                "segmentation": [poly],
+                "category_id": category_id,
+            }
+            objs.append(obj)
+        record["annotations"] = objs
+        dataset_dicts.append(record)
+    return dataset_dicts
+
+def custom_mapper(dataset_dicts):
+    dataset_dicts = copy.deepcopy(dataset_dicts)  # it will be modified by code below
+    image = utils.read_image(dataset_dicts["file_name"], format="BGR")
+    transform_list = [
+        T.Resize((800,800)),
+        T.RandomBrightness(0.8, 1.8),
+        T.RandomContrast(0.6, 1.3),
+        T.RandomSaturation(0.8, 1.4),
+        T.RandomRotation(angle=[90, 90]),
+        T.RandomLighting(0.7),
+        T.RandomFlip(prob=0.4, horizontal=False, vertical=True),
+    ]
+
+    image, transforms = T.apply_transform_gens(transform_list, image)
+    dataset_dicts["image"] = torch.as_tensor(image.transpose(2, 0, 1).astype("float32"))
+
+    annos = [
+        utils.transform_instance_annotations(obj, transforms, image.shape[:2])
+        for obj in dataset_dicts.pop("annotations")
+        if obj.get("iscrowd", 0) == 0
+    ]
+
+    instances = utils.annotations_to_instances(annos, image.shape[:2])
+    dataset_dicts["instances"] = utils.filter_empty_instances(instances)
+    return dataset_dicts
+
+## Replace default trainer, subs 2x 1D method
+class CustomTrainer(DefaultTrainer):
+    @classmethod
+    def build_train_loader(cls, cfg):
+        return build_detection_train_loader(cfg, mapper=custom_mapper)
+
+# Example dataset info with specific classes
+dataset_info = {
+    "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+}
+
+register_datasets(dataset_info)
+
+
 # def split_dataset(img_dir, label_dir, test_size=0.2, seed=42):
 #     random.seed(seed)
 #     label_files = [f for f in os.listdir(label_dir) if f.endswith('.json')]
