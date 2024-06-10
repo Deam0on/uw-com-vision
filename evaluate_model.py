@@ -12,25 +12,26 @@ from detectron2.data import build_detection_test_loader
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 
-def evaluate_model(dataset_name, model_path, output_dir, visualize=False):
+def evaluate_model(dataset_name, output_dir, visualize=False):
     """
     Evaluates a trained model on the specified dataset.
 
     Parameters:
     - dataset_name: Name of the dataset to evaluate.
-    - model_path: Path to the trained model weights.
     - output_dir: Directory to save evaluation results.
     - visualize: Boolean, if True, save visualizations of predictions.
 
     Returns:
     - metrics: Dictionary containing evaluation metrics.
     """
+    model_path = os.path.join("./trained_models", dataset_name, "model_final.pth")
+
     # Load model configuration
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.MODEL.WEIGHTS = model_path
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # Set threshold for this model
-    cfg.MODEL.DEVICE = "cuda"  # Use GPU for inference if available
+    cfg.MODEL.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available
 
     predictor = DefaultPredictor(cfg)
     
@@ -44,11 +45,9 @@ def evaluate_model(dataset_name, model_path, output_dir, visualize=False):
     # Print metrics
     print(f"Evaluation metrics: {metrics}")
 
-    if visualize:
-        visualize_predictions(predictor, dataset_name, output_dir)
-
     # Save metrics to CSV
     csv_path = os.path.join(output_dir, "metrics.csv")
+    os.makedirs(output_dir, exist_ok=True)
     with open(csv_path, mode='w', newline='') as csv_file:
         fieldnames = ['metric', 'value']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
