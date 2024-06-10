@@ -609,7 +609,7 @@ def midpoint(ptA, ptB):
 #   # v.save("test.png")
 #   cv2.imwrite(test_img + '_' + str(x_pred) + "__pred.png",out.get_image()[:, :, ::-1])
 
-def GetInference(predictor, im, x_pred, output_dir, metadata):
+def GetInference():
     outputs = predictor(im)
 
     # Ensure the outputs contain 'instances'
