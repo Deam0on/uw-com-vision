@@ -377,7 +377,7 @@ predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
 
 metadata = MetadataCatalog.get(f"{selected_model_dataset}_train")
 
-def get_image_folder_path(base_path='/content/INFERENCE'):
+def get_image_folder_path(base_path='/home/deamoon_uw_nn/DATASET/INFERENCE'):
     """
     This function checks whether the images are in the base folder or in the UPLOAD subfolder.
     It returns the path to the folder containing the images.
