@@ -104,9 +104,9 @@ def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_siz
 def register_datasets(dataset_info, output_dir, test_size=0.2):
 
      # Available datasets
-    dataset_info = {
-        "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
-    }
+    # dataset_info = {
+    #     "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+    # }
     
     for dataset_name, info in dataset_info.items():
         img_dir, label_dir, thing_classes = info
