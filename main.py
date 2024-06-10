@@ -74,7 +74,7 @@ if __name__ == "__main__":
     }
 
     # Call training
-    selected_dataset = "polyhipes"  # User-selected dataset
+    # selected_dataset = "polyhipes"  # User-selected dataset
 
 
     
