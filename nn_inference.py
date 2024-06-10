@@ -84,7 +84,7 @@ def register_datasets(dataset_info, test_size=0.2):
             train_files = split_data['train']
             test_files = split_data['test']
         else:
-            print("No split training data found!"
+            print("No split training data found!")
 
         # Register training dataset
         DatasetCatalog.register(
