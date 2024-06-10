@@ -576,12 +576,7 @@ def run_inference(dataset_name, output_dir, visualize=False):
     - output_dir: Directory to save inference results.
     - visualize: Boolean, if True, save visualizations of predictions.
     """
-    img_dir = os.path.join("/path/to/images")  # Set the fixed path for image directory
-
-    # Register datasets and load model
-    dataset_info = {
-        dataset_name: (img_dir, img_dir, ["throat", "pore"])  # Adjust dataset_info if necessary
-    }
+    dataset_info = read_dataset_info('dataset_info.json')
     register_datasets(dataset_info)
     
     trained_model_paths = get_trained_model_paths("./trained_models")
