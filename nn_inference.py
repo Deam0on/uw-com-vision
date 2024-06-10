@@ -66,16 +66,25 @@ def register_datasets(dataset_info, test_size=0.2):
         img_dir, label_dir, thing_classes = info
 
         # Load or split the dataset
-        split_dir = os.path.join(label_dir, 'splits')
+        # split_dir = os.path.join(label_dir, 'splits')
+        split_dir = "/home/deamoon_uw_nn/split_dir/"
         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
         
+        # if os.path.exists(split_file):
+        #     with open(split_file, 'r') as f:
+        #         split_data = json.load(f)
+        #     train_files = split_data['train']
+        #     test_files = split_data['test']
+        # else:
+        #     train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, test_size)
+
         if os.path.exists(split_file):
             with open(split_file, 'r') as f:
                 split_data = json.load(f)
             train_files = split_data['train']
             test_files = split_data['test']
         else:
-            train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, test_size)
+            print("No split training data found!"
 
         # Register training dataset
         DatasetCatalog.register(
