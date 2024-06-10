@@ -66,4 +66,12 @@ def main():
         run_inference(args.img_dir, args.model_path, args.output_dir, args.visualize)
 
 if __name__ == "__main__":
+    # Available datasets
+    dataset_info = {
+        "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+    }
+
+    # Call training
+    selected_dataset = "polyhipes"  # User-selected dataset
+    
     main()
