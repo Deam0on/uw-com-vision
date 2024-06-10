@@ -592,52 +592,52 @@ def midpoint(ptA, ptB):
 #   cv2.imwrite(test_img + '_' + str(x_pred) + "__pred.png",out.get_image()[:, :, ::-1])
 
 ## sub inference from mask
-# def GetInference():
-#   outputs = predictor(im)
-
-#   # Get all instances
-#   inst_out = outputs['instances']
-
-#   # Filter instances where predicted class is 3
-#   filtered_instances = inst_out[inst_out.pred_classes == x_pred]
-    
-#   v = Visualizer(im[:, :, ::-1],
-#                   metadata=multiclass_test_metadata,
-#                   scale=1,
-#                   instance_mode=ColorMode.SEGMENTATION)
-#   out = v.draw_instance_predictions(filtered_instances.to("cpu"))  
-#   # v.save("test.png")
-#   cv2.imwrite(test_img + '_' + str(x_pred) + "__pred.png",out.get_image()[:, :, ::-1])
-
 def GetInference():
-    outputs = predictor(im)
+  outputs = predictor(im)
 
-    # Ensure the outputs contain 'instances'
-    if 'instances' not in outputs:
-        raise ValueError("No 'instances' found in outputs from the model.")
+  # Get all instances
+  inst_out = outputs['instances']
 
-    instances = outputs['instances']
+  # Filter instances where predicted class is 3
+  filtered_instances = inst_out[inst_out.pred_classes == x_pred]
     
-    if not isinstance(instances, detectron2.structures.Instances):
-        raise TypeError(f"Expected 'Instances', got {type(instances)}.")
+  v = Visualizer(im[:, :, ::-1],
+                  metadata=metadata,
+                  scale=1,
+                  instance_mode=ColorMode.SEGMENTATION)
+  out = v.draw_instance_predictions(filtered_instances.to("cpu"))  
+  # v.save("test.png")
+  cv2.imwrite(test_img + '_' + str(x_pred) + "__pred.png",out.get_image()[:, :, ::-1])
 
-    # Filter instances by class
-    filtered_instances = instances[instances.pred_classes == x_pred]
+# def GetInference():
+#     outputs = predictor(im)
+
+#     # Ensure the outputs contain 'instances'
+#     if 'instances' not in outputs:
+#         raise ValueError("No 'instances' found in outputs from the model.")
+
+#     instances = outputs['instances']
     
-    # Ensure metadata is a Metadata object
-    if not hasattr(metadata, 'get'):
-        raise TypeError(f"Expected metadata to have 'get' method, got {type(metadata)} instead.")
+#     if not isinstance(instances, detectron2.structures.Instances):
+#         raise TypeError(f"Expected 'Instances', got {type(instances)}.")
 
-    v = Visualizer(im[:, :, ::-1],
-                   metadata=metadata,
-                   scale=1,
-                   instance_mode=ColorMode.SEGMENTATION)
-    out = v.draw_instance_predictions(filtered_instances.to("cpu"))
+#     # Filter instances by class
+#     filtered_instances = instances[instances.pred_classes == x_pred]
+    
+#     # Ensure metadata is a Metadata object
+#     if not hasattr(metadata, 'get'):
+#         raise TypeError(f"Expected metadata to have 'get' method, got {type(metadata)} instead.")
 
-    # Save the output image
-    output_image_path = os.path.join(output_dir, f"pred_{x_pred}.png")
-    cv2.imwrite(output_image_path, out.get_image()[:, :, ::-1])
-    print(f"Saved inference image for class {x_pred} to {output_image_path}")
+#     v = Visualizer(im[:, :, ::-1],
+#                    metadata=metadata,
+#                    scale=1,
+#                    instance_mode=ColorMode.SEGMENTATION)
+#     out = v.draw_instance_predictions(filtered_instances.to("cpu"))
+
+#     # Save the output image
+#     output_image_path = os.path.join(output_dir, f"pred_{x_pred}.png")
+#     cv2.imwrite(output_image_path, out.get_image()[:, :, ::-1])
+#     print(f"Saved inference image for class {x_pred} to {output_image_path}")
 
 
 
