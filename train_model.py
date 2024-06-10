@@ -296,9 +296,10 @@ if __name__ == "__main__":
     dataset_info = {
         "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
     }
-    
-    register_datasets(dataset_info)
-    
+
     # Call training
     selected_dataset = "polyhipes"  # User-selected dataset
+    output_dir = "/home/deamoon_uw_nn/splits/"
+    
+    register_datasets(dataset_info)
     train_on_dataset(selected_dataset, "./trained_models")
