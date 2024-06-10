@@ -195,6 +195,7 @@ dataset_info = {
 register_datasets(dataset_info)
 
 
+
 # def split_dataset(img_dir, label_dir, test_size=0.2, seed=42):
 #     random.seed(seed)
 #     label_files = [f for f in os.listdir(label_dir) if f.endswith('.json')]
@@ -364,6 +365,8 @@ def choose_and_use_model(model_paths, dataset_name):
 trained_model_paths = get_trained_model_paths("./trained_models")
 selected_model_dataset = "polyhipes"  # User-selected model
 predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
+
+metadata = MetadataCatalog.get(f"{selected_model_dataset}_train")
 
 def get_image_folder_path(base_path='/content/INFERENCE'):
     """
@@ -580,22 +583,54 @@ def midpoint(ptA, ptB):
 #   cv2.imwrite(test_img + '_' + str(x_pred) + "__pred.png",out.get_image()[:, :, ::-1])
 
 ## sub inference from mask
-def GetInference():
-  outputs = predictor(im)
+# def GetInference():
+#   outputs = predictor(im)
 
-  # Get all instances
-  inst_out = outputs['instances']
+#   # Get all instances
+#   inst_out = outputs['instances']
 
-  # Filter instances where predicted class is 3
-  filtered_instances = inst_out[inst_out.pred_classes == x_pred]
+#   # Filter instances where predicted class is 3
+#   filtered_instances = inst_out[inst_out.pred_classes == x_pred]
     
-  v = Visualizer(im[:, :, ::-1],
-                  metadata=multiclass_test_metadata,
-                  scale=1,
-                  instance_mode=ColorMode.SEGMENTATION)
-  out = v.draw_instance_predictions(filtered_instances.to("cpu"))  
-  # v.save("test.png")
-  cv2.imwrite(test_img + '_' + str(x_pred) + "__pred.png",out.get_image()[:, :, ::-1])
+#   v = Visualizer(im[:, :, ::-1],
+#                   metadata=multiclass_test_metadata,
+#                   scale=1,
+#                   instance_mode=ColorMode.SEGMENTATION)
+#   out = v.draw_instance_predictions(filtered_instances.to("cpu"))  
+#   # v.save("test.png")
+#   cv2.imwrite(test_img + '_' + str(x_pred) + "__pred.png",out.get_image()[:, :, ::-1])
+
+def GetInference(predictor, im, x_pred, output_dir, metadata):
+    outputs = predictor(im)
+
+    # Ensure the outputs contain 'instances'
+    if 'instances' not in outputs:
+        raise ValueError("No 'instances' found in outputs from the model.")
+
+    instances = outputs['instances']
+    
+    if not isinstance(instances, detectron2.structures.Instances):
+        raise TypeError(f"Expected 'Instances', got {type(instances)}.")
+
+    # Filter instances by class
+    filtered_instances = instances[instances.pred_classes == x_pred]
+    
+    # Ensure metadata is a Metadata object
+    if not hasattr(metadata, 'get'):
+        raise TypeError(f"Expected metadata to have 'get' method, got {type(metadata)} instead.")
+
+    v = Visualizer(im[:, :, ::-1],
+                   metadata=metadata,
+                   scale=1,
+                   instance_mode=ColorMode.SEGMENTATION)
+    out = v.draw_instance_predictions(filtered_instances.to("cpu"))
+
+    # Save the output image
+    output_image_path = os.path.join(output_dir, f"pred_{x_pred}.png")
+    cv2.imwrite(output_image_path, out.get_image()[:, :, ::-1])
+    print(f"Saved inference image for class {x_pred} to {output_image_path}")
+
+
 
 ## count types
 
