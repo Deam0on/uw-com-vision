@@ -566,18 +566,27 @@ def GetCounts():
     PList.append(PCount)
 
 
-# Main exec.
-if __name__ == "__main__":
-    # Example usage:
-    dataset_info = {
-        "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
-    }
+
+def run_inference(selected_dataset, dataset_info):
+    """
+    Runs inference on images in the specified directory using the provided model.
+
+    Parameters:
+    - img_dir: Directory containing images for inference.
+    - model_path: Path to the trained model weights (.pth file).
+    - output_dir: Directory to save inference results.
+    - visualize: Boolean, if True, save visualizations of predictions.
+    """
+    # dataset_info = {
+    #     "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+    # }
+    
     output_dir = "/home/deamoon_uw_nn/splits/"
     
     register_datasets(dataset_info)
     
     trained_model_paths = get_trained_model_paths("./trained_models")
-    selected_model_dataset = "polyhipes"  # User-selected model
+    selected_model_dataset = selected_dataset 
     predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
     
     metadata = MetadataCatalog.get(f"{selected_model_dataset}_train")
