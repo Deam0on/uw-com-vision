@@ -259,7 +259,7 @@ class CustomTrainer(DefaultTrainer):
     def build_train_loader(cls, cfg):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
 
-def train_on_dataset(dataset_name, output_dir):
+def train_on_dataset(dataset_info, dataset_name):
     """
     Configures and trains a Detectron2 model on a specific dataset.
     
@@ -268,10 +268,16 @@ def train_on_dataset(dataset_name, output_dir):
     - output_dir: Directory to save the trained model.
     """
 
-     # Available datasets
-    dataset_info = {
-        "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
-    }
+    #  # Available datasets
+    # dataset_info = {
+    #     "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+    # }
+
+    # # Call training
+    # selected_dataset = "polyhipes"  # User-selected dataset
+    output_dir = "/home/deamoon_uw_nn/splits/"
+    
+    register_datasets(dataset_info)
     
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
