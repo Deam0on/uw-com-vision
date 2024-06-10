@@ -489,149 +489,154 @@ def GetCounts():
     TList.append(TCount)
     PList.append(PCount)
 
-# Example usage:
-dataset_info = {
-    "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
-}
-register_datasets(dataset_info)
 
-trained_model_paths = get_trained_model_paths("./trained_models")
-selected_model_dataset = "polyhipes"  # User-selected model
-predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
+# Main exec.
+if __name__ == "__main__":
+    # Example usage:
+    dataset_info = {
+        "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+    }
+    register_datasets(dataset_info)
+    
+    trained_model_paths = get_trained_model_paths("./trained_models")
+    selected_model_dataset = "polyhipes"  # User-selected model
+    predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
+    
+    metadata = MetadataCatalog.get(f"{selected_model_dataset}_train")
+    
+    image_folder_path = get_image_folder_path()
+    
+    path = "./output/"  # Path to save outputs
+    inpath = image_folder_path
+    images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
+    
+    Img_ID = []
+    EncodedPixels = []
+    conv = lambda l: ' '.join(map(str, l))
+    
+    for name in images_name:
+        image = cv2.imread(inpath + "/" + name)
+        outputs = predictor(image)
+        masks = postprocess_masks(
+            np.asarray(outputs["instances"].to('cpu')._fields['pred_masks']),
+            outputs["instances"].to('cpu')._fields['scores'].numpy(), image)
+    
+        if masks:  # If any objects are detected in this image
+            for i in range(len(masks)):  # Loop all instances
+                Img_ID.append(name.replace('.tif', ''))
+                EncodedPixels.append(conv(rle_encoding(masks[i])))
+    
+    # Save inference results
+    df = pd.DataFrame({"ImageId": Img_ID, "EncodedPixels": EncodedPixels})
+    df.to_csv("./output/R50_flip_" + ".csv", index=False, sep=',')
+    
+    for x_pred in [0, 1]:
+        TList = []
+        PList = []
+        csv_filename = f'results_x_pred_{x_pred}.csv'
+        test_img_path = image_folder_path
+    
+        # Open CSV file before processing images
+        with open(csv_filename, 'w', newline='') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
+    
+            for test_img in os.listdir(test_img_path):
+                input_path = os.path.join(test_img_path, test_img)
+                im = cv2.imread(input_path)
+    
+                # Convert image to grayscale
+                gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    
+                # Use canny edge detection
+                edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    
+                reader = easyocr.Reader(['en'])
+                result = reader.readtext(gray, detail=0, paragraph=False, contrast_ths=0.85, adjust_contrast=0.85, add_margin=0.25, width_ths=0.25, decoder='beamsearch')
+                pxum_r = result[0]
+                psum = re.sub("[^0-9]", "", pxum_r)
+    
+                lines_list = []
+                lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=1)
+    
+                for points in lines:
+                    x1, y1, x2, y2 = points[0]
+                    cv2.line(im, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    lines_list.append([(x1, y1), (x2, y2)])
+                    scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+                    um_pix = float(psum) / scale_len
+    
+                GetInference()
+                GetCounts()
+    
+                outputs = predictor(im)
+                inst_out = outputs['instances']
+                filtered_instances = inst_out[inst_out.pred_classes == x_pred]
+                mask_array = filtered_instances.pred_masks.to("cpu").numpy()
+                num_instances = mask_array.shape[0]
+                mask_array = np.moveaxis(mask_array, 0, -1)
+                output = np.zeros_like(im)
+    
+                for i in range(num_instances):
+                    mask = mask_array[:, :, i:(i + 1)]
+                    output = np.where(mask == True, 255, output)
+                imm = Image.fromarray(output)
+                imm.save('predicted_masks.jpg')
+                cv2.imwrite('Masks.jpg', output)  # Save mask
+                im_mask = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
+                cnts = cv2.findContours(im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cnts = imutils.grab_contours(cnts)
+    
+                if len(cnts) > 0:
+                    (cnts, _) = contours.sort_contours(cnts)
+                    pixelsPerMetric = 0.85
+    
+                    for c in cnts:
+                        if cv2.contourArea(c) < 100:
+                            continue
+                        area = cv2.contourArea(c)
+                        perimeter = cv2.arcLength(c, True)
+    
+                        orig = im_mask.copy()
+                        box = cv2.minAreaRect(c)
+                        box = cv2.boxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
+                        box = np.array(box, dtype="int")
+                        box = perspective.order_points(box)
+                        cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
+                        for (x, y) in box:
+                            cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
+                        (tl, tr, br, bl) = box
+                        (tltrX, tltrY) = midpoint(tl, tr)
+                        (blbrX, blbrY) = midpoint(bl, br)
+                        (tlblX, tlblY) = midpoint(tl, bl)
+                        (trbrX, trbrY) = midpoint(tr, br)
+                        dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
+                        dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
+                        if pixelsPerMetric is None:
+                            pixelsPerMetric = dB / width
+                        dimA = dA / pixelsPerMetric
+                        dimB = dB / pixelsPerMetric
+                        dimArea = area / pixelsPerMetric
+                        dimPerimeter = perimeter / pixelsPerMetric
+                        diaFeret = max(dimA, dimB)
+                        if (dimA and dimB) != 0:
+                            Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
+                        else:
+                            Aspect_Ratio = 0
+                        Length = min(dimA, dimB) * um_pix
+                        Width = max(dimA, dimB) * um_pix
+                        CircularED = np.sqrt(4 * area / np.pi) * um_pix
+                        Chords = cv2.arcLength(c, True) * um_pix
+                        Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
+                        Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
+                        Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
+                        Feret_diam = diaFeret * um_pix
+    
+                        csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
+    
+        tT = sum(TList)
+        tP = sum(PList)
+        print("No. (Total) of Pores:  " + repr(tP))
+        print("No. (Total) of Pore Throats:  " + repr(tT))
 
-metadata = MetadataCatalog.get(f"{selected_model_dataset}_train")
 
-image_folder_path = get_image_folder_path()
-
-path = "./output/"  # Path to save outputs
-inpath = image_folder_path
-images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
-
-Img_ID = []
-EncodedPixels = []
-conv = lambda l: ' '.join(map(str, l))
-
-for name in images_name:
-    image = cv2.imread(inpath + "/" + name)
-    outputs = predictor(image)
-    masks = postprocess_masks(
-        np.asarray(outputs["instances"].to('cpu')._fields['pred_masks']),
-        outputs["instances"].to('cpu')._fields['scores'].numpy(), image)
-
-    if masks:  # If any objects are detected in this image
-        for i in range(len(masks)):  # Loop all instances
-            Img_ID.append(name.replace('.tif', ''))
-            EncodedPixels.append(conv(rle_encoding(masks[i])))
-
-# Save inference results
-df = pd.DataFrame({"ImageId": Img_ID, "EncodedPixels": EncodedPixels})
-df.to_csv("./output/R50_flip_" + ".csv", index=False, sep=',')
-
-for x_pred in [0, 1]:
-    TList = []
-    PList = []
-    csv_filename = f'results_x_pred_{x_pred}.csv'
-    test_img_path = image_folder_path
-
-    # Open CSV file before processing images
-    with open(csv_filename, 'w', newline='') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
-
-        for test_img in os.listdir(test_img_path):
-            input_path = os.path.join(test_img_path, test_img)
-            im = cv2.imread(input_path)
-
-            # Convert image to grayscale
-            gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-
-            # Use canny edge detection
-            edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-
-            reader = easyocr.Reader(['en'])
-            result = reader.readtext(gray, detail=0, paragraph=False, contrast_ths=0.85, adjust_contrast=0.85, add_margin=0.25, width_ths=0.25, decoder='beamsearch')
-            pxum_r = result[0]
-            psum = re.sub("[^0-9]", "", pxum_r)
-
-            lines_list = []
-            lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=1)
-
-            for points in lines:
-                x1, y1, x2, y2 = points[0]
-                cv2.line(im, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                lines_list.append([(x1, y1), (x2, y2)])
-                scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-                um_pix = float(psum) / scale_len
-
-            GetInference()
-            GetCounts()
-
-            outputs = predictor(im)
-            inst_out = outputs['instances']
-            filtered_instances = inst_out[inst_out.pred_classes == x_pred]
-            mask_array = filtered_instances.pred_masks.to("cpu").numpy()
-            num_instances = mask_array.shape[0]
-            mask_array = np.moveaxis(mask_array, 0, -1)
-            output = np.zeros_like(im)
-
-            for i in range(num_instances):
-                mask = mask_array[:, :, i:(i + 1)]
-                output = np.where(mask == True, 255, output)
-            imm = Image.fromarray(output)
-            imm.save('predicted_masks.jpg')
-            cv2.imwrite('Masks.jpg', output)  # Save mask
-            im_mask = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
-            cnts = cv2.findContours(im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            cnts = imutils.grab_contours(cnts)
-
-            if len(cnts) > 0:
-                (cnts, _) = contours.sort_contours(cnts)
-                pixelsPerMetric = 0.85
-
-                for c in cnts:
-                    if cv2.contourArea(c) < 100:
-                        continue
-                    area = cv2.contourArea(c)
-                    perimeter = cv2.arcLength(c, True)
-
-                    orig = im_mask.copy()
-                    box = cv2.minAreaRect(c)
-                    box = cv2.boxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
-                    box = np.array(box, dtype="int")
-                    box = perspective.order_points(box)
-                    cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
-                    for (x, y) in box:
-                        cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
-                    (tl, tr, br, bl) = box
-                    (tltrX, tltrY) = midpoint(tl, tr)
-                    (blbrX, blbrY) = midpoint(bl, br)
-                    (tlblX, tlblY) = midpoint(tl, bl)
-                    (trbrX, trbrY) = midpoint(tr, br)
-                    dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
-                    dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
-                    if pixelsPerMetric is None:
-                        pixelsPerMetric = dB / width
-                    dimA = dA / pixelsPerMetric
-                    dimB = dB / pixelsPerMetric
-                    dimArea = area / pixelsPerMetric
-                    dimPerimeter = perimeter / pixelsPerMetric
-                    diaFeret = max(dimA, dimB)
-                    if (dimA and dimB) != 0:
-                        Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
-                    else:
-                        Aspect_Ratio = 0
-                    Length = min(dimA, dimB) * um_pix
-                    Width = max(dimA, dimB) * um_pix
-                    CircularED = np.sqrt(4 * area / np.pi) * um_pix
-                    Chords = cv2.arcLength(c, True) * um_pix
-                    Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
-                    Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
-                    Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
-                    Feret_diam = diaFeret * um_pix
-
-                    csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
-
-    tT = sum(TList)
-    tP = sum(PList)
-    print("No. (Total) of Pores:  " + repr(tP))
-    print("No. (Total) of Pore Throats:  " + repr(tT))
