@@ -102,6 +102,12 @@ def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_siz
     return train_files, test_files
 
 def register_datasets(dataset_info, output_dir, test_size=0.2):
+
+     # Available datasets
+    dataset_info = {
+        "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+    }
+    
     for dataset_name, info in dataset_info.items():
         img_dir, label_dir, thing_classes = info
 
@@ -261,6 +267,12 @@ def train_on_dataset(dataset_name, output_dir):
     - dataset_name: Name of the dataset to train on.
     - output_dir: Directory to save the trained model.
     """
+
+     # Available datasets
+    dataset_info = {
+        "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+    }
+    
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.DATASETS.TRAIN = (f"{dataset_name}_train",)
@@ -291,15 +303,15 @@ def train_on_dataset(dataset_name, output_dir):
 
 
 # Main exec.
-if __name__ == "__main__":
-    # Available datasets
-    dataset_info = {
-        "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
-    }
+# if __name__ == "__main__":
+#     # Available datasets
+#     dataset_info = {
+#         "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+#     }
 
-    # Call training
-    selected_dataset = "polyhipes"  # User-selected dataset
-    output_dir = "/home/deamoon_uw_nn/splits/"
+#     # Call training
+#     selected_dataset = "polyhipes"  # User-selected dataset
+#     output_dir = "/home/deamoon_uw_nn/splits/"
     
-    register_datasets(dataset_info)
-    train_on_dataset(selected_dataset, "./trained_models")
+#     register_datasets(dataset_info)
+#     train_on_dataset(selected_dataset, "./trained_models")
