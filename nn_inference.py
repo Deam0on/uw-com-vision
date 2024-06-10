@@ -204,20 +204,6 @@ def get_trained_model_paths(base_dir):
             model_paths[dataset_name] = model_path
     return model_paths
 
-def choose_and_use_model(model_paths, dataset_name):
-    if dataset_name not in model_paths:
-        print(f"No model found for dataset {dataset_name}")
-        return
-
-    model_path = model_paths[dataset_name]
-    cfg = get_cfg()
-    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
-    cfg.MODEL.ROI_HEADS.NUM_CLASSES = 2
-    cfg.MODEL.DEVICE = "cuda"
-    
-    predictor = load_model(cfg, model_path)
-    return predictor
-    
 def load_model(cfg, model_path, dataset_name):
     cfg.MODEL.WEIGHTS = model_path
     thing_classes = MetadataCatalog.get(f"{dataset_name}_train").thing_classes
@@ -234,7 +220,8 @@ def choose_and_use_model(model_paths, dataset_name):
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.MODEL.DEVICE = "cuda"
-    
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.45
+
     predictor = load_model(cfg, model_path, dataset_name)
     return predictor
 
@@ -243,7 +230,7 @@ trained_model_paths = get_trained_model_paths("./trained_models")
 selected_model_dataset = "polyhipes"  # User-selected model
 predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
 
-def get_image_folder_path(base_path='/home/deamoon_uw_nn/DATASET/INFERENCE'):
+def get_image_folder_path(base_path='/content/INFERENCE'):
     """
     This function checks whether the images are in the base folder or in the UPLOAD subfolder.
     It returns the path to the folder containing the images.
@@ -321,14 +308,14 @@ def get_masks(fn, predictor):
     return res
 
 # inference with trained model
-cfg = get_cfg()
-cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
-cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
-cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
-cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.45   # set the testing threshold for this model
-predictor = DefaultPredictor(cfg)
+# cfg = get_cfg()
+# cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+# cfg.MODEL.ROI_HEADS.NUM_CLASSES = 4
+# cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
+# cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.45   # set the testing threshold for this model
+# predictor = DefaultPredictor(cfg)
 
-cfg.MODEL.DEVICE = "cuda"
+# cfg.MODEL.DEVICE = "cuda"
 MetadataCatalog.get("multiclass_Train").set(
          things_classes=["throat","pore"])
 MetadataCatalog.get("multiclass_Train").set(
@@ -388,7 +375,7 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
     overlap = np.zeros([height, width])
 
     masks = []
-  
+
     # Removes overlaps from masks with lower score
     for i in range(len(ori_mask)):
         # Fill holes inside the mask
@@ -431,13 +418,31 @@ for name in images_name:
                 Img_ID.append(name.replace('.tif', ''))
                 EncodedPixels.append(conv(rle_encoding(masks[i])))
 
-## save inference 
+## save inference
 df = pd.DataFrame({"ImageId": Img_ID, "EncodedPixels": EncodedPixels})
 df.to_csv("./output/R50_flip_" + ".csv", index=False, sep=',')
 
 ## def for analysis and measurements
 def midpoint(ptA, ptB):
     return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
+
+## sub inference from mask
+# def GetInference():
+#   outputs = predictor(im)
+
+#   # Get all instances
+#   inst_out = outputs['instances']
+
+#   # Filter instances where predicted class is 3
+#   filtered_instances = inst_out[inst_out.pred_classes == x_pred]
+#   thing_classes = MetadataCatalog.get(f"{selected_model_dataset}_train").thing_classes
+#   v = Visualizer(im[:, :, ::-1],
+#                   metadata=thing_classes,
+#                   scale=1,
+#                   instance_mode=ColorMode.SEGMENTATION)
+#   out = v.draw_instance_predictions(filtered_instances.to("cpu"))
+#   # v.save("test.png")
+#   cv2.imwrite(test_img + '_' + str(x_pred) + "__pred.png",out.get_image()[:, :, ::-1])
 
 ## sub inference from mask
 def GetInference():
