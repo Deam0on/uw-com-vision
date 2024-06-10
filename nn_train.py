@@ -44,6 +44,8 @@ def split_dataset(img_dir, label_dir, dataset_name, test_size=0.2, seed=42):
     with open(split_file, 'w') as f:
         json.dump(split_data, f)
 
+    print(split_dir)
+
     return train_files, test_files
 
 def register_datasets(dataset_info, test_size=0.2):
