@@ -37,7 +37,8 @@ def split_dataset(img_dir, label_dir, dataset_name, test_size=0.2, seed=42):
     train_files, test_files = train_test_split(label_files, test_size=test_size, random_state=seed)
 
     # Save the split
-    split_dir = os.path.join(label_dir, 'splits')
+    # split_dir = os.path.join(label_dir, 'splits')
+    split_dir = "/home/deamoon_uw_nn/split_dir/"
     os.makedirs(split_dir, exist_ok=True)
     split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
     split_data = {'train': train_files, 'test': test_files}
