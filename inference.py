@@ -567,32 +567,32 @@ def GetCounts():
 
 
 
-def run_inference(img_dir, model_path, output_dir, visualize=False):
+def run_inference(dataset_name, output_dir, visualize=False):
     """
     Runs inference on images in the specified directory using the provided model.
 
     Parameters:
-    - img_dir: Directory containing images for inference.
-    - model_path: Path to the trained model weights (.pth file).
+    - dataset_name: Name of the dataset.
     - output_dir: Directory to save inference results.
     - visualize: Boolean, if True, save visualizations of predictions.
     """
+    img_dir = os.path.join("/path/to/images")  # Set the fixed path for image directory
+
     # Register datasets and load model
     dataset_info = {
-        "polyhipes": (img_dir, img_dir, ["throat", "pore"])  # Adjust dataset_info if necessary
+        dataset_name: (img_dir, img_dir, ["throat", "pore"])  # Adjust dataset_info if necessary
     }
     register_datasets(dataset_info)
     
     trained_model_paths = get_trained_model_paths("./trained_models")
-    selected_model_dataset = "polyhipes"  # Update this with the appropriate dataset name
-    predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
+    predictor = choose_and_use_model(trained_model_paths, dataset_name)
     
-    metadata = MetadataCatalog.get(f"{selected_model_dataset}_train")
+    metadata = MetadataCatalog.get(f"{dataset_name}_train")
     
     image_folder_path = get_image_folder_path()
     
     # Path to save outputs
-    path = "./output/"
+    path = output_dir
     os.makedirs(path, exist_ok=True)
     inpath = image_folder_path
     images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
