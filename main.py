@@ -1,3 +1,5 @@
+# main.py
+
 import argparse
 import os
 from data_preparation import split_dataset
@@ -39,6 +41,14 @@ def main():
         help="Path to a pre-trained model (.pth file). Required for 'evaluate' and 'inference' tasks."
     )
     parser.add_argument(
+        '--test_size', type=float, default=0.2,
+        help="Proportion of the dataset to include in the test split. Used in 'prepare' and 'train' tasks."
+    )
+    parser.add_argument(
+        '--seed', type=int, default=42,
+        help="Random seed for reproducibility. Default is 42."
+    )
+    parser.add_argument(
         '--visualize', action='store_true',
         help="Flag to visualize results during evaluation and inference. Saves visualizations of predictions."
     )
@@ -47,11 +57,11 @@ def main():
 
     if args.task == 'prepare':
         print(f"Preparing dataset {args.dataset_name}...")
-        split_dataset(args.img_dir, args.label_dir, args.dataset_name, args.output_dir)
+        split_dataset(args.img_dir, args.label_dir, args.dataset_name, args.output_dir, args.test_size, args.seed)
 
     elif args.task == 'train':
         print(f"Training model on dataset {args.dataset_name}...")
-        train_on_dataset(args.dataset_name, dataset_info)
+        train_on_dataset(args.dataset_name, args.output_dir)
         
     elif args.task == 'evaluate':
         if not args.model_path:
@@ -63,27 +73,7 @@ def main():
         if not args.model_path:
             raise ValueError("Model path is required for inference.")
         print(f"Running inference on dataset {args.dataset_name}...")
-        run_inference(args.selected_dataset, dataset_info)
+        run_inference(args.img_dir, args.model_path, args.output_dir, args.visualize)
 
 if __name__ == "__main__":
-
-    
-    # Available datasets
-    dataset_info = {
-        "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
-    }
-
-    # Call training
-    # selected_dataset = "polyhipes"  # User-selected dataset
-
-
-    
-     # dataset_name = "polyhipes"  # Example dataset name
-#     model_path = "./trained_models/polyhipes/model_final.pth"  # Example path to model
-#     output_dir = "./evaluation_results"  # Directory to save evaluation results and visualizations
-
-#     # Evaluate the model
-#     metrics = evaluate_model(dataset_name, model_path, output_dir, visualize=True)
-#     print(metrics)
-    
     main()
