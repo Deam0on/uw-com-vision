@@ -147,11 +147,11 @@ def compute_iou(boxA, boxB):
     return iou
 
 # Example usage
-if __name__ == "__main__":
-    dataset_name = "polyhipes"  # Example dataset name
-    model_path = "./trained_models/polyhipes/model_final.pth"  # Example path to model
-    output_dir = "./evaluation_results"  # Directory to save evaluation results and visualizations
+# if __name__ == "__main__":
+#     dataset_name = "polyhipes"  # Example dataset name
+#     model_path = "./trained_models/polyhipes/model_final.pth"  # Example path to model
+#     output_dir = "./evaluation_results"  # Directory to save evaluation results and visualizations
 
-    # Evaluate the model
-    metrics = evaluate_model(dataset_name, model_path, output_dir, visualize=True)
-    print(metrics)
+#     # Evaluate the model
+#     metrics = evaluate_model(dataset_name, model_path, output_dir, visualize=True)
+#     print(metrics)
