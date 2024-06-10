@@ -39,10 +39,6 @@ def main():
         help="Path to a pre-trained model (.pth file). Required for 'evaluate' and 'inference' tasks."
     )
     parser.add_argument(
-        '--test_size', type=float, default=0.2,
-        help="Proportion of the dataset to include in the test split. Used in 'prepare' and 'train' tasks."
-    )
-    parser.add_argument(
         '--visualize', action='store_true',
         help="Flag to visualize results during evaluation and inference. Saves visualizations of predictions."
     )
@@ -51,7 +47,7 @@ def main():
 
     if args.task == 'prepare':
         print(f"Preparing dataset {args.dataset_name}...")
-        split_dataset(args.img_dir, args.label_dir, args.dataset_name, args.output_dir, args.test_size)
+        split_dataset(args.img_dir, args.label_dir, args.dataset_name, args.output_dir)
 
     elif args.task == 'train':
         print(f"Training model on dataset {args.dataset_name}...")
