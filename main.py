@@ -29,12 +29,12 @@ def main():
     
     args = parser.parse_args()
 
-    img_dir = "/path/to/images"  # Set the fixed path for image directory
-    output_dir = "./output"  # Set the fixed path for output directory
+    img_dir = os.path.join("./DATASET", args.dataset_name)  # Set the fixed path for image directory
+    output_dir = "./split_dir"  # Set the fixed path for output directory
 
     if args.task == 'prepare':
         print(f"Preparing dataset {args.dataset_name}...")
-        split_dataset(img_dir, args.dataset_name, output_dir)
+        split_dataset(img_dir, args.dataset_name)
 
     elif args.task == 'train':
         print(f"Training model on dataset {args.dataset_name}...")
