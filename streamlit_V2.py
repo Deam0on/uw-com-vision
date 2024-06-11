@@ -75,12 +75,3 @@ if vm_files:
         st.write(file)
 else:
     st.write("No files found in the specified directory on the VM.")
-
-# List files in the GCS bucket
-st.header("Files in Google Cloud Storage")
-gcs_files = list_files_in_bucket(GCS_BUCKET_NAME, GCS_FOLDER)
-if gcs_files:
-    for file in gcs_files:
-        st.write(file)
-else:
-    st.write("No files found in the specified folder in the GCS bucket.")
