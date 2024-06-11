@@ -31,7 +31,7 @@ def split_dataset(img_dir, dataset_name, test_size=0.2, seed=42):
     with open(split_file, 'w') as f:
         json.dump(split_data, f)
 
-    print(f"Training / testing data split into {split_file} stored at {split_dir}")
+    print(f"Training & Testing data succesfully split into {split_file}")
 
     return train_files, test_files
 
