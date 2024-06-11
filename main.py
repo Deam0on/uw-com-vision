@@ -58,16 +58,16 @@ def main():
         help="Name of the dataset to use (e.g., 'polyhipes')."
     )
     parser.add_argument(
-        '--visualize', action='store_true',
-        help="Flag to visualize results during evaluation and inference. Saves visualizations of predictions."
+        '--visualize', action='store_true', default=False,
+        help="Flag to visualize results during evaluation and inference. Saves visualizations of predictions. Default is False."
     )
     parser.add_argument(
-        '--download', action='store_true',
-        help="Flag to download data from Google Cloud Storage before executing the task."
+        '--download', action='store_true', default=False,
+        help="Flag to download data from Google Cloud Storage before executing the task. Default is False."
     )
     parser.add_argument(
-        '--upload', action='store_true',
-        help="Flag to upload results to Google Cloud Storage after executing the task."
+        '--upload', action='store_true', default=True,
+        help="Flag to upload results to Google Cloud Storage after executing the task. Default is True."
     )
     
     args = parser.parse_args()
