@@ -12,6 +12,53 @@ from detectron2.data import build_detection_test_loader
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 
+def read_dataset_info(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+        # Convert list values back to tuples for consistency with the original data
+        dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
+    return dataset_info
+
+def register_datasets(dataset_info, test_size=0.2):
+    """
+    Registers the datasets in the Detectron2 framework.
+
+    Parameters:
+    - dataset_info: Dictionary containing dataset names and their info.
+    - test_size: Proportion of the dataset to include in the test split.
+    """
+    for dataset_name, info in dataset_info.items():
+        img_dir, label_dir, thing_classes = info
+
+        # Load or split the dataset
+        split_dir = "./split_dir/"
+        split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+        
+        if os.path.exists(split_file):
+            with open(split_file, 'r') as f:
+                split_data = json.load(f)
+            train_files = split_data['train']
+            test_files = split_data['test']
+        else:
+            # train_files, test_files = split_dataset(img_dir, dataset_name, test_size=0.2)
+            print(f"No split found at {split_file}")
+
+        # Register training dataset
+        DatasetCatalog.register(
+            f"{dataset_name}_train",
+            lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
+            get_split_dicts(img_dir, label_dir, files)
+        )
+        MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
+
+        # Register testing dataset
+        DatasetCatalog.register(
+            f"{dataset_name}_test",
+            lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
+            get_split_dicts(img_dir, label_dir, files)
+        )
+        MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
+
 def evaluate_model(dataset_name, output_dir, visualize=False):
     """
     Evaluates a trained model on the specified dataset.
@@ -25,6 +72,8 @@ def evaluate_model(dataset_name, output_dir, visualize=False):
     - metrics: Dictionary containing evaluation metrics.
     """
     model_path = os.path.join("./trained_models", dataset_name, "model_final.pth")
+    dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
+    register_datasets(dataset_info)
 
     # Load model configuration
     cfg = get_cfg()
