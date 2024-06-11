@@ -543,9 +543,9 @@ def GetInference():
     # dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
     # register_datasets(dataset_info)
     
-    trained_model_paths = get_trained_model_paths("./trained_models")
-    selected_model_dataset = dataset_name  # User-selected model
-    predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
+    # trained_model_paths = get_trained_model_paths("./trained_models")
+    # selected_model_dataset = dataset_name  # User-selected model
+    # predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
     outputs = predictor(im)
 
     # Get all instances
@@ -597,7 +597,8 @@ def run_inference(dataset_name, output_dir, visualize=False):
     register_datasets(dataset_info)
     
     trained_model_paths = get_trained_model_paths("./trained_models")
-    predictor = choose_and_use_model(trained_model_paths, dataset_name)
+    selected_model_dataset = dataset_name  # User-selected model
+    predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
     
     metadata = MetadataCatalog.get(f"{dataset_name}_train")
     
