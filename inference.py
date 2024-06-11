@@ -96,7 +96,8 @@ from data_preparation import split_dataset
 #         )
 #         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
 
-def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size=0.2):
+# def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size=0.2):
+def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir="./split_dir", test_size=0.2):
     """
     Loads the dataset splits from CSV files or creates new splits if they don't exist.
 
@@ -134,7 +135,8 @@ def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_siz
     
     return train_files, test_files
 
-def register_datasets(dataset_info, output_dir, test_size=0.2):
+# def register_datasets(dataset_info, output_dir, test_size=0.2):
+def register_datasets(dataset_info, output_dir="./split_dir", test_size=0.2):
     for dataset_name, info in dataset_info.items():
         img_dir, label_dir, thing_classes = info
 
