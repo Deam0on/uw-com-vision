@@ -4,14 +4,14 @@ import os
 from google.cloud import storage
 
 # Absolute path to main.py
-MAIN_SCRIPT_PATH = '/home/yourusername/uw-com-vision/main.py'
+MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
 
 # Directory to list files on the VM
-VM_DIR = '/home/yourusername/uw-com-vision/output'
+VM_DIR = '/home/deamoon_uw_nn/DATASET/INFERENCE/'
 
 # GCS bucket details
 GCS_BUCKET_NAME = 'uw-com-vision'
-GCS_FOLDER = 'Archive'
+GCS_FOLDER = '/DATASET/INFERENCE/'
 
 # Function to run shell commands
 def run_command(command):
