@@ -534,7 +534,7 @@ def midpoint(ptA, ptB):
     """
     return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
 
-def GetInference(dataset_name):
+def GetInference(predictor, im):
     """
     Performs inference on an image and saves the predicted instances.
 
@@ -543,9 +543,9 @@ def GetInference(dataset_name):
     # dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
     # register_datasets(dataset_info)
     
-    trained_model_paths = get_trained_model_paths("./trained_models")
-    selected_model_dataset = dataset_name  # User-selected model
-    predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
+    # trained_model_paths = get_trained_model_paths("./trained_models")
+    # selected_model_dataset = dataset_name  # User-selected model
+    # predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
     outputs = predictor(im)
 
     # Get all instances
@@ -561,7 +561,7 @@ def GetInference(dataset_name):
     out = v.draw_instance_predictions(filtered_instances.to("cpu"))
     cv2.imwrite(test_img + '_' + str(x_pred) + "__pred.png", out.get_image()[:, :, ::-1])
 
-def GetCounts():
+def GetCounts(predictor, im):
     """
     Counts the number of instances for each class in the image.
 
@@ -666,8 +666,8 @@ def run_inference(dataset_name, output_dir, visualize=False):
                     scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
                     um_pix = float(psum) / scale_len
     
-                GetInference(dataset_name)  # Ensure this function is correctly defined elsewhere
-                GetCounts()  # Ensure this function is correctly defined elsewhere
+                GetInference(predictor, im)  # Ensure this function is correctly defined elsewhere
+                GetCounts(predictor, im)  # Ensure this function is correctly defined elsewhere
     
                 outputs = predictor(im)
                 inst_out = outputs['instances']
