@@ -33,36 +33,36 @@ from sklearn.model_selection import train_test_split
 from data_preparation import split_dataset
 
 
-def split_dataset(img_dir, dataset_name, test_size=0.2, seed=42):
-    """
-    Splits the dataset into training and testing sets and saves the split information.
+# def split_dataset(img_dir, dataset_name, test_size=0.2, seed=42):
+#     """
+#     Splits the dataset into training and testing sets and saves the split information.
     
-    Parameters:
-    - img_dir: Directory containing images.
-    - label_dir: Directory containing labels.
-    - dataset_name: Name of the dataset.
-    - test_size: Proportion of the dataset to include in the test split.
-    - seed: Random seed for reproducibility.
+#     Parameters:
+#     - img_dir: Directory containing images.
+#     - label_dir: Directory containing labels.
+#     - dataset_name: Name of the dataset.
+#     - test_size: Proportion of the dataset to include in the test split.
+#     - seed: Random seed for reproducibility.
     
-    Returns:
-    - train_files: List of training label files.
-    - test_files: List of testing label files.
-    """
-    random.seed(seed)
-    label_files = [f for f in os.listdir(img_dir) if f.endswith('.json')]
-    train_files, test_files = train_test_split(label_files, test_size=test_size, random_state=seed)
+#     Returns:
+#     - train_files: List of training label files.
+#     - test_files: List of testing label files.
+#     """
+#     random.seed(seed)
+#     label_files = [f for f in os.listdir(img_dir) if f.endswith('.json')]
+#     train_files, test_files = train_test_split(label_files, test_size=0.2, seed=42)
 
-    # Save the split
-    split_dir = "./split_dir/"
-    os.makedirs(split_dir, exist_ok=True)
-    split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
-    split_data = {'train': train_files, 'test': test_files}
-    with open(split_file, 'w') as f:
-        json.dump(split_data, f)
+#     # Save the split
+#     split_dir = "./split_dir/"
+#     os.makedirs(split_dir, exist_ok=True)
+#     split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+#     split_data = {'train': train_files, 'test': test_files}
+#     with open(split_file, 'w') as f:
+#         json.dump(split_data, f)
 
-    print(f"Training & Testing data succesfully split into {split_file}")
+#     print(f"Training & Testing data succesfully split into {split_file}")
 
-    return train_files, test_files
+#     return train_files, test_files
 
 def register_datasets(dataset_info, test_size=0.2):
     """
@@ -85,7 +85,8 @@ def register_datasets(dataset_info, test_size=0.2):
             train_files = split_data['train']
             test_files = split_data['test']
         else:
-            train_files, test_files = split_dataset(img_dir, dataset_name, test_size=0.2)
+            # train_files, test_files = split_dataset(img_dir, dataset_name, test_size=0.2)
+            print(f"No split found at {split_file}")
 
         # Register training dataset
         DatasetCatalog.register(
