@@ -76,7 +76,7 @@ def choose_and_use_model(model_paths, dataset_name):
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.45
 
     predictor = load_model(cfg, model_path, dataset_name)
-    return predictor, cfg
+    return predictor
 
 def read_dataset_info(file_path):
     with open(file_path, 'r') as file:
@@ -222,7 +222,7 @@ def evaluate_model(dataset_name, output_dir, visualize=False):
     
 
     # Load model configuration
-    # cfg = get_cfg()
+    cfg = get_cfg()
     # cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     # cfg.MODEL.WEIGHTS = model_path
     # cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # Set threshold for this model
