@@ -19,6 +19,78 @@ def read_dataset_info(file_path):
         dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
     return dataset_info
 
+def get_split_dicts(img_dir, label_dir, files):
+    """
+    Generates a list of dictionaries for Detectron2 dataset registration.
+    
+    Parameters:
+    - img_dir: Directory containing images.
+    - label_dir: Directory containing labels.
+    - files: List of label files to process.
+    
+    Returns:
+    - dataset_dicts: List of dictionaries with image and annotation data.
+    """
+    dataset_dicts = []
+    idx = 0
+    for file in files:
+        json_file = os.path.join(label_dir, file)
+        with open(json_file) as f:
+            imgs_anns = json.load(f)
+
+        record = {}
+        filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
+        record["file_name"] = filename
+        record["image_id"] = idx
+        record["height"] = imgs_anns["metadata"]["height"]
+        record["width"] = imgs_anns["metadata"]["width"]
+        idx += 1
+        annos = imgs_anns["instances"]
+        objs = []
+
+        for anno in annos:
+            categoryName = anno["className"]
+            type = anno["type"]
+
+            if type == "ellipse":
+                cx = anno["cx"]
+                cy = anno["cy"]
+                rx = anno["rx"]
+                ry = anno["ry"]
+                theta = anno["angle"]
+                ellipse = ((cx, cy), (rx, ry), theta)
+                circ = shapely.geometry.Point(ellipse[0]).buffer(1)
+                ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
+                ellr = shapely.affinity.rotate(ell, ellipse[2])
+                px, py = ellr.exterior.coords.xy
+                poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+                poly = [p for x in poly for p in x]
+            elif type == "polygon":
+                px = anno["points"][0:-1:2]
+                py = anno["points"][1:-1:2]
+                px.append(anno["points"][0])
+                py.append(anno["points"][-1])
+                poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+                poly = [p for x in poly for p in x]
+
+            if "throat" in categoryName:
+                category_id = 0
+            elif "pore" in categoryName:
+                category_id = 1
+            else:
+                raise ValueError("Category Name Not Found: " + categoryName)
+
+            obj = {
+                "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
+                "bbox_mode": BoxMode.XYXY_ABS,
+                "segmentation": [poly],
+                "category_id": category_id,
+            }
+            objs.append(obj)
+        record["annotations"] = objs
+        dataset_dicts.append(record)
+    return dataset_dicts
+
 def register_datasets(dataset_info, test_size=0.2):
     """
     Registers the datasets in the Detectron2 framework.
