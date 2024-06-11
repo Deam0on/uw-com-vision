@@ -7,11 +7,11 @@ from google.cloud import storage
 MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
 
 # Directory to list files on the VM
-VM_DIR = '/home/deamoon_uw_nn/DATASET/INFERENCE/'
+VM_DIR = '/home/deamoon_uw_nn/DATASET/INFERENCE/UPLOAD'
 
 # GCS bucket details
 GCS_BUCKET_NAME = 'uw-com-vision'
-GCS_FOLDER = '/DATASET/INFERENCE/'
+GCS_FOLDER = '/DATASET/INFERENCE/UPLOAD'
 
 # Function to run shell commands
 def run_command(command):
