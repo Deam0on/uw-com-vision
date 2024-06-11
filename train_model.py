@@ -32,6 +32,77 @@ from skimage.morphology import dilation, erosion
 from sklearn.model_selection import train_test_split
 from data_preparation import split_dataset
 
+
+def split_dataset(img_dir, dataset_name, test_size=0.2, seed=42):
+    """
+    Splits the dataset into training and testing sets and saves the split information.
+    
+    Parameters:
+    - img_dir: Directory containing images.
+    - label_dir: Directory containing labels.
+    - dataset_name: Name of the dataset.
+    - test_size: Proportion of the dataset to include in the test split.
+    - seed: Random seed for reproducibility.
+    
+    Returns:
+    - train_files: List of training label files.
+    - test_files: List of testing label files.
+    """
+    random.seed(seed)
+    label_files = [f for f in os.listdir(img_dir) if f.endswith('.json')]
+    train_files, test_files = train_test_split(label_files, test_size=test_size, random_state=seed)
+
+    # Save the split
+    split_dir = "./split_dir/"
+    os.makedirs(split_dir, exist_ok=True)
+    split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+    split_data = {'train': train_files, 'test': test_files}
+    with open(split_file, 'w') as f:
+        json.dump(split_data, f)
+
+    print(f"Training & Testing data succesfully split into {split_file}")
+
+    return train_files, test_files
+
+def register_datasets(dataset_info, test_size=0.2):
+    """
+    Registers the datasets in the Detectron2 framework.
+
+    Parameters:
+    - dataset_info: Dictionary containing dataset names and their info.
+    - test_size: Proportion of the dataset to include in the test split.
+    """
+    for dataset_name, info in dataset_info.items():
+        img_dir, label_dir, thing_classes = info
+
+        # Load or split the dataset
+        split_dir = os.path.join(label_dir, 'splits')
+        split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+        
+        if os.path.exists(split_file):
+            with open(split_file, 'r') as f:
+                split_data = json.load(f)
+            train_files = split_data['train']
+            test_files = split_data['test']
+        else:
+            train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, test_size)
+
+        # Register training dataset
+        DatasetCatalog.register(
+            f"{dataset_name}_train",
+            lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
+            get_split_dicts(img_dir, label_dir, files)
+        )
+        MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
+
+        # Register testing dataset
+        DatasetCatalog.register(
+            f"{dataset_name}_test",
+            lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
+            get_split_dicts(img_dir, label_dir, files)
+        )
+        MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
+
 # def split_dataset(img_dir, label_dir, dataset_name, test_size=0.2, seed=42):
 #     """
 #     Splits the dataset into training and testing sets and saves the split information.
@@ -63,86 +134,86 @@ from data_preparation import split_dataset
 
 #     return train_files, test_files
 
-def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size=0.2):
-    """
-    Loads the dataset splits from CSV files or creates new splits if they don't exist.
+# def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size=0.2):
+#     """
+#     Loads the dataset splits from CSV files or creates new splits if they don't exist.
 
-    Parameters:
-    - img_dir: Directory containing images.
-    - label_dir: Directory containing labels.
-    - dataset_name: Name of the dataset.
-    - output_dir: Directory to save or load split CSV files.
-    - test_size: Proportion of the dataset to include in the test split.
+#     Parameters:
+#     - img_dir: Directory containing images.
+#     - label_dir: Directory containing labels.
+#     - dataset_name: Name of the dataset.
+#     - output_dir: Directory to save or load split CSV files.
+#     - test_size: Proportion of the dataset to include in the test split.
 
-    Returns:
-    - train_files: List of training label files.
-    - test_files: List of testing label files.
-    """
-    train_csv_path = os.path.join(output_dir, f"{dataset_name}_train_split.csv")
-    test_csv_path = os.path.join(output_dir, f"{dataset_name}_test_split.csv")
+#     Returns:
+#     - train_files: List of training label files.
+#     - test_files: List of testing label files.
+#     """
+#     train_csv_path = os.path.join(output_dir, f"{dataset_name}_train_split.csv")
+#     test_csv_path = os.path.join(output_dir, f"{dataset_name}_test_split.csv")
 
-    if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
-        # Load splits from CSV
-        with open(train_csv_path, 'r') as train_csv:
-            reader = csv.reader(train_csv)
-            next(reader)  # Skip header
-            train_files = [row[0] for row in reader]
+#     if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
+#         # Load splits from CSV
+#         with open(train_csv_path, 'r') as train_csv:
+#             reader = csv.reader(train_csv)
+#             next(reader)  # Skip header
+#             train_files = [row[0] for row in reader]
 
-        with open(test_csv_path, 'r') as test_csv:
-            reader = csv.reader(test_csv)
-            next(reader)  # Skip header
-            test_files = [row[0] for row in reader]
+#         with open(test_csv_path, 'r') as test_csv:
+#             reader = csv.reader(test_csv)
+#             next(reader)  # Skip header
+#             test_files = [row[0] for row in reader]
         
-        print(f"Loaded training split from {train_csv_path}")
-        print(f"Loaded testing split from {test_csv_path}")
-    else:
-        # Create new splits and save them
-        train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size)
+#         print(f"Loaded training split from {train_csv_path}")
+#         print(f"Loaded testing split from {test_csv_path}")
+#     else:
+#         # Create new splits and save them
+#         train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size)
     
-    return train_files, test_files
+#     return train_files, test_files
 
-def register_datasets(dataset_info, output_dir, test_size=0.2):
+# def register_datasets(dataset_info, output_dir, test_size=0.2):
 
-     # Available datasets
-    # dataset_info = {
-    #     "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
-    # }
+#      # Available datasets
+#     # dataset_info = {
+#     #     "polyhipes": ("/home/deamoon_uw_nn/DATASET/polyhipes/", "/home/deamoon_uw_nn/DATASET/polyhipes/", ["throat", "pore"])
+#     # }
     
-    for dataset_name, info in dataset_info.items():
-        img_dir, label_dir, thing_classes = info
+#     for dataset_name, info in dataset_info.items():
+#         img_dir, label_dir, thing_classes = info
 
-        train_csv_path = os.path.join(output_dir, f"{dataset_name}_train_split.csv")
-        test_csv_path = os.path.join(output_dir, f"{dataset_name}_test_split.csv")
+#         train_csv_path = os.path.join(output_dir, f"{dataset_name}_train_split.csv")
+#         test_csv_path = os.path.join(output_dir, f"{dataset_name}_test_split.csv")
 
-        # Load train/test files from CSV
-        if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
-            with open(train_csv_path, 'r') as train_csv:
-                reader = csv.reader(train_csv)
-                next(reader)  # Skip header
-                train_files = [row[0] for row in reader]
+#         # Load train/test files from CSV
+#         if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
+#             with open(train_csv_path, 'r') as train_csv:
+#                 reader = csv.reader(train_csv)
+#                 next(reader)  # Skip header
+#                 train_files = [row[0] for row in reader]
 
-            with open(test_csv_path, 'r') as test_csv:
-                reader = csv.reader(test_csv)
-                next(reader)  # Skip header
-                test_files = [row[0] for row in reader]
-        else:
-            train_files, test_files = load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size)
+#             with open(test_csv_path, 'r') as test_csv:
+#                 reader = csv.reader(test_csv)
+#                 next(reader)  # Skip header
+#                 test_files = [row[0] for row in reader]
+#         else:
+#             train_files, test_files = load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size)
 
-        # Register training dataset
-        DatasetCatalog.register(
-            f"{dataset_name}_train",
-            lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
-            get_split_dicts(img_dir, label_dir, files)
-        )
-        MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
+#         # Register training dataset
+#         DatasetCatalog.register(
+#             f"{dataset_name}_train",
+#             lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
+#             get_split_dicts(img_dir, label_dir, files)
+#         )
+#         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
 
-        # Register testing dataset
-        DatasetCatalog.register(
-            f"{dataset_name}_test",
-            lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
-            get_split_dicts(img_dir, label_dir, files)
-        )
-        MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
+#         # Register testing dataset
+#         DatasetCatalog.register(
+#             f"{dataset_name}_test",
+#             lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
+#             get_split_dicts(img_dir, label_dir, files)
+#         )
+#         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
 
 def get_split_dicts(img_dir, label_dir, files):
     """
