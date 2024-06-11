@@ -211,14 +211,15 @@ def evaluate_model(dataset_name, output_dir, visualize=False):
     Returns:
     - metrics: Dictionary containing evaluation metrics.
     """
+    dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
+    register_datasets(dataset_info)
     
     trained_model_paths = get_trained_model_paths("./trained_models")
     selected_model_dataset = dataset_name  # User-selected model
     predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
     
-    model_path = os.path.join("./trained_models", dataset_name, "model_final.pth")
-    dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
-    register_datasets(dataset_info)
+    # model_path = os.path.join("./trained_models", dataset_name, "model_final.pth")
+    
 
     # Load model configuration
     # cfg = get_cfg()
