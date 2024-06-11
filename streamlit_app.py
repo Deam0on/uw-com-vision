@@ -29,18 +29,6 @@ if st.button("Run Task"):
     st.info(f"Running: {command}")
     stdout, stderr = run_command(command)
     st.text(stdout)
-    if stderr:
-        st.error(stderr)
-    else:
-        if st.button("Run Task"):
-    visualize_flag = "--visualize" if visualize else ""
-    download_flag = "--download" if download else ""
-    upload_flag = "--upload" if upload else ""
-
-    command = f"python3 main.py --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
-    st.info(f"Running: {command}")
-    stdout, stderr = run_command(command)
-    st.text(stdout)
     
     if stderr:
         st.error(stderr)
@@ -49,6 +37,7 @@ if st.button("Run Task"):
 
         # Example: Display images if available
         if task == 'inference':
-            for img_file in os.listdir('/home/deamoon_uw_nn/'):
+            for img_file in os.listdir('/home/yourusername/uw-com-vision/output'):
                 if img_file.endswith('.png'):
-                    st.image(os.path.join('/home/deamoon_uw_nn/', img_file), caption=img_file)
+                    st.image(os.path.join('/home/yourusername/uw-com-vision/output', img_file), caption=img_file)
+
