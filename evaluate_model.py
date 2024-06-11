@@ -52,7 +52,7 @@ def load_model(cfg, model_path, dataset_name):
     thing_classes = MetadataCatalog.get(f"{dataset_name}_train").thing_classes
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
     predictor = DefaultPredictor(cfg)
-    return predictor
+    return predictor, cfg
 
 def choose_and_use_model(model_paths, dataset_name):
     """
