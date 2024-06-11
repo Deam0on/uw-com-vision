@@ -16,6 +16,7 @@ from detectron2.data.datasets import register_coco_instances
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
+import csv
 
 def read_dataset_info(file_path):
     with open(file_path, 'r') as file:
