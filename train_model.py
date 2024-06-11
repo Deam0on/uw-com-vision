@@ -347,7 +347,7 @@ def train_on_dataset(dataset_name, output_dir):
     """
 
     # Example usage
-    dataset_info = read_dataset_info('dataset_info.json')
+    dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
     register_datasets(dataset_info)
 
     # Load configuration
