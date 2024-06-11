@@ -565,6 +565,13 @@ def GetCounts():
     TList.append(TCount)
     PList.append(PCount)
 
+def read_dataset_info(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+        # Convert list values back to tuples for consistency with the original data
+        dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
+    return dataset_info
+
 
 
 def run_inference(dataset_name, output_dir, visualize=False):
