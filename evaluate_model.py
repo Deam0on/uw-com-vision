@@ -2,13 +2,18 @@ import os
 import json
 import numpy as np
 import torch
-from detectron2.config import get_cfg
-from detectron2 import model_zoo
+import detectron2.data.transforms as T
+from detectron2.structures import BoxMode
+from detectron2.data import detection_utils as utils
+from detectron2.engine import DefaultTrainer
+from detectron2.data import build_detection_test_loader, build_detection_train_loader
 from detectron2.data import DatasetCatalog, MetadataCatalog
+from detectron2.utils.visualizer import Visualizer, ColorMode
+from detectron2 import model_zoo
+from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
+from detectron2.data.datasets import register_coco_instances
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
-from detectron2.utils.visualizer import Visualizer
-from detectron2.data import build_detection_test_loader
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 
