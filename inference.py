@@ -583,7 +583,7 @@ def run_inference(dataset_name, output_dir, visualize=False):
     - output_dir: Directory to save inference results.
     - visualize: Boolean, if True, save visualizations of predictions.
     """
-    dataset_info = read_dataset_info('dataset_info.json')
+    dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
     register_datasets(dataset_info)
     
     trained_model_paths = get_trained_model_paths("./trained_models")
