@@ -131,6 +131,8 @@ def register_datasets(dataset_info, test_size=0.2):
         )
         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
 
+        print(f"Checking name: {dataset_name}, img: {img_dir}, label: {label_dir}, classes: {thing_classes}")
+
 def evaluate_model(dataset_name, output_dir, visualize=False):
     """
     Evaluates a trained model on the specified dataset.
