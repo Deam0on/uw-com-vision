@@ -52,7 +52,7 @@ def load_model(cfg, model_path, dataset_name):
     thing_classes = MetadataCatalog.get(f"{dataset_name}_train").thing_classes
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
     predictor = DefaultPredictor(cfg)
-    return predictor, cfg
+    return predictor
 
 def choose_and_use_model(model_paths, dataset_name):
     """
@@ -76,7 +76,7 @@ def choose_and_use_model(model_paths, dataset_name):
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.45
 
     predictor = load_model(cfg, model_path, dataset_name)
-    return predictor
+    return predictor, cfg
 
 def read_dataset_info(file_path):
     with open(file_path, 'r') as file:
