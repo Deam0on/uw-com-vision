@@ -18,6 +18,66 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 import csv
 
+def get_trained_model_paths(base_dir):
+    """
+    Retrieves paths to trained models in a given base directory.
+
+    Parameters:
+    - base_dir: Directory containing trained models.
+
+    Returns:
+    - model_paths: Dictionary with dataset names as keys and model paths as values.
+    """
+    model_paths = {}
+    for dataset_name in os.listdir(base_dir):
+        model_dir = os.path.join(base_dir, dataset_name)
+        model_path = os.path.join(model_dir, "model_final.pth")
+        if os.path.exists(model_path):
+            model_paths[dataset_name] = model_path
+    return model_paths
+
+def load_model(cfg, model_path, dataset_name):
+    """
+    Loads a trained model with a specific configuration.
+
+    Parameters:
+    - cfg: Configuration object for the model.
+    - model_path: Path to the trained model.
+    - dataset_name: Name of the dataset for metadata.
+
+    Returns:
+    - predictor: Loaded predictor object.
+    """
+    cfg.MODEL.WEIGHTS = model_path
+    thing_classes = MetadataCatalog.get(f"{dataset_name}_train").thing_classes
+    cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
+    predictor = DefaultPredictor(cfg)
+    return predictor
+
+def choose_and_use_model(model_paths, dataset_name):
+    """
+    Selects and loads a trained model for a specific dataset.
+
+    Parameters:
+    - model_paths: Dictionary of model paths.
+    - dataset_name: Name of the dataset for which the model is used.
+
+    Returns:
+    - predictor: Predictor object for inference.
+    """
+    if dataset_name not in model_paths:
+        print(f"No model found for dataset {dataset_name}")
+        return None
+
+    model_path = model_paths[dataset_name]
+    cfg = get_cfg()
+    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+    cfg.MODEL.DEVICE = "cuda"
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.45
+
+    predictor = load_model(cfg, model_path, dataset_name)
+    return predictor
+
 def read_dataset_info(file_path):
     with open(file_path, 'r') as file:
         data = json.load(file)
@@ -151,18 +211,23 @@ def evaluate_model(dataset_name, output_dir, visualize=False):
     Returns:
     - metrics: Dictionary containing evaluation metrics.
     """
+    
+    trained_model_paths = get_trained_model_paths("./trained_models")
+    selected_model_dataset = dataset_name  # User-selected model
+    predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
+    
     model_path = os.path.join("./trained_models", dataset_name, "model_final.pth")
     dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
     register_datasets(dataset_info)
 
     # Load model configuration
-    cfg = get_cfg()
-    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
-    cfg.MODEL.WEIGHTS = model_path
-    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # Set threshold for this model
-    cfg.MODEL.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available
+    # cfg = get_cfg()
+    # cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+    # cfg.MODEL.WEIGHTS = model_path
+    # cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # Set threshold for this model
+    # cfg.MODEL.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # Use GPU if available
 
-    predictor = DefaultPredictor(cfg)
+    # predictor = DefaultPredictor(cfg)
     
     # Prepare the evaluation data loader
     evaluator = COCOEvaluator(f"{dataset_name}_test", cfg, False, output_dir=output_dir)
