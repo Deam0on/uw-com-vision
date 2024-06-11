@@ -534,7 +534,7 @@ def midpoint(ptA, ptB):
     """
     return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
 
-def GetInference(predictor, im, x_pred, metadata):
+def GetInference(predictor, im, x_pred, metadata, test_img):
     """
     Performs inference on an image and saves the predicted instances.
 
@@ -561,7 +561,7 @@ def GetInference(predictor, im, x_pred, metadata):
     out = v.draw_instance_predictions(filtered_instances.to("cpu"))
     cv2.imwrite(test_img + '_' + str(x_pred) + "__pred.png", out.get_image()[:, :, ::-1])
 
-def GetCounts(predictor, im):
+def GetCounts(predictor, im, TList, PList):
     """
     Counts the number of instances for each class in the image.
 
@@ -666,8 +666,8 @@ def run_inference(dataset_name, output_dir, visualize=False):
                     scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
                     um_pix = float(psum) / scale_len
     
-                GetInference(predictor, im, x_pred, metadata)  # Ensure this function is correctly defined elsewhere
-                GetCounts(predictor, im)  # Ensure this function is correctly defined elsewhere
+                GetInference(predictor, im, x_pred, metadata, test_img)  # Ensure this function is correctly defined elsewhere
+                GetCounts(predictor, im, TList, PList)  # Ensure this function is correctly defined elsewhere
     
                 outputs = predictor(im)
                 inst_out = outputs['instances']
