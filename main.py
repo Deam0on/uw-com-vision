@@ -1,9 +1,44 @@
 import argparse
 import os
+import shutil
+from datetime import datetime, timedelta
+from pathlib import Path
 from data_preparation import split_dataset
 from train_model import train_on_dataset
 from evaluate_model import evaluate_model
-from inference import run_inference  # Assuming you have an inference script or function
+from inference import run_inference
+
+def download_data_from_bucket():
+    """
+    Download data from a Google Cloud Storage bucket to a local directory.
+    
+    Parameters:
+    - bucket_url: URL of the Google Cloud Storage bucket.
+    - local_dir: Local directory to store downloaded data.
+    """
+    dirpath = Path('/home/deamoon_uw_nn') / 'DATASET'
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
+
+    os.system("gsutil -m cp -r gs://uw-com-vision/DATASET /home/deamoon_uw_nn")
+
+def upload_data_to_bucket():
+    """
+    Upload data from local directories to a Google Cloud Storage bucket.
+
+    Parameters:
+    - local_dirs: List of local directories or files to upload.
+    - bucket_url: URL of the Google Cloud Storage bucket.
+    """
+    # Create a directory with the current time-date stamp
+    time_offset = timedelta(hours=2)
+    timestamp = (datetime.now() + time_offset).strftime("%Y%m%d_%H%M%S")
+    archive_path = f"gs://uw-com-vision/Archive/{timestamp}/"
+
+    # Upload the specified directories or files to the bucket
+    os.system(f"gsutil -m cp -r /home/deamoon_uw_nn/*.png {archive_path}")
+    os.system(f"gsutil -m cp -r /home/deamoon_uw_nn/*.csv {archive_path}")
+    os.system(f"gsutil -m cp -r /home/deamoon_uw_nn/output/ {archive_path}")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -26,11 +61,23 @@ def main():
         '--visualize', action='store_true',
         help="Flag to visualize results during evaluation and inference. Saves visualizations of predictions."
     )
+    parser.add_argument(
+        '--download', action='store_true',
+        help="Flag to download data from Google Cloud Storage before executing the task."
+    )
+    parser.add_argument(
+        '--upload', action='store_true',
+        help="Flag to upload results to Google Cloud Storage after executing the task."
+    )
     
     args = parser.parse_args()
 
     img_dir = os.path.join("./DATASET", args.dataset_name)  # Set the fixed path for image directory
     output_dir = "./split_dir"  # Set the fixed path for output directory
+
+    if args.download:
+        print(f"Downloading data for dataset {args.dataset_name} from bucket...")
+        download_data_from_bucket()
 
     if args.task == 'prepare':
         print(f"Preparing dataset {args.dataset_name}...")
@@ -46,7 +93,14 @@ def main():
         
     elif args.task == 'inference':
         print(f"Running inference on dataset {args.dataset_name}...")
+        os.system("rm -f *.png")
+        os.system("rm -f *.csv")
+        os.system("rm -f *.jpg")
         run_inference(args.dataset_name, output_dir, args.visualize)
+
+    if args.upload:
+        print(f"Uploading results for dataset {args.dataset_name} to bucket...")
+        upload_data_to_bucket()
 
 if __name__ == "__main__":
     main()
