@@ -1,31 +1,10 @@
 import streamlit as st
-import paramiko
-from scp import SCPClient
+import subprocess
 
-# GCP VM SSH details
-VM_HOST = "YOUR_GCP_VM_IP"
-VM_USERNAME = "YOUR_GCP_VM_USERNAME"
-SSH_KEY_PATH = "/path/to/your/private/key"
-
-def execute_remote_command(command):
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(VM_HOST, username=VM_USERNAME, key_filename=SSH_KEY_PATH)
-
-    stdin, stdout, stderr = ssh.exec_command(command)
-    output = stdout.read().decode('utf-8')
-    ssh.close()
-    return output
-
-def upload_file_to_vm(local_path, remote_path):
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(VM_HOST, username=VM_USERNAME, key_filename=SSH_KEY_PATH)
-
-    with SCPClient(ssh.get_transport()) as scp:
-        scp.put(local_path, remote_path)
-
-    ssh.close()
+def run_command(command):
+    """Runs a shell command and returns the output."""
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    return result.stdout
 
 # Streamlit interface
 st.title("Neural Network Control Panel")
@@ -37,20 +16,18 @@ visualize = st.checkbox("Visualize Results", value=False)
 
 if st.button("Run Task"):
     visualize_flag = "--visualize" if visualize else ""
-    command = f"python main.py --task {task} --dataset_name {dataset_name} {visualize_flag}"
-    output = execute_remote_command(command)
+    command = f"python3 main.py --task {task} --dataset_name {dataset_name} {visualize_flag}"
+    output = run_command(command)
     st.success("Task completed successfully!")
     st.text_area("Output", output)
 
-st.header("Upload Files to GCP VM")
+st.header("Upload Files to Google Cloud Storage")
 uploaded_files = st.file_uploader("Choose files", accept_multiple_files=True)
-remote_dir = st.text_input("Remote Directory on VM")
+bucket_name = st.text_input("GCS Bucket Name")
 
-if st.button("Upload to VM") and uploaded_files and remote_dir:
+if st.button("Upload to GCS") and uploaded_files and bucket_name:
     for uploaded_file in uploaded_files:
-        local_path = uploaded_file.name
-        with open(local_path, "wb") as f:
+        with open(uploaded_file.name, "wb") as f:
             f.write(uploaded_file.getbuffer())
-        upload_file_to_vm(local_path, remote_dir)
-        os.remove(local_path)
-    st.success("Uploaded files to VM.")
+        os.system(f"gsutil cp {uploaded_file.name} gs://{bucket_name}/{uploaded_file.name}")
+        st.success(f"Uploaded {uploaded_file.name} to GCS.")
