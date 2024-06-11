@@ -2,8 +2,8 @@ import streamlit as st
 import subprocess
 import os
 import json
-
 from google.cloud import storage
+from datetime import datetime
 
 # Absolute path to main.py
 MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
@@ -13,6 +13,10 @@ VM_DIR = '/home/deamoon_uw_nn/DATASET/INFERENCE/UPLOAD'
 
 # Path to dataset info file
 DATASET_INFO_PATH = './uw-com-vision/dataset_info.json'
+
+# GCS bucket details
+GCS_BUCKET_NAME = 'uw-com-vision'
+GCS_FOLDER = 'Archive'
 
 # Function to run shell commands
 def run_command(command):
@@ -26,12 +30,19 @@ def list_files_on_vm(directory):
     except FileNotFoundError:
         return []
 
-# Function to list files in a GCS bucket
-def list_files_in_bucket(bucket_name, folder):
+# Function to list folders in a GCS bucket
+def list_folders_in_bucket(bucket_name, folder):
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blobs = bucket.list_blobs(prefix=folder, delimiter='/')
+    return [blob.name for blob in blobs if blob.name.endswith('/')]
+
+# Function to list .png files in a GCS folder
+def list_png_files_in_gcs_folder(bucket_name, folder):
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blobs = bucket.list_blobs(prefix=folder)
-    return [blob.name for blob in blobs]
+    return [blob.name for blob in blobs if blob.name.endswith('.png')]
 
 # Function to check if stderr contains errors
 def contains_errors(stderr):
@@ -85,9 +96,18 @@ if vm_files:
 else:
     st.write("No files found in the specified directory on the VM.")
 
+# List folders in the GCS bucket
+st.header("Google Cloud Storage")
+folders = list_folders_in_bucket(GCS_BUCKET_NAME, GCS_FOLDER)
+
+# Rename folders for readability
+folder_names = {folder: datetime.strptime(folder.split('/')[1], "%Y%m%d_%H%M%S").strftime("%d %B %Y, %H:%M:%S") for folder in folders}
+folder_dropdown = st.selectbox("Select Folder", list(folder_names.keys()), format_func=lambda x: folder_names[x])
+
 # Display images if available
-if task == 'inference':
-    if st.button("Show Inference Images"):
-        for img_file in os.listdir(VM_DIR):
-            if img_file.endswith('.png'):
-                st.image(os.path.join(VM_DIR, img_file), caption=img_file)
+if st.button("Show Inference Images"):
+    st.write(f"Displaying images from folder: {folder_names[folder_dropdown]}")
+    image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
+    for img_file in image_files:
+        img_url = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{img_file}"
+        st.image(img_url, caption=os.path.basename(img_file))
