@@ -540,8 +540,8 @@ def GetInference():
 
     Assumes the global variables `im`, `predictor`, `metadata`, `test_img`, and `x_pred` are defined.
     """
-    dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
-    register_datasets(dataset_info)
+    # dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
+    # register_datasets(dataset_info)
     
     trained_model_paths = get_trained_model_paths("./trained_models")
     selected_model_dataset = dataset_name  # User-selected model
