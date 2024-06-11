@@ -534,7 +534,7 @@ def midpoint(ptA, ptB):
     """
     return ((ptA[0] + ptB[0]) * 0.5, (ptA[1] + ptB[1]) * 0.5)
 
-def GetInference(predictor, im):
+def GetInference(predictor, im, x_pred):
     """
     Performs inference on an image and saves the predicted instances.
 
@@ -666,7 +666,7 @@ def run_inference(dataset_name, output_dir, visualize=False):
                     scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
                     um_pix = float(psum) / scale_len
     
-                GetInference(predictor, im)  # Ensure this function is correctly defined elsewhere
+                GetInference(predictor, im, x_pred)  # Ensure this function is correctly defined elsewhere
                 GetCounts(predictor, im)  # Ensure this function is correctly defined elsewhere
     
                 outputs = predictor(im)
