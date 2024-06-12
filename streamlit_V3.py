@@ -55,6 +55,12 @@ def load_dataset_names():
         data = json.load(f)
     return list(data.keys())
 
+# Initialize session state
+if 'show_errors' not in st.session_state:
+    st.session_state.show_errors = False
+if 'stderr' not in st.session_state:
+    st.session_state.stderr = ""
+
 # Streamlit interface
 st.title("Neural Network Control Panel")
 
@@ -76,16 +82,24 @@ if st.button("Run Task"):
     st.info(f"Running: {command}")
     stdout, stderr = run_command(command)
     st.text(stdout)
+
+    st.session_state.stderr = stderr  # Store stderr in session state
     
-    # Display buttons for error and warning messages
+    # Reset the show_errors state
+    st.session_state.show_errors = False
+    
     if stderr:
-        if st.button("Show Errors and Warnings"):
-            if contains_errors(stderr):
-                st.error(stderr)
-            else:
-                st.warning(stderr)
+        st.session_state.show_errors = True
     else:
         st.success(f"{task.capitalize()} task completed successfully!")
+
+# Show errors and warnings
+if st.session_state.show_errors:
+    if st.button("Show Errors and Warnings"):
+        if contains_errors(st.session_state.stderr):
+            st.error(st.session_state.stderr)
+        else:
+            st.warning(st.session_state.stderr)
 
 # List files on the VM
 st.header("Files on VM")
