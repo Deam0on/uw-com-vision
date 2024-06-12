@@ -25,7 +25,8 @@ def list_folders_in_bucket(bucket_name, folder):
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blobs = bucket.list_blobs(prefix=folder + '/', delimiter='/')
-    return [blob.name for blob in blobs if blob.name.endswith('/')]
+    # Exclude the base folder itself and ensure we have subfolders
+    return [blob.name for blob in blobs if blob.name != folder + '/' and blob.name.endswith('/')]
 
 # Function to list .png files in a GCS folder
 def list_png_files_in_gcs_folder(bucket_name, folder):
@@ -99,17 +100,34 @@ else:
 
 # List folders in the GCS bucket
 st.header("Google Cloud Storage")
-if st.session_state.folders == []:
+if not st.session_state.folders:
     st.session_state.folders = list_folders_in_bucket(GCS_BUCKET_NAME, GCS_FOLDER)
 
-# Rename folders for readability
-folder_names = {folder: datetime.strptime(folder.split('/')[-2], "%Y%m%d_%H%M%S").strftime("%d %B %Y, %H:%M:%S") for folder in st.session_state.folders}
-folder_dropdown = st.selectbox("Select Folder", list(folder_names.keys()), format_func=lambda x: folder_names[x])
+# Rename folders for readability and exclude non-timestamp folders
+def is_valid_timestamp_folder(folder_name):
+    try:
+        datetime.strptime(folder_name, "%Y%m%d_%H%M%S")
+        return True
+    except ValueError:
+        return False
+
+folder_names = {
+    folder: datetime.strptime(folder.split('/')[-2], "%Y%m%d_%H%M%S").strftime("%d %B %Y, %H:%M:%S")
+    for folder in st.session_state.folders if is_valid_timestamp_folder(folder.split('/')[-2])
+}
+
+if folder_names:
+    folder_dropdown = st.selectbox("Select Folder", list(folder_names.keys()), format_func=lambda x: folder_names[x])
+else:
+    st.write("No valid folders found in the GCS bucket.")
 
 # Display images if available
-if st.button("Show Inference Images"):
+if st.button("Show Inference Images") and folder_names:
     st.write(f"Displaying images from folder: {folder_names[folder_dropdown]}")
     image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
-    for img_file in image_files:
-        img_url = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{img_file}"
-        st.image(img_url, caption=os.path.basename(img_file))
+    if image_files:
+        for img_file in image_files:
+            img_url = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{img_file}"
+            st.image(img_url, caption=os.path.basename(img_file))
+    else:
+        st.write("No images found in the selected folder.")
