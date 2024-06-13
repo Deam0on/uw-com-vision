@@ -157,8 +157,25 @@ dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys(
 # Align checkbox and button to the right side
 col1, col2 = st.columns([3, 1])
 with col1:
-    st.text("Confirm Deletion")
-    # confirm_deletion = st.checkbox("Confirm Deletion")
+    # Execute task
+    if st.button("Run Task"):
+        visualize_flag = "--visualize"  # Always true
+        upload_flag = "--upload"  # Always true
+        download_flag = "--download" if use_new_data else ""
+    
+        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
+        st.info(f"Running: {command}")
+        stdout, stderr = run_command(command)
+        st.text(stdout)
+    
+        st.session_state.stderr = stderr  # Store stderr in session state
+    
+        # Reset the show_errors state if there are new errors
+        if stderr:
+            st.session_state.show_errors = True
+        else:
+            st.success(f"{task.capitalize()} task completed successfully!")
+
 with col2:
     confirm_deletion = st.checkbox("Confirm Deletion")
     if st.button("Remove Dataset"):
@@ -186,24 +203,24 @@ if use_new_data:
     if st.button("Upload Files") and uploaded_files:
         upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files, overwrite)
 
-# Execute task
-if st.button("Run Task"):
-    visualize_flag = "--visualize"  # Always true
-    upload_flag = "--upload"  # Always true
-    download_flag = "--download" if use_new_data else ""
+# # Execute task
+# if st.button("Run Task"):
+#     visualize_flag = "--visualize"  # Always true
+#     upload_flag = "--upload"  # Always true
+#     download_flag = "--download" if use_new_data else ""
 
-    command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
-    st.info(f"Running: {command}")
-    stdout, stderr = run_command(command)
-    st.text(stdout)
+#     command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
+#     st.info(f"Running: {command}")
+#     stdout, stderr = run_command(command)
+#     st.text(stdout)
 
-    st.session_state.stderr = stderr  # Store stderr in session state
+#     st.session_state.stderr = stderr  # Store stderr in session state
 
-    # Reset the show_errors state if there are new errors
-    if stderr:
-        st.session_state.show_errors = True
-    else:
-        st.success(f"{task.capitalize()} task completed successfully!")
+#     # Reset the show_errors state if there are new errors
+#     if stderr:
+#         st.session_state.show_errors = True
+#     else:
+#         st.success(f"{task.capitalize()} task completed successfully!")
 
 # Show errors and warnings
 if st.session_state.show_errors:
