@@ -5,6 +5,8 @@ import json
 from google.cloud import storage
 from datetime import datetime
 from google.api_core import page_iterator
+from io import BytesIO
+from PIL import Image
 
 # Absolute path to main.py
 MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
@@ -54,17 +56,7 @@ def list_png_files_in_gcs_folder(bucket_name, folder):
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blobs = bucket.list_blobs(prefix=folder)
-    return [blob.name for blob in blobs if blob.name.endswith('.png')]
-
-# Function to generate signed URLs for blobs
-def generate_signed_urls(bucket_name, blobs):
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-    urls = {}
-    for blob_name in blobs:
-        blob = bucket.blob(blob_name)
-        urls[blob_name] = blob.generate_signed_url(expiration=3600)  # URL valid for 1 hour
-    return urls
+    return [blob for blob in blobs if blob.name.endswith('.png')]
 
 # Function to check if stderr contains errors
 def contains_errors(stderr):
@@ -144,9 +136,9 @@ if st.button("Show Inference Images") and st.session_state.folders:
     st.write(f"Displaying images from folder: {folder_dropdown}")
     image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
     if image_files:
-        signed_urls = generate_signed_urls(GCS_BUCKET_NAME, image_files)
-        for img_file, img_url in signed_urls.items():
-            st.write(f"Image URL: {img_url}")  # Print the image URL for debugging
-            st.image(img_url, caption=os.path.basename(img_file))
+        for blob in image_files:
+            img_bytes = blob.download_as_bytes()
+            img = Image.open(BytesIO(img_bytes))
+            st.image(img, caption=os.path.basename(blob.name))
     else:
         st.write("No images found in the selected folder.")
