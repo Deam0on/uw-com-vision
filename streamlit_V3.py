@@ -5,7 +5,6 @@ import json
 from google.cloud import storage
 from datetime import datetime
 from google.api_core import page_iterator
-from google.cloud import storage
 
 # Absolute path to main.py
 MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
@@ -120,7 +119,6 @@ else:
         if st.button("Show Errors and Warnings"):
             st.session_state.show_errors = True
 
-
 # List folders in the GCS bucket
 st.header("Google Cloud Storage")
 if not st.session_state.folders:
@@ -138,6 +136,7 @@ if st.button("Show Inference Images") and st.session_state.folders:
     if image_files:
         for img_file in image_files:
             img_url = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{img_file}"
+            st.write(f"Image URL: {img_url}")  # Print the image URL for debugging
             st.image(img_url, caption=os.path.basename(img_file))
     else:
         st.write("No images found in the selected folder.")
