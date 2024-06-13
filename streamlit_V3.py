@@ -145,17 +145,20 @@ if new_dataset:
 dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys()))
 
 # Button to remove dataset with confirmation dialog
-if st.button("Remove Dataset"):
-    if st.session_state.datasets:
-        with st.expander("Confirmation"):
-            st.warning(f"Are you sure you want to delete the dataset '{dataset_name}'?")
-            if st.checkbox("I confirm deletion"):
-                if st.button("Confirm Delete"):
-                    del st.session_state.datasets[dataset_name]
-                    save_dataset_names_to_gcs(st.session_state.datasets)
-                    st.success(f"Dataset '{dataset_name}' deleted.")
-                    # Refresh the page to reflect the deletion
-                    st.experimental_rerun()
+remove_dataset_clicked = st.button("Remove Dataset")
+
+if remove_dataset_clicked:
+    with st.expander("Confirmation", expanded=True):
+        st.warning(f"Are you sure you want to delete the dataset '{dataset_name}'?")
+        confirm_deletion = st.checkbox("I confirm deletion")
+        if confirm_deletion:
+            confirm_delete_clicked = st.button("Confirm Delete")
+            if confirm_delete_clicked:
+                del st.session_state.datasets[dataset_name]
+                save_dataset_names_to_gcs(st.session_state.datasets)
+                st.success(f"Dataset '{dataset_name}' deleted.")
+                # Refresh the page to reflect the deletion
+                st.experimental_rerun()
 
 # Conditionally show the upload section
 if use_new_data:
