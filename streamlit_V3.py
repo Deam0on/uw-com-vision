@@ -50,13 +50,6 @@ def run_command(command):
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     return result.stdout, result.stderr
 
-# Function to list folders in a GCS bucket
-def list_folders_in_bucket(bucket_name, folder):
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-    blobs = bucket.list_blobs(prefix=folder + '/', delimiter='/')
-    return [blob.name for blob in blobs if blob.name.count('/') == 2]
-
 # Function to list .png files in a GCS folder
 def list_png_files_in_gcs_folder(bucket_name, folder):
     client = storage.Client()
