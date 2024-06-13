@@ -14,7 +14,7 @@ MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
 # GCS bucket details
 GCS_BUCKET_NAME = 'uw-com-vision'
 GCS_DATASET_FOLDER = 'DATASET'
-GCS_INFERENCE_FOLDER = 'INFERENCE'
+GCS_INFERENCE_FOLDER = 'DATASET/INFERENCE'
 GCS_ARCHIVE_FOLDER = 'Archive'
 GCS_DATASET_INFO_PATH = f'dataset_info.json'
 
@@ -99,9 +99,17 @@ def save_dataset_names_to_gcs(data):
     st.write("Dataset info updated in GCS.")
 
 # Function to upload files to GCS
-def upload_files_to_gcs(bucket_name, target_folder, files):
+def upload_files_to_gcs(bucket_name, target_folder, files, overwrite):
     client = storage.Client()
     bucket = client.bucket(bucket_name)
+    
+    # If overwriting, delete all existing blobs in the target folder
+    if overwrite:
+        blobs = bucket.list_blobs(prefix=target_folder)
+        for blob in blobs:
+            blob.delete()
+        st.write(f"Existing files in '{target_folder}' have been deleted.")
+    
     for file in files:
         blob = bucket.blob(f"{target_folder}/{file.name}")
         blob.upload_from_file(file)
@@ -125,7 +133,7 @@ if 'confirm_delete' not in st.session_state:
 st.title("PaCE Neural Network Control Panel")
 
 # Task selection
-st.header("Controls")
+st.header("Script controls")
 use_new_data = st.checkbox("Use new data from bucket", value=False)
 
 new_dataset = st.checkbox("New dataset")
@@ -149,8 +157,10 @@ dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys(
 # Align checkbox and button to the right side
 col1, col2 = st.columns([3, 1])
 with col1:
-    confirm_deletion = st.checkbox("Confirm Deletion")
+    st.text("Confirm Deletion")
+    # confirm_deletion = st.checkbox("Confirm Deletion")
 with col2:
+    confirm_deletion = st.checkbox("Confirm Deletion")
     if st.button("Remove Dataset"):
         if confirm_deletion:
             del st.session_state.datasets[dataset_name]
@@ -168,12 +178,13 @@ if use_new_data:
         "Select folder to upload to",
         [f"{GCS_DATASET_FOLDER}/{dataset_name}", GCS_INFERENCE_FOLDER]
     )
+    overwrite = st.checkbox("Overwrite existing data in the folder")
     uploaded_files = st.file_uploader(
         "Choose files to upload",
         accept_multiple_files=True
     )
     if st.button("Upload Files") and uploaded_files:
-        upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files)
+        upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files, overwrite)
 
 # Execute task
 if st.button("Run Task"):
