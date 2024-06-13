@@ -135,7 +135,7 @@ if st.button("Show Inference Images") and st.session_state.folders:
     image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
     if image_files:
         for img_file in image_files:
-            img_url = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{img_file}"
+            img_url = f"https://storage.cloud.google.com/{GCS_BUCKET_NAME}/{img_file}?authuser=2"
             st.write(f"Image URL: {img_url}")  # Print the image URL for debugging
             st.image(img_url, caption=os.path.basename(img_file))
     else:
