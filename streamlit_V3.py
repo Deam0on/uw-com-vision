@@ -144,6 +144,19 @@ if new_dataset:
 
 dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys()))
 
+# Button to remove dataset with confirmation dialog
+if st.button("Remove Dataset"):
+    if st.session_state.datasets:
+        with st.expander("Confirmation"):
+            st.warning(f"Are you sure you want to delete the dataset '{dataset_name}'?")
+            if st.checkbox("I confirm deletion"):
+                if st.button("Confirm Delete"):
+                    del st.session_state.datasets[dataset_name]
+                    save_dataset_names_to_gcs(st.session_state.datasets)
+                    st.success(f"Dataset '{dataset_name}' deleted.")
+                    # Refresh the page to reflect the deletion
+                    st.experimental_rerun()
+
 # Conditionally show the upload section
 if use_new_data:
     st.header("Upload Files to GCS")
