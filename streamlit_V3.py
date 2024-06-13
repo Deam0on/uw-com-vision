@@ -16,7 +16,7 @@ GCS_BUCKET_NAME = 'uw-com-vision'
 GCS_DATASET_FOLDER = 'DATASET'
 GCS_INFERENCE_FOLDER = 'INFERENCE'
 GCS_ARCHIVE_FOLDER = 'Archive'
-GCS_DATASET_INFO_PATH = f'{GCS_DATASET_FOLDER}/dataset_info.json'
+GCS_DATASET_INFO_PATH = f'dataset_info.json'
 
 def _item_to_value(iterator, item):
     return item
@@ -78,7 +78,16 @@ def load_dataset_names_from_gcs():
     client = storage.Client()
     bucket = client.bucket(GCS_BUCKET_NAME)
     blob = bucket.blob(GCS_DATASET_INFO_PATH)
-    data = json.loads(blob.download_as_bytes())
+    
+    # Try to download the file
+    try:
+        data = json.loads(blob.download_as_bytes())
+    except Exception as e:
+        # If the file does not exist, initialize with an empty dictionary
+        st.warning(f"dataset_info.json not found. Initializing a new one.")
+        data = {}
+        save_dataset_names_to_gcs(data)
+    
     return data
 
 # Function to save dataset names to JSON in GCS
