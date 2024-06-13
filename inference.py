@@ -345,7 +345,7 @@ def choose_and_use_model(model_paths, dataset_name):
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.MODEL.DEVICE = "cuda"
-    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.45
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.80
 
     predictor = load_model(cfg, model_path, dataset_name)
     return predictor
