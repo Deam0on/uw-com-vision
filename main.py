@@ -20,7 +20,7 @@ def download_data_from_bucket():
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
 
-    os.system("gsutil -m cp -r gs://uw-com-vision/DATASET /home/deamoon_uw_nn")
+    os.system("gsutil -m cp -r gs://uw-com-vision/DATASET /home/deamoon_uw_nn/uw-com-vision")
 
 def upload_data_to_bucket():
     """
