@@ -16,7 +16,7 @@ GCS_BUCKET_NAME = 'uw-com-vision'
 GCS_DATASET_FOLDER = 'DATASET'
 GCS_INFERENCE_FOLDER = 'INFERENCE'
 GCS_ARCHIVE_FOLDER = 'Archive'
-GCS_DATASET_INFO_PATH = f'dataset_info.json'
+GCS_DATASET_INFO_PATH = f'{GCS_DATASET_FOLDER}/dataset_info.json'
 
 def _item_to_value(iterator, item):
     return item
@@ -133,8 +133,8 @@ if new_dataset:
         path1 = f"/home/deamoon_uw_nn/DATASET/{new_dataset_name}/"
         path2 = path1
         new_classes = st.text_input("Enter classes (comma separated)")
-        classes = [cls.strip() for cls in new_classes.split(',')] if new_classes else []
         if st.button("Add Dataset"):
+            classes = [cls.strip() for cls in new_classes.split(',')] if new_classes else []
             if new_dataset_name and classes:
                 st.session_state.datasets[new_dataset_name] = [path1, path2, classes]
                 save_dataset_names_to_gcs(st.session_state.datasets)
