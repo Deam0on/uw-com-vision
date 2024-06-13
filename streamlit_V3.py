@@ -60,12 +60,15 @@ def list_png_files_in_gcs_folder(bucket_name, folder):
     blobs = bucket.list_blobs(prefix=folder)
     return [blob for blob in blobs if blob.name.endswith('.png')]
 
-# Function to list .csv files in a GCS folder
-def list_csv_files_in_gcs_folder(bucket_name, folder):
+# Function to list specific .csv files in a GCS folder
+def list_specific_csv_files_in_gcs_folder(bucket_name, folder):
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blobs = bucket.list_blobs(prefix=folder)
-    return [blob for blob in blobs if blob.name.endswith('.csv')]
+    return [
+        blob for blob in blobs
+        if blob.name.endswith('results_x_pred_1.csv') or blob.name.endswith('results_x_pred_0.csv')
+    ]
 
 # Function to check if stderr contains errors
 def contains_errors(stderr):
@@ -106,18 +109,19 @@ task = st.selectbox("Select Task", ["prepare", "train", "evaluate", "inference"]
 dataset_name = st.selectbox("Dataset Name", load_dataset_names())
 use_new_data = st.checkbox("Use new data from bucket", value=False)
 
-# File upload section
-st.header("Upload Files to GCS")
-upload_folder = st.selectbox(
-    "Select folder to upload to",
-    [f"{GCS_DATASET_FOLDER}/{dataset_name}", GCS_INFERENCE_FOLDER]
-)
-uploaded_files = st.file_uploader(
-    "Choose files to upload",
-    accept_multiple_files=True
-)
-if st.button("Upload Files") and uploaded_files:
-    upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files)
+# Conditionally show the upload section
+if use_new_data:
+    st.header("Upload Files to GCS")
+    upload_folder = st.selectbox(
+        "Select folder to upload to",
+        [f"{GCS_DATASET_FOLDER}/{dataset_name}", GCS_INFERENCE_FOLDER]
+    )
+    uploaded_files = st.file_uploader(
+        "Choose files to upload",
+        accept_multiple_files=True
+    )
+    if st.button("Upload Files") and uploaded_files:
+        upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files)
 
 # Execute task
 if st.button("Run Task"):
@@ -178,17 +182,23 @@ if st.session_state.show_images:
     else:
         st.write("No images found in the selected folder.")
 
-    # Button to download CSV files
-    csv_files = list_csv_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
+    # Button to download specific CSV files
+    csv_files = list_specific_csv_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
     if csv_files:
         for blob in csv_files:
             csv_bytes = blob.download_as_bytes()
             csv_name = os.path.basename(blob.name)
+            if csv_name == 'results_x_pred_1.csv':
+                download_name = 'results_pores.csv'
+            elif csv_name == 'results_x_pred_0.csv':
+                download_name = 'results_throats.csv'
+            else:
+                continue  # Skip files that don't match the specific names
             st.download_button(
-                label=f"Download {csv_name}",
+                label=f"Download {download_name}",
                 data=csv_bytes,
-                file_name=csv_name,
+                file_name=download_name,
                 mime='text/csv'
             )
     else:
-        st.write("No CSV files found in the selected folder.")
+        st.write("No specific CSV files found in the selected folder.")
