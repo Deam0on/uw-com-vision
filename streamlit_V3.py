@@ -16,7 +16,7 @@ GCS_BUCKET_NAME = 'uw-com-vision'
 GCS_DATASET_FOLDER = 'DATASET'
 GCS_INFERENCE_FOLDER = 'INFERENCE'
 GCS_ARCHIVE_FOLDER = 'Archive'
-GCS_DATASET_INFO_PATH = f'{GCS_DATASET_FOLDER}/dataset_info.json'
+GCS_DATASET_INFO_PATH = f'dataset_info.json'
 
 def _item_to_value(iterator, item):
     return item
