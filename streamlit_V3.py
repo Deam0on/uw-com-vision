@@ -56,19 +56,15 @@ def list_png_files_in_gcs_folder(bucket_name, folder):
     blobs = bucket.list_blobs(prefix=folder)
     return [blob.name for blob in blobs if blob.name.endswith('.png')]
 
-def list_blob(bucket_name, folder):
+# Function to generate signed URLs for blobs
+def generate_signed_urls(bucket_name, blobs):
     client = storage.Client()
     bucket = client.bucket(bucket_name)
-    blobs = bucket.list_blobs(prefix=folder)
-    return [blob for blob in blobs if blob.name.endswith('.png')]
-
-def list_down(bucket_name, folder):
-    client = storage.Client()  # Implicit environ set-up
-    bucket = client.bucket(bucket_name)
-    blob = list_blob(bucket_name, folder)
-    url_lifetime = 3600  # Seconds in an hour
-    serving_url = blob.generate_signed_url(url_lifetime)
-    return serving_url
+    urls = {}
+    for blob_name in blobs:
+        blob = bucket.blob(blob_name)
+        urls[blob_name] = blob.generate_signed_url(expiration=3600)  # URL valid for 1 hour
+    return urls
 
 # Function to check if stderr contains errors
 def contains_errors(stderr):
@@ -148,8 +144,8 @@ if st.button("Show Inference Images") and st.session_state.folders:
     st.write(f"Displaying images from folder: {folder_dropdown}")
     image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
     if image_files:
-        for img_file in image_files:
-            img_url = list_down(GCS_BUCKET_NAME, folder_dropdown)
+        signed_urls = generate_signed_urls(GCS_BUCKET_NAME, image_files)
+        for img_file, img_url in signed_urls.items():
             st.write(f"Image URL: {img_url}")  # Print the image URL for debugging
             st.image(img_url, caption=os.path.basename(img_file))
     else:
