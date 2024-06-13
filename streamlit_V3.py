@@ -16,7 +16,9 @@ DATASET_INFO_PATH = './uw-com-vision/dataset_info.json'
 
 # GCS bucket details
 GCS_BUCKET_NAME = 'uw-com-vision'
-GCS_FOLDER = 'Archive'
+GCS_DATASET_FOLDER = 'DATASET'
+GCS_INFERENCE_FOLDER = 'INFERENCE'
+GCS_ARCHIVE_FOLDER = 'Archive'
 
 def _item_to_value(iterator, item):
     return item
@@ -76,6 +78,15 @@ def load_dataset_names():
         data = json.load(f)
     return list(data.keys())
 
+# Function to upload files to GCS
+def upload_files_to_gcs(bucket_name, target_folder, files):
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    for file in files:
+        blob = bucket.blob(f"{target_folder}/{file.name}")
+        blob.upload_from_file(file)
+        st.write(f"Uploaded {file.name} to {target_folder}")
+
 # Initialize session state
 if 'show_errors' not in st.session_state:
     st.session_state.show_errors = False
@@ -93,13 +104,26 @@ st.title("Neural Network Control Panel")
 st.header("Run Neural Network Script")
 task = st.selectbox("Select Task", ["prepare", "train", "evaluate", "inference"])
 dataset_name = st.selectbox("Dataset Name", load_dataset_names())
-download = st.checkbox("Download Data", value=False)
+use_new_data = st.checkbox("Use new data from bucket", value=False)
+
+# File upload section
+st.header("Upload Files to GCS")
+upload_folder = st.selectbox(
+    "Select folder to upload to",
+    [f"{GCS_DATASET_FOLDER}/{dataset_name}", GCS_INFERENCE_FOLDER]
+)
+uploaded_files = st.file_uploader(
+    "Choose files to upload",
+    accept_multiple_files=True
+)
+if st.button("Upload Files") and uploaded_files:
+    upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files)
 
 # Execute task
 if st.button("Run Task"):
     visualize_flag = "--visualize"  # Always true
     upload_flag = "--upload"  # Always true
-    download_flag = "--download" if download else ""
+    download_flag = "--download" if use_new_data else ""
 
     command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
     st.info(f"Running: {command}")
@@ -131,7 +155,7 @@ else:
 # List folders in the GCS bucket
 st.header("Google Cloud Storage")
 if not st.session_state.folders:
-    st.session_state.folders = list_directories(GCS_BUCKET_NAME, GCS_FOLDER)
+    st.session_state.folders = list_directories(GCS_BUCKET_NAME, GCS_ARCHIVE_FOLDER)
 
 if st.session_state.folders:
     folder_dropdown = st.selectbox("Select Folder", st.session_state.folders, format_func=lambda x: x.strip('/'))
