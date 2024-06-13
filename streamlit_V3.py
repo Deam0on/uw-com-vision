@@ -11,14 +11,12 @@ from PIL import Image
 # Absolute path to main.py
 MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
 
-# Path to dataset info file
-DATASET_INFO_PATH = './uw-com-vision/dataset_info.json'
-
 # GCS bucket details
 GCS_BUCKET_NAME = 'uw-com-vision'
 GCS_DATASET_FOLDER = 'DATASET'
 GCS_INFERENCE_FOLDER = 'INFERENCE'
 GCS_ARCHIVE_FOLDER = 'Archive'
+GCS_DATASET_INFO_PATH = f'{GCS_DATASET_FOLDER}/dataset_info.json'
 
 def _item_to_value(iterator, item):
     return item
@@ -75,11 +73,21 @@ def contains_errors(stderr):
     error_keywords = ['error', 'failed', 'exception', 'traceback', 'critical']
     return any(keyword in stderr.lower() for keyword in error_keywords)
 
-# Load dataset names from dataset_info.json
-def load_dataset_names():
-    with open(DATASET_INFO_PATH, 'r') as f:
-        data = json.load(f)
-    return list(data.keys())
+# Function to load dataset names from JSON in GCS
+def load_dataset_names_from_gcs():
+    client = storage.Client()
+    bucket = client.bucket(GCS_BUCKET_NAME)
+    blob = bucket.blob(GCS_DATASET_INFO_PATH)
+    data = json.loads(blob.download_as_bytes())
+    return data
+
+# Function to save dataset names to JSON in GCS
+def save_dataset_names_to_gcs(data):
+    client = storage.Client()
+    bucket = client.bucket(GCS_BUCKET_NAME)
+    blob = bucket.blob(GCS_DATASET_INFO_PATH)
+    blob.upload_from_string(json.dumps(data, indent=2), content_type='application/json')
+    st.write("Dataset info updated in GCS.")
 
 # Function to upload files to GCS
 def upload_files_to_gcs(bucket_name, target_folder, files):
@@ -99,15 +107,33 @@ if 'folders' not in st.session_state:
     st.session_state.folders = []
 if 'show_images' not in st.session_state:
     st.session_state.show_images = False
+if 'datasets' not in st.session_state:
+    st.session_state.datasets = load_dataset_names_from_gcs()
 
 # Streamlit interface
 st.title("Neural Network Control Panel")
 
 # Task selection
 st.header("Run Neural Network Script")
-task = st.selectbox("Select Task", ["prepare", "train", "evaluate", "inference"])
-dataset_name = st.selectbox("Dataset Name", load_dataset_names())
 use_new_data = st.checkbox("Use new data from bucket", value=False)
+
+new_dataset = st.checkbox("New dataset")
+if new_dataset:
+    new_dataset_name = st.text_input("Enter new dataset name")
+    if new_dataset_name:
+        path1 = f"/home/deamoon_uw_nn/DATASET/{new_dataset_name}/"
+        path2 = path1
+        new_classes = st.text_input("Enter classes (comma separated)")
+        classes = [cls.strip() for cls in new_classes.split(',')] if new_classes else []
+        if st.button("Add Dataset"):
+            if new_dataset_name and classes:
+                st.session_state.datasets[new_dataset_name] = [path1, path2, classes]
+                save_dataset_names_to_gcs(st.session_state.datasets)
+                st.success(f"Dataset '{new_dataset_name}' added.")
+            else:
+                st.warning("Please enter a valid dataset name and classes.")
+
+dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys()))
 
 # Conditionally show the upload section
 if use_new_data:
