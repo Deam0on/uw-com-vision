@@ -16,7 +16,7 @@ GCS_BUCKET_NAME = 'uw-com-vision'
 GCS_DATASET_FOLDER = 'DATASET'
 GCS_INFERENCE_FOLDER = 'DATASET/INFERENCE'
 GCS_ARCHIVE_FOLDER = 'Archive'
-GCS_DATASET_INFO_PATH = f'dataset_info.json'
+GCS_DATASET_INFO_PATH = 'dataset_info.json'
 
 def _item_to_value(iterator, item):
     return item
@@ -171,7 +171,7 @@ with col1:
             progress_bar = st.progress(0)
             for i in range(0, 100, 10):  # Simulate progress
                 progress_bar.progress(i)
-                # Simulating task progress
+                st.time.sleep(0.2)  # Simulate task progress
 
             stdout, stderr = run_command(command)
             progress_bar.progress(100)
@@ -230,7 +230,7 @@ else:
 
 # List folders in the GCS bucket
 st.header("Google Cloud Storage")
-if not st.session_state.folders:
+if 'folders' not in st.session_state or not st.session_state.folders:
     st.session_state.folders = list_directories(GCS_BUCKET_NAME, GCS_ARCHIVE_FOLDER)
 
 if st.session_state.folders:
@@ -239,38 +239,4 @@ else:
     st.write("No folders found in the GCS bucket.")
 
 # Button to show inference images
-if st.button("Show Inference Images") and st.session_state.folders:
-    st.session_state.show_images = True
-
-# Display images if available
-if st.session_state.show_images:
-    st.write(f"Displaying images from folder: {folder_dropdown}")
-    image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
-    if image_files:
-        for blob in image_files:
-            img_bytes = blob.download_as_bytes()
-            img = Image.open(BytesIO(img_bytes))
-            st.image(img, caption=os.path.basename(blob.name))
-    else:
-        st.write("No images found in the selected folder.")
-
-    # Button to download specific CSV files
-    csv_files = list_specific_csv_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
-    if csv_files:
-        for blob in csv_files:
-            csv_bytes = blob.download_as_bytes()
-            csv_name = os.path.basename(blob.name)
-            if csv_name == 'results_x_pred_1.csv':
-                download_name = 'results_pores.csv'
-            elif csv_name == 'results_x_pred_0.csv':
-                download_name = 'results_throats.csv'
-            else:
-                continue  # Skip files that don't match the specific names
-            st.download_button(
-                label=f"Download {download_name}",
-                data=csv_bytes,
-                file_name=download_name,
-                mime='text/csv'
-            )
-    else:
-        st.write("No specific CSV files found in the selected folder.")
+if st.button("Show
