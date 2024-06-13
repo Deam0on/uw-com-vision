@@ -20,7 +20,7 @@ def download_data_from_bucket():
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
 
-    os.system("gsutil -m cp -r gs://uw-com-vision/DATASET /home/deamoon_uw_nn/uw-com-vision")
+    os.system("gsutil -m cp -r gs://uw-com-vision/DATASET /home/deamoon_uw_nn")
 
 def upload_data_to_bucket():
     """
@@ -72,7 +72,7 @@ def main():
     
     args = parser.parse_args()
 
-    os.system("gsutil -m cp -r gs://uw-com-vision/dataset_info.json /home/deamoon_uw_nn")
+    os.system("gsutil -m cp -r gs://uw-com-vision/dataset_info.json /home/deamoon_uw_nn/uw-com-vision")
 
     img_dir = os.path.join("./DATASET", args.dataset_name)  # Set the fixed path for image directory
     output_dir = "./split_dir"  # Set the fixed path for output directory
