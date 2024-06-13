@@ -58,6 +58,13 @@ def list_png_files_in_gcs_folder(bucket_name, folder):
     blobs = bucket.list_blobs(prefix=folder)
     return [blob for blob in blobs if blob.name.endswith('.png')]
 
+# Function to list .csv files in a GCS folder
+def list_csv_files_in_gcs_folder(bucket_name, folder):
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blobs = bucket.list_blobs(prefix=folder)
+    return [blob for blob in blobs if blob.name.endswith('.csv')]
+
 # Function to check if stderr contains errors
 def contains_errors(stderr):
     error_keywords = ['error', 'failed', 'exception', 'traceback', 'critical']
@@ -76,6 +83,8 @@ if 'stderr' not in st.session_state:
     st.session_state.stderr = ""
 if 'folders' not in st.session_state:
     st.session_state.folders = []
+if 'show_images' not in st.session_state:
+    st.session_state.show_images = False
 
 # Streamlit interface
 st.title("Neural Network Control Panel")
@@ -84,15 +93,13 @@ st.title("Neural Network Control Panel")
 st.header("Run Neural Network Script")
 task = st.selectbox("Select Task", ["prepare", "train", "evaluate", "inference"])
 dataset_name = st.selectbox("Dataset Name", load_dataset_names())
-visualize = st.checkbox("Visualize Results", value=False)
 download = st.checkbox("Download Data", value=False)
-upload = st.checkbox("Upload Results", value=True)
 
 # Execute task
 if st.button("Run Task"):
-    visualize_flag = "--visualize" if visualize else ""
+    visualize_flag = "--visualize"  # Always true
+    upload_flag = "--upload"  # Always true
     download_flag = "--download" if download else ""
-    upload_flag = "--upload" if upload else ""
 
     command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
     st.info(f"Running: {command}")
@@ -101,11 +108,13 @@ if st.button("Run Task"):
 
     st.session_state.stderr = stderr  # Store stderr in session state
 
-    # Reset the show_errors state if there are new errors
+    # Reset the show_errors and show_images state if there are new errors
     if stderr:
         st.session_state.show_errors = True
+        st.session_state.show_images = False
     else:
         st.success(f"{task.capitalize()} task completed successfully!")
+        st.session_state.show_images = True
 
 # Show errors and warnings
 if st.session_state.show_errors:
@@ -132,7 +141,7 @@ else:
     st.write("No folders found in the GCS bucket.")
 
 # Display images if available
-if st.button("Show Inference Images") and st.session_state.folders:
+if st.session_state.show_images and st.session_state.folders:
     st.write(f"Displaying images from folder: {folder_dropdown}")
     image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
     if image_files:
@@ -142,3 +151,18 @@ if st.button("Show Inference Images") and st.session_state.folders:
             st.image(img, caption=os.path.basename(blob.name))
     else:
         st.write("No images found in the selected folder.")
+
+    # Button to download CSV files
+    csv_files = list_csv_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
+    if csv_files:
+        for blob in csv_files:
+            csv_bytes = blob.download_as_bytes()
+            csv_name = os.path.basename(blob.name)
+            st.download_button(
+                label=f"Download {csv_name}",
+                data=csv_bytes,
+                file_name=csv_name,
+                mime='text/csv'
+            )
+    else:
+        st.write("No CSV files found in the selected folder.")
