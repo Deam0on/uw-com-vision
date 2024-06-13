@@ -118,6 +118,8 @@ if 'show_images' not in st.session_state:
     st.session_state.show_images = False
 if 'datasets' not in st.session_state:
     st.session_state.datasets = load_dataset_names_from_gcs()
+if 'confirm_delete' not in st.session_state:
+    st.session_state.confirm_delete = False
 
 # Streamlit interface
 st.title("Neural Network Control Panel")
@@ -144,21 +146,18 @@ if new_dataset:
 
 dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys()))
 
-# Button to remove dataset with confirmation dialog
-remove_dataset_clicked = st.button("Remove Dataset")
+# Checkbox for confirmation
+confirm_deletion = st.checkbox("Confirm Deletion")
 
-if remove_dataset_clicked:
-    with st.expander("Confirmation", expanded=True):
-        st.warning(f"Are you sure you want to delete the dataset '{dataset_name}'?")
-        confirm_deletion = st.checkbox("I confirm deletion")
-        if confirm_deletion:
-            confirm_delete_clicked = st.button("Confirm Delete")
-            if confirm_delete_clicked:
-                del st.session_state.datasets[dataset_name]
-                save_dataset_names_to_gcs(st.session_state.datasets)
-                st.success(f"Dataset '{dataset_name}' deleted.")
-                # Refresh the page to reflect the deletion
-                st.experimental_rerun()
+# Button to remove dataset
+if st.button("Remove Dataset"):
+    if confirm_deletion:
+        del st.session_state.datasets[dataset_name]
+        save_dataset_names_to_gcs(st.session_state.datasets)
+        st.success(f"Dataset '{dataset_name}' deleted.")
+        st.experimental_rerun()  # Refresh to reflect deletion
+    else:
+        st.warning("Please check the confirmation box to delete the dataset.")
 
 # Conditionally show the upload section
 if use_new_data:
