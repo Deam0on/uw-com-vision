@@ -122,10 +122,10 @@ if 'confirm_delete' not in st.session_state:
     st.session_state.confirm_delete = False
 
 # Streamlit interface
-st.title("Neural Network Control Panel")
+st.title("PaCE Neural Network Control Panel")
 
 # Task selection
-st.header("Run Neural Network Script")
+st.header("Controls")
 use_new_data = st.checkbox("Use new data from bucket", value=False)
 
 new_dataset = st.checkbox("New dataset")
@@ -146,18 +146,20 @@ if new_dataset:
 
 dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys()))
 
-# Checkbox for confirmation
-confirm_deletion = st.checkbox("Confirm Deletion")
-
-# Button to remove dataset
-if st.button("Remove Dataset"):
-    if confirm_deletion:
-        del st.session_state.datasets[dataset_name]
-        save_dataset_names_to_gcs(st.session_state.datasets)
-        st.success(f"Dataset '{dataset_name}' deleted.")
-        st.experimental_rerun()  # Refresh to reflect deletion
-    else:
-        st.warning("Please check the confirmation box to delete the dataset.")
+# Align checkbox and button to the right side
+col1, col2 = st.columns([3, 1])
+with col1:
+    confirm_deletion = st.checkbox("Confirm Deletion")
+with col2:
+    if st.button("Remove Dataset"):
+        if confirm_deletion:
+            del st.session_state.datasets[dataset_name]
+            save_dataset_names_to_gcs(st.session_state.datasets)
+            st.success(f"Dataset '{dataset_name}' deleted.")
+            st.session_state.confirm_delete = False  # Automatically uncheck after deletion
+            st.experimental_rerun()  # Refresh to reflect deletion
+        else:
+            st.warning("Please check the confirmation box to delete the dataset.")
 
 # Conditionally show the upload section
 if use_new_data:
