@@ -16,7 +16,8 @@ GCS_BUCKET_NAME = 'uw-com-vision'
 GCS_DATASET_FOLDER = 'DATASET'
 GCS_INFERENCE_FOLDER = 'DATASET/INFERENCE'
 GCS_ARCHIVE_FOLDER = 'Archive'
-GCS_DATASET_INFO_PATH = f'dataset_info.json'
+GCS_DATASET_INFO_PATH = 'dataset_info.json'
+TASK_CONFIG_PATH = 'task_config.json'
 
 def _item_to_value(iterator, item):
     return item
@@ -98,6 +99,11 @@ def save_dataset_names_to_gcs(data):
     blob.upload_from_string(json.dumps(data, indent=2), content_type='application/json')
     st.write("Dataset info updated in GCS.")
 
+# Function to load tasks from JSON configuration file
+def load_tasks():
+    with open(TASK_CONFIG_PATH, 'r') as f:
+        return json.load(f).get("tasks", [])
+
 # Function to upload files to GCS
 def upload_files_to_gcs(bucket_name, target_folder, files, overwrite):
     client = storage.Client()
@@ -144,12 +150,15 @@ if 'datasets' not in st.session_state:
     st.session_state.datasets = load_dataset_names_from_gcs()
 if 'confirm_delete' not in st.session_state:
     st.session_state.confirm_delete = False
+if 'tasks' not in st.session_state:
+    st.session_state.tasks = load_tasks()
 
 # Streamlit interface
 st.title("PaCE Neural Network Control Panel")
 
 # Task selection
 st.header("Script controls")
+task = st.selectbox("Select Task", st.session_state.tasks, help="Choose the task you want to execute.")
 use_new_data = st.checkbox("Use new data from bucket", value=False)
 
 new_dataset = st.checkbox("New dataset")
@@ -256,8 +265,14 @@ if st.session_state.folders:
     if sort_option == "Name":
         filtered_folders.sort()
     elif sort_option == "Date":
-        # Assuming folder names contain date strings in 'YYYYMMDD' format somewhere in them
-        filtered_folders.sort(key=lambda x: datetime.strptime(x.strip('/').split('/')[-1], "%Y%m%d"), reverse=True)
+        # Assuming folder names contain date strings in 'YYYYMMDD_HHMMSS' format
+        def extract_date(folder_name):
+            try:
+                return datetime.strptime(folder_name.strip('/').split('/')[-1], "%Y%m%d_%H%M%S")
+            except ValueError:
+                return datetime.min  # Handle invalid date formats gracefully
+        
+        filtered_folders.sort(key=extract_date, reverse=True)
     
     folder_dropdown = st.selectbox("Select Folder", filtered_folders, format_func=lambda x: x.strip('/'))
 else:
@@ -300,5 +315,7 @@ if st.session_state.show_images:
     else:
         st.write("No specific CSV files found in the selected folder.")
 
-# Save session state on app close
-st.on_session_end(save_session_state)
+# Button to manually save session state
+if st.button("Save Session"):
+    save_session_state()
+    st.success("Session state saved.")
