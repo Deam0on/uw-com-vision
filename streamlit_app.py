@@ -151,7 +151,8 @@ if new_dataset:
                 st.success(f"Dataset '{new_dataset_name}' added.")
             else:
                 st.warning("Please enter a valid dataset name and classes.")
-
+                
+task = st.selectbox("Select Task", ["prepare", "train", "evaluate", "inference"])
 dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys()))
 
 # Align checkbox and button to the right side
