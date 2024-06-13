@@ -4,6 +4,8 @@ import os
 import json
 from google.cloud import storage
 from datetime import datetime
+from google.api_core import page_iterator
+from google.cloud import storage
 
 # Absolute path to main.py
 MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
@@ -14,6 +16,34 @@ DATASET_INFO_PATH = './uw-com-vision/dataset_info.json'
 # GCS bucket details
 GCS_BUCKET_NAME = 'uw-com-vision'
 GCS_FOLDER = 'Archive'
+
+def _item_to_value(iterator, item):
+    return item
+
+def list_directories(bucket_name, prefix):
+    if prefix and not prefix.endswith('/'):
+        prefix += '/'
+
+    extra_params = {
+        "projection": "noAcl",
+        "prefix": prefix,
+        "delimiter": '/'
+    }
+
+    gcs = storage.Client()
+
+    path = "/b/" + bucket_name + "/o"
+
+    iterator = page_iterator.HTTPIterator(
+        client=gcs,
+        api_request=gcs._connection.api_request,
+        path=path,
+        items_key='prefixes',
+        item_to_value=_item_to_value,
+        extra_params=extra_params,
+    )
+
+    return [x for x in iterator]
 
 # Function to run shell commands
 def run_command(command):
@@ -97,10 +127,11 @@ else:
         if st.button("Show Errors and Warnings"):
             st.session_state.show_errors = True
 
+
 # List folders in the GCS bucket
 st.header("Google Cloud Storage")
 if not st.session_state.folders:
-    st.session_state.folders = list_folders_in_bucket(GCS_BUCKET_NAME, GCS_FOLDER)
+    st.session_state.folders = list_directories(GCS_BUCKET_NAME, GCS_FOLDER)
 
 if st.session_state.folders:
     folder_dropdown = st.selectbox("Select Folder", st.session_state.folders, format_func=lambda x: x.strip('/'))
