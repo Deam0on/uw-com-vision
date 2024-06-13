@@ -108,13 +108,11 @@ if st.button("Run Task"):
 
     st.session_state.stderr = stderr  # Store stderr in session state
 
-    # Reset the show_errors and show_images state if there are new errors
+    # Reset the show_errors state if there are new errors
     if stderr:
         st.session_state.show_errors = True
-        st.session_state.show_images = False
     else:
         st.success(f"{task.capitalize()} task completed successfully!")
-        st.session_state.show_images = True
 
 # Show errors and warnings
 if st.session_state.show_errors:
@@ -140,8 +138,12 @@ if st.session_state.folders:
 else:
     st.write("No folders found in the GCS bucket.")
 
+# Button to show inference images
+if st.button("Show Inference Images") and st.session_state.folders:
+    st.session_state.show_images = True
+
 # Display images if available
-if st.session_state.show_images and st.session_state.folders:
+if st.session_state.show_images:
     st.write(f"Displaying images from folder: {folder_dropdown}")
     image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
     if image_files:
