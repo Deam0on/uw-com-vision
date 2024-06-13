@@ -56,6 +56,20 @@ def list_png_files_in_gcs_folder(bucket_name, folder):
     blobs = bucket.list_blobs(prefix=folder)
     return [blob.name for blob in blobs if blob.name.endswith('.png')]
 
+def list_blob(bucket_name, folder):
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blobs = bucket.list_blobs(prefix=folder)
+    return [blob for blob in blobs if blob.name.endswith('.png')]
+
+def list_down(bucket_name, folder):
+    client = storage.Client()  # Implicit environ set-up
+    bucket = client.bucket(bucket_name)
+    blob = list_blob(bucket_name, folder)
+    url_lifetime = 3600  # Seconds in an hour
+    serving_url = blob.generate_signed_url(url_lifetime)
+    return serving_url
+
 # Function to check if stderr contains errors
 def contains_errors(stderr):
     error_keywords = ['error', 'failed', 'exception', 'traceback', 'critical']
@@ -135,7 +149,7 @@ if st.button("Show Inference Images") and st.session_state.folders:
     image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
     if image_files:
         for img_file in image_files:
-            img_url = f"https://storage.cloud.google.com/{GCS_BUCKET_NAME}/{img_file}?authuser=2"
+            img_url = list_down(GCS_BUCKET_NAME, folder_dropdown)
             st.write(f"Image URL: {img_url}")  # Print the image URL for debugging
             st.image(img_url, caption=os.path.basename(img_file))
     else:
