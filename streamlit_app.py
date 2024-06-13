@@ -115,6 +115,22 @@ def upload_files_to_gcs(bucket_name, target_folder, files, overwrite):
         blob.upload_from_file(file)
         st.write(f"Uploaded {file.name} to {target_folder}")
 
+# Save session state to a file
+def save_session_state():
+    with open("session_state.json", "w") as f:
+        json.dump(dict(st.session_state), f)
+
+# Load session state from a file
+def load_session_state():
+    if os.path.exists("session_state.json"):
+        with open("session_state.json", "r") as f:
+            state = json.load(f)
+            for key, value in state.items():
+                st.session_state[key] = value
+
+# Load session state on startup
+load_session_state()
+
 # Initialize session state
 if 'show_errors' not in st.session_state:
     st.session_state.show_errors = False
@@ -138,11 +154,11 @@ use_new_data = st.checkbox("Use new data from bucket", value=False)
 
 new_dataset = st.checkbox("New dataset")
 if new_dataset:
-    new_dataset_name = st.text_input("Enter new dataset name")
+    new_dataset_name = st.text_input("Enter new dataset name", help="Provide a unique name for the dataset.")
     if new_dataset_name:
         path1 = f"/home/deamoon_uw_nn/DATASET/{new_dataset_name}/"
         path2 = path1
-        new_classes = st.text_input("Enter classes (comma separated)")
+        new_classes = st.text_input("Enter classes (comma separated)", help="Provide class names separated by commas.")
         if st.button("Add Dataset"):
             classes = [cls.strip() for cls in new_classes.split(',')] if new_classes else []
             if new_dataset_name and classes:
@@ -152,29 +168,33 @@ if new_dataset:
             else:
                 st.warning("Please enter a valid dataset name and classes.")
 
-dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys()))
+dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys()), help="Select a dataset for the task.")
 
 # Align checkbox and button to the right side
 col1, col2 = st.columns([3, 1])
 with col1:
     # Execute task
     if st.button("Run Task"):
-        visualize_flag = "--visualize"  # Always true
-        upload_flag = "--upload"  # Always true
-        download_flag = "--download" if use_new_data else ""
-    
-        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
-        st.info(f"Running: {command}")
-        stdout, stderr = run_command(command)
-        st.text(stdout)
-    
-        st.session_state.stderr = stderr  # Store stderr in session state
-    
-        # Reset the show_errors state if there are new errors
-        if stderr:
-            st.session_state.show_errors = True
-        else:
-            st.success(f"{task.capitalize()} task completed successfully!")
+        with st.spinner(f"Running task with dataset '{dataset_name}'..."):
+            visualize_flag = "--visualize"  # Always true
+            upload_flag = "--upload"  # Always true
+            download_flag = "--download" if use_new_data else ""
+        
+            command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
+            st.info(f"Running: {command}")
+            progress_bar = st.progress(0)
+            stdout, stderr = run_command(command)
+            progress_bar.progress(100)
+        
+            st.text(stdout)
+        
+            st.session_state.stderr = stderr  # Store stderr in session state
+        
+            # Reset the show_errors state if there are new errors
+            if stderr:
+                st.session_state.show_errors = True
+            else:
+                st.success(f"{task.capitalize()} task completed successfully!")
 
 with col2:
     confirm_deletion = st.checkbox("Confirm Deletion")
@@ -196,45 +216,32 @@ if use_new_data:
         [f"{GCS_DATASET_FOLDER}/{dataset_name}", GCS_INFERENCE_FOLDER]
     )
     overwrite = st.checkbox("Overwrite existing data in the folder")
+    confirm_overwrite = False
+    if overwrite:
+        confirm_overwrite = st.checkbox("Confirm Overwrite")
     uploaded_files = st.file_uploader(
         "Choose files to upload",
-        accept_multiple_files=True
+        accept_multiple_files=True,
+        help="Select one or more files to upload."
     )
     if st.button("Upload Files") and uploaded_files:
-        upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files, overwrite)
-
-# # Execute task
-# if st.button("Run Task"):
-#     visualize_flag = "--visualize"  # Always true
-#     upload_flag = "--upload"  # Always true
-#     download_flag = "--download" if use_new_data else ""
-
-#     command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
-#     st.info(f"Running: {command}")
-#     stdout, stderr = run_command(command)
-#     st.text(stdout)
-
-#     st.session_state.stderr = stderr  # Store stderr in session state
-
-#     # Reset the show_errors state if there are new errors
-#     if stderr:
-#         st.session_state.show_errors = True
-#     else:
-#         st.success(f"{task.capitalize()} task completed successfully!")
+        if overwrite and not confirm_overwrite:
+            st.warning("Please confirm overwrite.")
+        else:
+            upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files, overwrite)
 
 # Show errors and warnings
 if st.session_state.show_errors:
-    if st.button("Hide Errors and Warnings"):
-        st.session_state.show_errors = False
-    else:
+    with st.expander("Errors and Warnings", expanded=True):
         if contains_errors(st.session_state.stderr):
             st.error(st.session_state.stderr)
         else:
             st.warning(st.session_state.stderr)
+    if st.button("Hide Errors and Warnings"):
+        st.session_state.show_errors = False
 else:
-    if st.session_state.stderr:
-        if st.button("Show Errors and Warnings"):
-            st.session_state.show_errors = True
+    if st.session_state.stderr and st.button("Show Errors and Warnings"):
+        st.session_state.show_errors = True
 
 # List folders in the GCS bucket
 st.header("Google Cloud Storage")
@@ -242,7 +249,17 @@ if not st.session_state.folders:
     st.session_state.folders = list_directories(GCS_BUCKET_NAME, GCS_ARCHIVE_FOLDER)
 
 if st.session_state.folders:
-    folder_dropdown = st.selectbox("Select Folder", st.session_state.folders, format_func=lambda x: x.strip('/'))
+    filter_text = st.text_input("Filter folders", help="Enter text to filter folders by name.")
+    sort_option = st.selectbox("Sort folders by", ["Name", "Date"], help="Choose sorting criteria.")
+    
+    filtered_folders = [f for f in st.session_state.folders if filter_text.lower() in f.lower()]
+    if sort_option == "Name":
+        filtered_folders.sort()
+    elif sort_option == "Date":
+        # Assuming folder names contain date strings in 'YYYYMMDD' format somewhere in them
+        filtered_folders.sort(key=lambda x: datetime.strptime(x.strip('/').split('/')[-1], "%Y%m%d"), reverse=True)
+    
+    folder_dropdown = st.selectbox("Select Folder", filtered_folders, format_func=lambda x: x.strip('/'))
 else:
     st.write("No folders found in the GCS bucket.")
 
@@ -282,3 +299,6 @@ if st.session_state.show_images:
             )
     else:
         st.write("No specific CSV files found in the selected folder.")
+
+# Save session state on app close
+st.on_session_end(save_session_state)
