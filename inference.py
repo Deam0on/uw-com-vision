@@ -596,7 +596,7 @@ def run_inference(dataset_name, output_dir, visualize=False):
     dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
     register_datasets(dataset_info)
     
-    trained_model_paths = get_trained_model_paths("./trained_models")
+    trained_model_paths = get_trained_model_paths("./split_dir")
     selected_model_dataset = dataset_name  # User-selected model
     predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
     
