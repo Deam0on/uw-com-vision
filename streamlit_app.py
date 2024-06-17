@@ -217,15 +217,12 @@ if use_new_data:
 
 # Show errors and warnings
 if st.session_state.show_errors:
-    if st.button("Hide Errors and Warnings"):
+    if st.button("Hide Errors"):
         st.session_state.show_errors = False
     else:
-        if contains_errors(st.session_state.stderr):
-            st.error(st.session_state.stderr)
-        else:
-            st.warning(st.session_state.stderr)
+        st.error(st.session_state.stderr)
 else:
-    if st.session_state.stderr and st.button("Show Errors and Warnings"):
+    if st.session_state.stderr and st.button("Show Errors"):
         st.session_state.show_errors = True
 
 # List folders in the GCS bucket
