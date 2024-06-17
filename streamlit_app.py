@@ -171,7 +171,7 @@ with col1:
             progress_bar = st.progress(0)
             for i in range(0, 100, 10):  # Simulate progress
                 progress_bar.progress(i)
-                # st.time.sleep(0.2)  # Simulate task progress
+                st.time.sleep(0.2)  # Simulate task progress
 
             stdout, stderr = run_command(command)
             progress_bar.progress(100)
