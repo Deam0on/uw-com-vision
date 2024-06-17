@@ -138,7 +138,7 @@ if 'show_errors' not in st.session_state:
 if 'stderr' not in st.session_state:
     st.session_state.stderr = ""
 if 'folders' not in st.session_state:
-    st.session_state.folders = []
+    st.session_state.folders = []  # Initialize folders as an empty list
 if 'show_images' not in st.session_state:
     st.session_state.show_images = False
 if 'datasets' not in st.session_state:
@@ -232,12 +232,13 @@ if use_new_data:
             upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files, overwrite)
         st.success("Files uploaded successfully.")
 
-# Show errors
+# Show errors and warnings
 if st.session_state.show_errors:
     if st.button("Hide Errors"):
         st.session_state.show_errors = False
     else:
-        st.error(st.session_state.stderr)
+        if contains_errors(st.session_state.stderr):
+            st.error(st.session_state.stderr)
 else:
     if st.session_state.stderr and st.button("Show Errors"):
         st.session_state.show_errors = True
