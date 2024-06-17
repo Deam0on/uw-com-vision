@@ -49,7 +49,24 @@ def list_directories(bucket_name, prefix):
 # Function to run shell commands
 def run_command(command):
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    return result.stdout, result.stderr
+    filtered_stderr = filter_errors(result.stderr)
+    return result.stdout, filtered_stderr
+
+def filter_errors(stderr):
+    """
+    Filter out warnings and informational messages from stderr, 
+    leaving only critical errors.
+    """
+    # Define a list of keywords that signify non-critical messages.
+    non_critical_keywords = ['note', 'warning', 'deprecated', 'operation completed', 'copying', 'done']
+
+    # Split stderr into lines and filter out non-critical messages.
+    filtered_lines = []
+    for line in stderr.splitlines():
+        if not any(keyword in line.lower() for keyword in non_critical_keywords):
+            filtered_lines.append(line)
+
+    return "\n".join(filtered_lines)
 
 # Function to list .png files in a GCS folder
 def list_png_files_in_gcs_folder(bucket_name, folder):
@@ -70,8 +87,8 @@ def list_specific_csv_files_in_gcs_folder(bucket_name, folder):
 
 # Function to check if stderr contains errors
 def contains_errors(stderr):
-    error_keywords = ['error', 'failed', 'exception', 'traceback', 'critical']
-    return any(keyword in stderr.lower() for keyword in error_keywords)
+    # Consider non-empty stderr as indicating errors
+    return bool(stderr.strip())
 
 # Function to load dataset names from JSON in GCS
 def load_dataset_names_from_gcs():
@@ -215,7 +232,7 @@ if use_new_data:
             upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files, overwrite)
         st.success("Files uploaded successfully.")
 
-# Show errors and warnings
+# Show errors
 if st.session_state.show_errors:
     if st.button("Hide Errors"):
         st.session_state.show_errors = False
