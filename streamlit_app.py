@@ -49,24 +49,7 @@ def list_directories(bucket_name, prefix):
 # Function to run shell commands
 def run_command(command):
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    filtered_stderr = filter_errors(result.stderr)
-    return result.stdout, filtered_stderr
-
-def filter_errors(stderr):
-    """
-    Filter out warnings and informational messages from stderr, 
-    leaving only critical errors.
-    """
-    # Define a list of keywords that signify non-critical messages.
-    non_critical_keywords = ['note', 'warning', 'deprecated', 'operation completed', 'copying', 'done']
-
-    # Split stderr into lines and filter out non-critical messages.
-    filtered_lines = []
-    for line in stderr.splitlines():
-        if not any(keyword in line.lower() for keyword in non_critical_keywords):
-            filtered_lines.append(line)
-
-    return "\n".join(filtered_lines)
+    return result.stdout, result.stderr
 
 # Function to list .png files in a GCS folder
 def list_png_files_in_gcs_folder(bucket_name, folder):
@@ -87,8 +70,8 @@ def list_specific_csv_files_in_gcs_folder(bucket_name, folder):
 
 # Function to check if stderr contains errors
 def contains_errors(stderr):
-    # Consider non-empty stderr as indicating errors
-    return bool(stderr.strip())
+    error_keywords = ['error', 'failed', 'exception', 'traceback', 'critical']
+    return any(keyword in stderr.lower() for keyword in error_keywords)
 
 # Function to load dataset names from JSON in GCS
 def load_dataset_names_from_gcs():
@@ -138,7 +121,7 @@ if 'show_errors' not in st.session_state:
 if 'stderr' not in st.session_state:
     st.session_state.stderr = ""
 if 'folders' not in st.session_state:
-    st.session_state.folders = []  # Initialize folders as an empty list
+    st.session_state.folders = []
 if 'show_images' not in st.session_state:
     st.session_state.show_images = False
 if 'datasets' not in st.session_state:
@@ -234,13 +217,15 @@ if use_new_data:
 
 # Show errors and warnings
 if st.session_state.show_errors:
-    if st.button("Hide Errors"):
+    if st.button("Hide Errors and Warnings"):
         st.session_state.show_errors = False
     else:
         if contains_errors(st.session_state.stderr):
             st.error(st.session_state.stderr)
+        else:
+            st.warning(st.session_state.stderr)
 else:
-    if st.session_state.stderr and st.button("Show Errors"):
+    if st.session_state.stderr and st.button("Show Errors and Warnings"):
         st.session_state.show_errors = True
 
 # List folders in the GCS bucket
