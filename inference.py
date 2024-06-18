@@ -452,7 +452,7 @@ def load_model(cfg, model_path, dataset_name):
     predictor = DefaultPredictor(cfg)
     return predictor
 
-def choose_and_use_model(model_paths, dataset_name):
+def choose_and_use_model(model_paths, dataset_name, threshold):
     """
     Selects and loads a trained model for a specific dataset.
 
@@ -471,7 +471,7 @@ def choose_and_use_model(model_paths, dataset_name):
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.MODEL.DEVICE = "cuda"
-    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.80
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = threshold
 
     predictor = load_model(cfg, model_path, dataset_name)
     return predictor
@@ -710,7 +710,7 @@ def read_dataset_info(file_path):
 
 
 
-def run_inference(dataset_name, output_dir, visualize=False):
+def run_inference(dataset_name, output_dir, visualize=False, threshold):
     """
     Runs inference on images in the specified directory using the provided model.
 
@@ -724,7 +724,7 @@ def run_inference(dataset_name, output_dir, visualize=False):
     
     trained_model_paths = get_trained_model_paths("/home/deamoon_uw_nn/split_dir")
     selected_model_dataset = dataset_name  # User-selected model
-    predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
+    predictor = choose_and_use_model(trained_model_paths, selected_model_dataset, threshold)
     
     metadata = MetadataCatalog.get(f"{dataset_name}_train")
     
