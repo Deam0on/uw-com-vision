@@ -476,7 +476,7 @@ def choose_and_use_model(model_paths, dataset_name):
     predictor = load_model(cfg, model_path, dataset_name)
     return predictor
 
-def get_image_folder_path(base_path='/home/deamoon_uw_nn/DATASET/INFERENCE'):
+def get_image_folder_path(base_path='/home/deamoon_uw_nn/DATASET/INFERENCE/'):
     """
     Determines the path to the folder containing images for inference.
 
