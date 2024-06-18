@@ -78,6 +78,7 @@ def register_datasets(dataset_info, test_size=0.2):
         # Load or split the dataset
         split_dir = "/home/deamoon_uw_nn/split_dir/"
         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+        category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
         
         if os.path.exists(split_file):
             with open(split_file, 'r') as f:
@@ -92,7 +93,7 @@ def register_datasets(dataset_info, test_size=0.2):
         DatasetCatalog.register(
             f"{dataset_name}_train",
             lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
-            get_split_dicts(img_dir, label_dir, files)
+            get_split_dicts(img_dir, label_dir, files, category_json)
         )
         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
 
@@ -100,7 +101,7 @@ def register_datasets(dataset_info, test_size=0.2):
         DatasetCatalog.register(
             f"{dataset_name}_test",
             lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
-            get_split_dicts(img_dir, label_dir, files)
+            get_split_dicts(img_dir, label_dir, files, category_json)
         )
         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
 
@@ -216,7 +217,79 @@ def register_datasets(dataset_info, test_size=0.2):
 #         )
 #         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
 
-def get_split_dicts(img_dir, label_dir, files):
+# def get_split_dicts(img_dir, label_dir, files):
+#     """
+#     Generates a list of dictionaries for Detectron2 dataset registration.
+    
+#     Parameters:
+#     - img_dir: Directory containing images.
+#     - label_dir: Directory containing labels.
+#     - files: List of label files to process.
+    
+#     Returns:
+#     - dataset_dicts: List of dictionaries with image and annotation data.
+#     """
+#     dataset_dicts = []
+#     idx = 0
+#     for file in files:
+#         json_file = os.path.join(label_dir, file)
+#         with open(json_file) as f:
+#             imgs_anns = json.load(f)
+
+#         record = {}
+#         filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
+#         record["file_name"] = filename
+#         record["image_id"] = idx
+#         record["height"] = imgs_anns["metadata"]["height"]
+#         record["width"] = imgs_anns["metadata"]["width"]
+#         idx += 1
+#         annos = imgs_anns["instances"]
+#         objs = []
+
+#         for anno in annos:
+#             categoryName = anno["className"]
+#             type = anno["type"]
+
+#             if type == "ellipse":
+#                 cx = anno["cx"]
+#                 cy = anno["cy"]
+#                 rx = anno["rx"]
+#                 ry = anno["ry"]
+#                 theta = anno["angle"]
+#                 ellipse = ((cx, cy), (rx, ry), theta)
+#                 circ = shapely.geometry.Point(ellipse[0]).buffer(1)
+#                 ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
+#                 ellr = shapely.affinity.rotate(ell, ellipse[2])
+#                 px, py = ellr.exterior.coords.xy
+#                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+#                 poly = [p for x in poly for p in x]
+#             elif type == "polygon":
+#                 px = anno["points"][0:-1:2]
+#                 py = anno["points"][1:-1:2]
+#                 px.append(anno["points"][0])
+#                 py.append(anno["points"][-1])
+#                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+#                 poly = [p for x in poly for p in x]
+
+#             if "throat" in categoryName:
+#                 category_id = 0
+#             elif "pore" in categoryName:
+#                 category_id = 1
+#             else:
+#                 raise ValueError("Category Name Not Found: " + categoryName)
+
+#             obj = {
+#                 "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
+#                 "bbox_mode": BoxMode.XYXY_ABS,
+#                 "segmentation": [poly],
+#                 "category_id": category_id,
+#             }
+#             objs.append(obj)
+#         record["annotations"] = objs
+#         dataset_dicts.append(record)
+#     return dataset_dicts
+
+def get_split_dicts(img_dir, label_dir, files, category_json):
     """
     Generates a list of dictionaries for Detectron2 dataset registration.
     
@@ -224,10 +297,16 @@ def get_split_dicts(img_dir, label_dir, files):
     - img_dir: Directory containing images.
     - label_dir: Directory containing labels.
     - files: List of label files to process.
+    - category_json: Path to the JSON file containing category information.
     
     Returns:
     - dataset_dicts: List of dictionaries with image and annotation data.
     """
+    # Load category names and create a mapping to category IDs
+    dataset_info = read_dataset_info(category_json)
+    category_names = dataset_info["polyhipes"][2]  # Adjust the key if necessary
+    category_name_to_id = {name: idx for idx, name in enumerate(category_names)}
+
     dataset_dicts = []
     idx = 0
     for file in files:
@@ -270,12 +349,10 @@ def get_split_dicts(img_dir, label_dir, files):
                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
                 poly = [p for x in poly for p in x]
 
-            if "throat" in categoryName:
-                category_id = 0
-            elif "pore" in categoryName:
-                category_id = 1
+            if categoryName in category_name_to_id:
+                category_id = category_name_to_id[categoryName]
             else:
-                raise ValueError("Category Name Not Found: " + categoryName)
+                raise ValueError(f"Category Name Not Found: {categoryName}")
 
             obj = {
                 "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
