@@ -62,7 +62,7 @@ def main():
         help="Flag to visualize results during evaluation and inference. Saves visualizations of predictions. Default is False."
     )
     parser.add_argument(
-        '--download', action='store_true', default=False,
+        '--download', action='store_true', default=True,
         help="Flag to download data from Google Cloud Storage before executing the task. Default is False."
     )
     parser.add_argument(
