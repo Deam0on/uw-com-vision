@@ -169,7 +169,7 @@ def register_datasets(dataset_info, test_size=0.2):
         img_dir, label_dir, thing_classes = info
 
         # Load or split the dataset
-        split_dir = "./split_dir/"
+        split_dir = "/home/deamoon_uw_nn/split_dir/"
         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
         
         if os.path.exists(split_file):
@@ -211,10 +211,10 @@ def evaluate_model(dataset_name, output_dir, visualize=False):
     Returns:
     - metrics: Dictionary containing evaluation metrics.
     """
-    dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
+    dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
     register_datasets(dataset_info)
     
-    trained_model_paths = get_trained_model_paths("./split_dir")
+    trained_model_paths = get_trained_model_paths("/home/deamoon_uw_nn/split_dir")
     selected_model_dataset = dataset_name  # User-selected model
     predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
     
