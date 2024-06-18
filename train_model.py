@@ -373,6 +373,7 @@ def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
         record["annotations"] = objs
         dataset_dicts.append(record)
     return dataset_dicts
+    
 def custom_mapper(dataset_dicts):
     """
     Custom data mapper function for Detectron2. Applies various transformations to the image and annotations.
