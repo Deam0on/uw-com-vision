@@ -162,7 +162,7 @@ with col1:
     if st.button("Run Task"):
         visualize_flag = "--visualize"  # Always true
         upload_flag = "--upload"  # Always true
-        download_flag = "--download" if use_new_data else ""
+        download_flag = "--download" 
 
         command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
         st.info(f"Running: {command}")
