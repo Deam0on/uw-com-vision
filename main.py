@@ -69,6 +69,10 @@ def main():
         '--upload', action='store_true', default=True,
         help="Flag to upload results to Google Cloud Storage after executing the task. Default is True."
     )
+    parser.add_argument(
+        '--threshold', type=float, default=0.8, 
+        help="Detection threshold for inference."
+    )
     
     args = parser.parse_args()
 
@@ -98,7 +102,7 @@ def main():
         os.system("rm -f *.png")
         os.system("rm -f *.csv")
         os.system("rm -f *.jpg")
-        run_inference(args.dataset_name, output_dir, args.visualize)
+        run_inference(args.dataset_name, output_dir, args.visualize, args.threshold)
 
     if args.upload:
         print(f"Uploading results for dataset {args.dataset_name} to bucket...")
