@@ -74,8 +74,8 @@ def main():
 
     os.system("gsutil -m cp -r gs://uw-com-vision/dataset_info.json /home/deamoon_uw_nn/uw-com-vision")
 
-    img_dir = os.path.join("./DATASET", args.dataset_name)  # Set the fixed path for image directory
-    output_dir = "./split_dir"  # Set the fixed path for output directory
+    img_dir = os.path.join("/home/deamoon_uw_nn/DATASET", args.dataset_name)  # Set the fixed path for image directory
+    output_dir = "/home/deamoon_uw_nn/split_dir"  # Set the fixed path for output directory
 
     if args.download:
         print(f"Downloading data for dataset {args.dataset_name} from bucket...")
