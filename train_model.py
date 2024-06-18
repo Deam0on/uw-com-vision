@@ -76,7 +76,7 @@ def register_datasets(dataset_info, test_size=0.2):
         img_dir, label_dir, thing_classes = info
 
         # Load or split the dataset
-        split_dir = "./split_dir/"
+        split_dir = "/home/deamoon_uw_nn/split_dir/"
         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
         
         if os.path.exists(split_file):
@@ -348,7 +348,7 @@ def train_on_dataset(dataset_name, output_dir):
     """
 
     # Example usage
-    dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
+    dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
     register_datasets(dataset_info)
 
     # Load configuration
