@@ -79,6 +79,7 @@ def register_datasets(dataset_info, test_size=0.2):
         split_dir = "/home/deamoon_uw_nn/split_dir/"
         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
         category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
+        category_key = "hw_patterns"
         
         if os.path.exists(split_file):
             with open(split_file, 'r') as f:
@@ -93,7 +94,7 @@ def register_datasets(dataset_info, test_size=0.2):
         DatasetCatalog.register(
             f"{dataset_name}_train",
             lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
-            get_split_dicts(img_dir, label_dir, files, category_json)
+            get_split_dicts(img_dir, label_dir, files, category_json, category_key)
         )
         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
 
@@ -101,7 +102,7 @@ def register_datasets(dataset_info, test_size=0.2):
         DatasetCatalog.register(
             f"{dataset_name}_test",
             lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
-            get_split_dicts(img_dir, label_dir, files, category_json)
+            get_split_dicts(img_dir, label_dir, files, category_json, category_key)
         )
         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
 
@@ -289,7 +290,7 @@ def register_datasets(dataset_info, test_size=0.2):
 #         dataset_dicts.append(record)
 #     return dataset_dicts
 
-def get_split_dicts(img_dir, label_dir, files, category_json):
+def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
     """
     Generates a list of dictionaries for Detectron2 dataset registration.
     
@@ -298,14 +299,22 @@ def get_split_dicts(img_dir, label_dir, files, category_json):
     - label_dir: Directory containing labels.
     - files: List of label files to process.
     - category_json: Path to the JSON file containing category information.
+    - category_key: Key in JSON to select category names.
     
     Returns:
     - dataset_dicts: List of dictionaries with image and annotation data.
     """
     # Load category names and create a mapping to category IDs
     dataset_info = read_dataset_info(category_json)
-    category_names = dataset_info["polyhipes"][2]  # Adjust the key if necessary
+    
+    # Check if category_key exists
+    if category_key not in dataset_info:
+        raise ValueError(f"Category key '{category_key}' not found in JSON")
+    
+    category_names = dataset_info[category_key][2]  # Extract category names from the JSON
     category_name_to_id = {name: idx for idx, name in enumerate(category_names)}
+    
+    print(f"Category Mapping: {category_name_to_id}")  # Debug: print category mapping
 
     dataset_dicts = []
     idx = 0
@@ -364,7 +373,6 @@ def get_split_dicts(img_dir, label_dir, files, category_json):
         record["annotations"] = objs
         dataset_dicts.append(record)
     return dataset_dicts
-
 def custom_mapper(dataset_dicts):
     """
     Custom data mapper function for Detectron2. Applies various transformations to the image and annotations.
