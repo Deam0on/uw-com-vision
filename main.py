@@ -102,7 +102,7 @@ def main():
         os.system("rm -f *.png")
         os.system("rm -f *.csv")
         os.system("rm -f *.jpg")
-        run_inference(args.dataset_name, output_dir, args.visualize, args.threshold)
+        run_inference(args.dataset_name, output_dir, args.threshold, args.visualize)
 
     if args.upload:
         print(f"Uploading results for dataset {args.dataset_name} to bucket...")
