@@ -193,7 +193,7 @@ with col1:
         visualize_flag = "--visualize"  # Always true
         upload_flag = "--upload"  # Always true
         download_flag = "--download" if use_new_data else ""
-        threshold_flag = f"--detection_threshold {detection_threshold}"
+        threshold_flag = f"--threshold {detection_threshold}"
 
         command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag} {threshold_flag}"
         st.info(f"Running: {command}")
