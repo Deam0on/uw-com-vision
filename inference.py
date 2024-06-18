@@ -812,9 +812,11 @@ def run_inference(dataset_name, output_dir, visualize=False):
                                 um_pix = float(psum) / scale_len
                         else:
                             um_pix = 1
+                            psum = 0
 
                 else:
                     um_pix = 1
+                    psum = 0
     
                 GetInference(predictor, im, x_pred, metadata, test_img)  # Ensure this function is correctly defined elsewhere
                 GetCounts(predictor, im, TList, PList)  # Ensure this function is correctly defined elsewhere
