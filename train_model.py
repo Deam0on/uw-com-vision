@@ -79,7 +79,7 @@ def register_datasets(dataset_info, test_size=0.2):
         split_dir = "/home/deamoon_uw_nn/split_dir/"
         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
         category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
-        category_key = "hw_patterns"
+        category_key = dataset_name
         
         if os.path.exists(split_file):
             with open(split_file, 'r') as f:
