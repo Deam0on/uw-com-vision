@@ -7,6 +7,8 @@ from datetime import datetime
 from google.api_core import page_iterator
 from io import BytesIO
 from PIL import Image
+import time
+import re  # Regular expressions for parsing ETA
 
 # Absolute path to main.py
 MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
@@ -46,10 +48,34 @@ def list_directories(bucket_name, prefix):
 
     return [x for x in iterator]
 
-# Function to run shell commands
-def run_command(command):
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    return result.stdout, result.stderr
+# Function to run shell commands with ETA
+def run_command_with_eta(command, task):
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    eta_placeholder = st.empty()
+    progress_bar = st.progress(0)
+
+    for line in iter(process.stdout.readline, ''):
+        st.text(line.strip())  # Display output line by line
+
+        # Check for ETA in the output for the training task
+        if task == "train":
+            match = re.search(r'ETA: (\d+:\d+:\d+)', line)
+            if match:
+                eta = match.group(1)
+                eta_placeholder.text(f"Estimated Time Remaining: {eta}")
+            else:
+                # Update progress bar if ETA is not found
+                match_progress = re.search(r'\[.*?(\d+)%\]', line)
+                if match_progress:
+                    progress = int(match_progress.group(1)) / 100.0
+                    progress_bar.progress(int(progress * 100))
+
+    stdout, stderr = process.communicate()
+    process.stdout.close()
+    process.stderr.close()
+    progress_bar.progress(100)
+    eta_placeholder.text("Task completed.")
+    return stdout, stderr
 
 # Function to list .png files in a GCS folder
 def list_png_files_in_gcs_folder(bucket_name, folder):
@@ -136,6 +162,10 @@ st.title("PaCE Neural Network Control Panel")
 st.header("Script controls")
 use_new_data = st.checkbox("Use new data from bucket", value=False)
 
+# Slider for detection threshold
+st.header("Detection Threshold")
+detection_threshold = st.slider("Set detection threshold", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
+
 new_dataset = st.checkbox("New dataset")
 if new_dataset:
     new_dataset_name = st.text_input("Enter new dataset name")
@@ -162,25 +192,21 @@ with col1:
     if st.button("Run Task"):
         visualize_flag = "--visualize"  # Always true
         upload_flag = "--upload"  # Always true
-        download_flag = "--download" 
+        download_flag = "--download" if use_new_data else ""
+        threshold_flag = f"--detection_threshold {detection_threshold}"
 
-        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
+        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag} {threshold_flag}"
         st.info(f"Running: {command}")
         
         with st.spinner('Running task...'):
-            progress_bar = st.progress(0)
-            for i in range(0, 100, 10):  # Simulate progress
-                progress_bar.progress(i)
-
-            stdout, stderr = run_command(command)
-            progress_bar.progress(100)
+            stdout, stderr = run_command_with_eta(command, task)
 
         st.text(stdout)
 
         st.session_state.stderr = stderr  # Store stderr in session state
 
         # Reset the show_errors state if there are new errors
-        if stderr:
+        if stderr and contains_errors(stderr):
             st.session_state.show_errors = True
         else:
             st.success(f"{task.capitalize()} task completed successfully!")
@@ -221,8 +247,6 @@ if st.session_state.show_errors:
     else:
         if contains_errors(st.session_state.stderr):
             st.error(st.session_state.stderr)
-        else:
-            st.warning(st.session_state.stderr)
 else:
     if st.session_state.stderr and st.button("Show Errors and Warnings"):
         st.session_state.show_errors = True
