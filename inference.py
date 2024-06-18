@@ -710,7 +710,7 @@ def read_dataset_info(file_path):
 
 
 
-def run_inference(dataset_name, output_dir, visualize=False, threshold):
+def run_inference(dataset_name, output_dir, threshold, visualize=False):
     """
     Runs inference on images in the specified directory using the provided model.
 
