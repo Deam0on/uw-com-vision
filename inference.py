@@ -850,8 +850,9 @@ def run_inference(dataset_name, output_dir, visualize=False):
                         (trbrX, trbrY) = midpoint(tr, br)
                         dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
                         dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
-                        if pixelsPerMetric is None:
-                            pixelsPerMetric = dB / width
+                        # if pixelsPerMetric is None:
+                        #     pixelsPerMetric = dB / width
+                        pixelsPerMetric = dB / width
                         dimA = dA / pixelsPerMetric
                         dimB = dB / pixelsPerMetric
                         dimArea = area / pixelsPerMetric
