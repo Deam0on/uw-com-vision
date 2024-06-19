@@ -737,6 +737,9 @@ def run_inference(dataset_name, output_dir, visualize=False):
     
     Img_ID = []
     EncodedPixels = []
+
+    test_count = 0
+        
     conv = lambda l: ' '.join(map(str, l))
     
     for name in images_name:
@@ -866,6 +869,9 @@ def run_inference(dataset_name, output_dir, visualize=False):
                         Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
                         Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
                         Feret_diam = diaFeret * um_pix
+
+                        test_count = test_count + 1
+                        print("Debug test_count is: {test_count}")
     
                         csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
     
