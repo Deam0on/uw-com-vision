@@ -833,6 +833,7 @@ def run_inference(dataset_name, output_dir, visualize=False):
                     print(f"Mask {i}: Found {len(single_cnts)} contours.")
                 
                     for c in single_cnts:
+                        pixelsPerMetric = 1 # or 0.85, correction
                         if cv2.contourArea(c) < 100:
                             continue
                         area = cv2.contourArea(c)
