@@ -824,14 +824,16 @@ def run_inference(dataset_name, output_dir, visualize=False):
                 im_mask = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
                 cnts = cv2.findContours(im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 cnts = imutils.grab_contours(cnts)
+
+                print(len(cnts))
     
                 if len(cnts) > 0:
                     (cnts, _) = contours.sort_contours(cnts)
                     pixelsPerMetric = 1 # 0.85
     
                     for c in cnts:
-                        # if cv2.contourArea(c) < 100:
-                        #     continue
+                        if cv2.contourArea(c) < 100:
+                            continue
                         area = cv2.contourArea(c)
                         perimeter = cv2.arcLength(c, True)
     
