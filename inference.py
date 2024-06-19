@@ -809,6 +809,8 @@ def run_inference(dataset_name, output_dir, visualize=False):
                 num_instances = mask_array.shape[0]
                 mask_array = np.moveaxis(mask_array, 0, -1)
                 output = np.zeros_like(im)
+
+                print(f"Number of instances for x_pred: {x_pred} is: {num_instances}")
     
                 for i in range(num_instances):
                     mask = mask_array[:, :, i:(i + 1)]
