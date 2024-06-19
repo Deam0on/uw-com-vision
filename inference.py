@@ -827,7 +827,7 @@ def run_inference(dataset_name, output_dir, visualize=False):
     
                 if len(cnts) > 0:
                     (cnts, _) = contours.sort_contours(cnts)
-                    # pixelsPerMetric = 0.85
+                    pixelsPerMetric = 1 # 0.85
     
                     for c in cnts:
                         # if cv2.contourArea(c) < 100:
@@ -852,7 +852,6 @@ def run_inference(dataset_name, output_dir, visualize=False):
                         dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
                         # if pixelsPerMetric is None:
                         #     pixelsPerMetric = dB / width
-                        pixelsPerMetric = dB / width
                         dimA = dA / pixelsPerMetric
                         dimB = dB / pixelsPerMetric
                         dimArea = area / pixelsPerMetric
