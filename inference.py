@@ -816,66 +816,67 @@ def run_inference(dataset_name, output_dir, visualize=False):
                 print(f"Number of instances for x_pred: {x_pred} is: {num_instances}")
 
                 for i in range(num_instances):
-                # Initialize a new output array for each mask
-                single_output = np.zeros_like(output)
-                mask = mask_array[:, :, i:(i + 1)]
-                single_output = np.where(mask == True, 255, single_output)
+                    # Initialize a new output array for each mask
+                    single_output = np.zeros_like(output)
+                    mask = mask_array[:, :, i:(i + 1)]
+                    single_output = np.where(mask == True, 255, single_output)
+                    
+                    # Save each mask image separately for debugging
+                    mask_filename = os.path.join(output_dir, f'mask_{i}.jpg')
+                    cv2.imwrite(mask_filename, single_output)
+                    
+                    # Convert the single mask to grayscale for contour detection
+                    single_im_mask = cv2.cvtColor(single_output, cv2.COLOR_BGR2GRAY)
+                    single_cnts = cv2.findContours(single_im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    single_cnts = imutils.grab_contours(single_cnts)
                 
-                # Save each mask image separately for debugging
-                mask_filename = os.path.join(output_dir, f'mask_{i}.jpg')
-                cv2.imwrite(mask_filename, single_output)
+                    print(f"Mask {i}: Found {len(single_cnts)} contours.")
                 
-                # Convert the single mask to grayscale for contour detection
-                single_im_mask = cv2.cvtColor(single_output, cv2.COLOR_BGR2GRAY)
-                single_cnts = cv2.findContours(single_im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                single_cnts = imutils.grab_contours(single_cnts)
+                    for c in single_cnts:
+                        if cv2.contourArea(c) < 100:
+                            continue
+                        area = cv2.contourArea(c)
+                        perimeter = cv2.arcLength(c, True)
                 
-                print(f"Mask {i}: Found {len(single_cnts)} contours.")
+                        orig = single_im_mask.copy()
+                        box = cv2.minAreaRect(c)
+                        box = cv2.boxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
+                        box = np.array(box, dtype="int")
+                        box = perspective.order_points(box)
+                        cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
+                        for (x, y) in box:
+                            cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
+                        (tl, tr, br, bl) = box
+                        (tltrX, tltrY) = midpoint(tl, tr)
+                        (blbrX, blbrY) = midpoint(bl, br)
+                        (tlblX, tlblY) = midpoint(tl, bl)
+                        (trbrX, trbrY) = midpoint(tr, br)
+                        dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
+                        dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
+                        dimA = dA / pixelsPerMetric
+                        dimB = dB / pixelsPerMetric
+                        dimArea = area / pixelsPerMetric
+                        dimPerimeter = perimeter / pixelsPerMetric
+                        diaFeret = max(dimA, dimB)
+                        if (dimA and dimB) != 0:
+                            Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
+                        else:
+                            Aspect_Ratio = 0
+                        Length = min(dimA, dimB) * um_pix
+                        Width = max(dimA, dimB) * um_pix
+                        CircularED = np.sqrt(4 * area / np.pi) * um_pix
+                        Chords = cv2.arcLength(c, True) * um_pix
+                        Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
+                        Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
+                        Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
+                        Feret_diam = diaFeret * um_pix
                 
-                for c in single_cnts:
-                if cv2.contourArea(c) < 100:
-                    continue
-                area = cv2.contourArea(c)
-                perimeter = cv2.arcLength(c, True)
-                
-                orig = single_im_mask.copy()
-                box = cv2.minAreaRect(c)
-                box = cv2.boxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
-                box = np.array(box, dtype="int")
-                box = perspective.order_points(box)
-                cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
-                for (x, y) in box:
-                    cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
-                (tl, tr, br, bl) = box
-                (tltrX, tltrY) = midpoint(tl, tr)
-                (blbrX, blbrY) = midpoint(bl, br)
-                (tlblX, tlblY) = midpoint(tl, bl)
-                (trbrX, trbrY) = midpoint(tr, br)
-                dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
-                dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
-                dimA = dA / pixelsPerMetric
-                dimB = dB / pixelsPerMetric
-                dimArea = area / pixelsPerMetric
-                dimPerimeter = perimeter / pixelsPerMetric
-                diaFeret = max(dimA, dimB)
-                if (dimA and dimB) != 0:
-                    Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
-                else:
-                    Aspect_Ratio = 0
-                Length = min(dimA, dimB) * um_pix
-                Width = max(dimA, dimB) * um_pix
-                CircularED = np.sqrt(4 * area / np.pi) * um_pix
-                Chords = cv2.arcLength(c, True) * um_pix
-                Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
-                Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
-                Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
-                Feret_diam = diaFeret * um_pix
-                
-                test_count = test_count + 1
-                print(f"Debug test_count is: {test_count}")
-                csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
+                        test_count = test_count + 1
+                        print(f"Debug test_count is: {test_count}")
+                        csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
 
-    
+
+
                 # for i in range(num_instances):
                 #     mask = mask_array[:, :, i:(i + 1)]
                 #     output = np.where(mask == True, 255, output)
