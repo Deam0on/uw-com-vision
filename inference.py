@@ -871,7 +871,7 @@ def run_inference(dataset_name, output_dir, visualize=False):
                         Feret_diam = diaFeret * um_pix
 
                         test_count = test_count + 1
-                        print("Debug test_count is: {test_count}")
+                        print(f"Debug test_count is: {test_count}")
     
                         csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
     
