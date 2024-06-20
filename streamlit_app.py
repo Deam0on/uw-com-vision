@@ -50,8 +50,15 @@ def list_directories(bucket_name, prefix):
 
 # Function to run shell commands
 def run_command(command):
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    return result.stdout, result.stderr
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    stdout, stderr = [], []
+    while process.poll() is None:
+        output = process.stdout.readline()
+        if output:
+            stdout.append(output.strip())
+    process.stdout.close()
+    process.stderr.close()
+    return '\n'.join(stdout), '\n'.join(stderr), process.returncode == 0
 
 # Function to list .png files in a GCS folder
 def list_png_files_in_gcs_folder(bucket_name, folder):
@@ -145,6 +152,28 @@ def format_and_sort_folders(folders):
     formatted_folders.sort(key=lambda x: x[1], reverse=True)
     return formatted_folders
 
+# Define a function to read and calculate ETA
+def estimate_eta(task, num_images=0):
+    data = read_eta_data()
+    if task == 'inference':
+        avg_time_per_image = data.get(task, {}).get('average_time_per_image', 1)
+        buffer = data.get(task, {}).get('buffer', 1)
+        task_eta = avg_time_per_image * num_images * buffer
+    else:
+        task_eta = data.get(task, {}).get('average_time', 60)
+    
+    download_eta = data.get('download', {}).get('average_time', 60)
+    upload_eta = data.get('upload', {}).get('average_time', 60)
+    
+    return download_eta, task_eta, upload_eta
+
+# Define a function to read ETA data
+def read_eta_data():
+    ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
+    if os.path.exists(ETA_FILE):
+        with open(ETA_FILE, 'r') as file:
+            return json.load(file)
+
 # Initialize session state
 if 'show_errors' not in st.session_state:
     st.session_state.show_errors = False
@@ -198,25 +227,49 @@ threshold = st.slider(
 col1, col2 = st.columns([3, 1])
 with col1:
     # Update the task execution button code to handle the combined ETA
-   
     if st.button("Run Task"):
         visualize_flag = "--visualize"  # Always true
         upload_flag = "--upload"  # Always true
-        download_flag = "--download" 
-
+        download_flag = "--download"
+        
+        # Calculate ETAs
+        download_eta, task_eta, upload_eta = estimate_eta(task)
+        
         command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
         st.info(f"Running: {command}")
         
         with st.spinner('Running task...'):
             progress_bar = st.progress(0)
-            for i in range(0, 100, 10):  # Simulate progress
-                progress_bar.progress(i)
+            countdown_placeholder = st.empty()
+            start_time = time.time()
 
+            def update_countdown(phase, eta):
+                end_time = start_time + eta
+                while time.time() < end_time:
+                    elapsed_time = time.time() - start_time
+                    remaining_time = end_time - time.time()
+                    hours, remainder = divmod(remaining_time, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    countdown_str = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+                    countdown_placeholder.text(f"{phase} - Time Remaining: {countdown_str}")
+                    progress_percentage = min(elapsed_time / total_eta, 1.0)
+                    progress_bar.progress(progress_percentage)
+                    time.sleep(1)
+
+            total_eta = download_eta + task_eta + upload_eta
+            st.info(f"Total Estimated Time to Complete: {str(timedelta(seconds=total_eta))}")
+
+            # Update countdowns for each phase
+            update_countdown("Downloading", download_eta)
+            start_time = time.time()  # Reset start time for task phase
             stdout, stderr = run_command(command)
+            update_countdown("Task in progress", task_eta)
+            start_time = time.time()  # Reset start time for upload phase
+            update_countdown("Uploading", upload_eta)
+
             progress_bar.progress(100)
 
         st.text(stdout)
-
         st.session_state.stderr = stderr  # Store stderr in session state
 
         # Reset the show_errors state if there are new errors
