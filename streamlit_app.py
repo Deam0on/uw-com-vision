@@ -115,6 +115,34 @@ def upload_files_to_gcs(bucket_name, target_folder, files, overwrite):
         blob.upload_from_file(file)
         st.write(f"Uploaded {file.name} to {target_folder}")
 
+def format_and_sort_folders(folders):
+    """
+    Format folder names from 'YYYYMMDD_HHMMSS' to a more readable format
+    and sort them from newest to oldest.
+
+    Parameters:
+    - folders: List of folder names.
+
+    Returns:
+    - List of tuples (original_name, formatted_name), sorted from newest to oldest.
+    """
+    formatted_folders = []
+    for folder in folders:
+        # Strip trailing slashes and extract the timestamp part
+        folder = folder.rstrip('/')
+        try:
+            # Parse and format the timestamp
+            timestamp = datetime.strptime(folder.split('/')[-1], '%Y%m%d_%H%M%S')
+            formatted_name = timestamp.strftime('%B %d, %Y %H:%M:%S')
+            formatted_folders.append((folder, formatted_name))
+        except ValueError:
+            # If parsing fails, keep the original folder name
+            formatted_folders.append((folder, folder))
+
+    # Sort by the timestamp (newest first)
+    formatted_folders.sort(key=lambda x: x[1], reverse=True)
+    return formatted_folders
+
 # Initialize session state
 if 'show_errors' not in st.session_state:
     st.session_state.show_errors = False
@@ -259,10 +287,19 @@ st.header("Google Cloud Storage")
 if 'folders' not in st.session_state or not st.session_state.folders:
     st.session_state.folders = list_directories(GCS_BUCKET_NAME, GCS_ARCHIVE_FOLDER)
 
-if st.session_state.folders:
-    folder_dropdown = st.selectbox("Select Folder", st.session_state.folders, format_func=lambda x: x.strip('/'))
+# Apply formatting and sorting
+formatted_folders = format_and_sort_folders(st.session_state.folders)
+
+if formatted_folders:
+    folder_dropdown = st.selectbox(
+        "Select Folder", 
+        formatted_folders, 
+        format_func=lambda x: x[1]  # Display the formatted name
+    )
 else:
     st.write("No folders found in the GCS bucket.")
+
+selected_folder = folder_dropdown[0]
 
 # Button to show inference images
 if st.button("Show Inference Images") and st.session_state.folders:
@@ -270,8 +307,8 @@ if st.button("Show Inference Images") and st.session_state.folders:
 
 # Display images if available
 if st.session_state.show_images:
-    st.write(f"Displaying images from folder: {folder_dropdown}")
-    image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
+    st.write(f"Displaying images from folder: {folder_dropdown[1]}")  # Use formatted name for display
+    image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, selected_folder)  # Use original name for operations
     if image_files:
         for blob in image_files:
             img_bytes = blob.download_as_bytes()
@@ -281,7 +318,7 @@ if st.session_state.show_images:
         st.write("No images found in the selected folder.")
 
     # Button to download specific CSV files
-    csv_files = list_specific_csv_files_in_gcs_folder(GCS_BUCKET_NAME, folder_dropdown)
+    csv_files = list_specific_csv_files_in_gcs_folder(GCS_BUCKET_NAME, selected_folder)  # Use original name for operations
     if csv_files:
         for blob in csv_files:
             csv_bytes = blob.download_as_bytes()
