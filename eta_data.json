@@ -6,7 +6,8 @@
         "average_time": 10
     },
     "inference": {
-        "average_time_per_image": 5
+        "average_time_per_image": 5,
+        "buffer": 1.1        
     },
     "download": {
         "average_time": 10
