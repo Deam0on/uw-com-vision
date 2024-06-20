@@ -250,31 +250,31 @@ with col1:
         visualize_flag = "--visualize"  # Always true
         upload_flag = "--upload"  # Always true
         download_flag = "--download"
-
+    
         # Calculate ETA
         if task == 'inference':
             num_images = len(os.listdir(f"/home/deamoon_uw_nn/DATASET/{dataset_name}"))
             eta = estimate_eta('inference', num_images)
         else:
             eta = estimate_eta(task)
-
+    
         command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
-        
+    
         # Start countdown and progress bar
         start_time = time.time()
         end_time = start_time + eta
         countdown_placeholder = st.empty()
         progress_bar = st.progress(0)
         output_placeholder = st.empty()
-
+    
         with st.spinner('Running task...'):
             progress_interval = 1  # Update every second
             elapsed_time = 0
             output_lines = []  # To store all output lines for display
-
+    
             # Run command in a separate thread or async function for real-time updates
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
+    
             while process.poll() is None:
                 line = process.stdout.readline()
                 if line:
@@ -290,9 +290,9 @@ with col1:
                 countdown_placeholder.markdown(f"**Time remaining: {countdown_str}**")
                 progress_percentage = min(elapsed_time / eta, 1.0)
                 progress_bar.progress(progress_percentage)
-
+    
                 time.sleep(progress_interval)
-
+    
             # Ensure the progress bar is full at the end
             progress_bar.progress(1.0)
             remaining_time = max(0, end_time - time.time())
@@ -305,9 +305,10 @@ with col1:
             if stdout:
                 output_lines.extend(stdout.splitlines())
                 output_placeholder.text("\n".join(output_lines[-10:]))
-        
+    
+        st.text(stdout)
         st.session_state.stderr = stderr  # Store stderr in session state
-
+    
         # Reset the show_errors state if there are new errors
         if stderr:
             st.session_state.show_errors = True
