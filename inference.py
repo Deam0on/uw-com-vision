@@ -683,6 +683,7 @@ def run_inference(dataset_name, output_dir, visualize=False):
 							Width = max(dimA, dimB)
 							
 							csvwriter.writerow([Length, Width, test_img])
+                    
 
 
 
