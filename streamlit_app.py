@@ -173,7 +173,8 @@ with col1:
         upload_flag = "--upload"  # Always true
         download_flag = "--download" 
 
-        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
+        # command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
+        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
         st.info(f"Running: {command}")
         
         with st.spinner('Running task...'):
