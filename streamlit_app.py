@@ -162,17 +162,13 @@ def estimate_eta(task, num_images=0):
         return task_time + download_time + upload_time
 
 # # Define a function to read ETA data
-# def read_eta_data():
-#     ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
-#     if os.path.exists(ETA_FILE):
-#         with open(ETA_FILE, 'r') as file:
-#             return json.load(file)
-#     else:
-#         return {
-#             "prepare": {"average_time": 300},
-#             "evaluate": {"average_time": 1800},
-#             "inference": {"average_time_per_image": 5, "buffer": 1.1}
-#         }
+def read_eta_data():
+    ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
+    if os.path.exists(ETA_FILE):
+        with open(ETA_FILE, 'r') as file:
+            return json.load(file)
+    else:
+        print(f"No ETA data found!")
 
 # Initialize session state
 if 'show_errors' not in st.session_state:
