@@ -588,6 +588,9 @@ def run_inference(dataset_name, output_dir, visualize=False):
                     if result:  # Ensure result is not empty
                         pxum_r = result[0]
                         psum = re.sub("[^0-9]", "", pxum_r)
+                    else:
+                        pxum_r = ''
+                        psum = '0'
 
                     lines_list = []
                     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=1)
@@ -599,6 +602,13 @@ def run_inference(dataset_name, output_dir, visualize=False):
                             lines_list.append([(x1, y1), (x2, y2)])
                             scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
                             um_pix = float(psum) / scale_len
+                    else:
+                        um_pix = 1
+                        psum = '0'
+                else:
+                    # Placeholder: You can add any specific handling for 'hw_patterns' here if needed.
+                    um_pix = 1
+                    psum = '0'
     
                 GetInference(predictor, im, x_pred, metadata, test_img)  # Ensure this function is correctly defined elsewhere
                 GetCounts(predictor, im, TList, PList)  # Ensure this function is correctly defined elsewhere
@@ -627,7 +637,7 @@ def run_inference(dataset_name, output_dir, visualize=False):
                     single_cnts = imutils.grab_contours(single_cnts)
                 
                     for c in single_cnts:
-                        pixelsPerMetric = 1 # or 0.85, correction
+                        pixelsPerMetric = 1  # or 0.85, correction
                         if cv2.contourArea(c) < 100:
                             continue
                         area = cv2.contourArea(c)
@@ -652,38 +662,34 @@ def run_inference(dataset_name, output_dir, visualize=False):
                         dimB = dB / pixelsPerMetric
 
                         if dataset_name != 'hw_patterns':
-			    dimArea = area / pixelsPerMetric
-	                    dimPerimeter = perimeter / pixelsPerMetric
-	                    diaFeret = max(dimA, dimB)
+                            dimArea = area / pixelsPerMetric
+                            dimPerimeter = perimeter / pixelsPerMetric
+                            diaFeret = max(dimA, dimB)
                             # Execute this block for datasets other than 'hw_patterns'
-			    if (dimA and dimB) != 0:
-				Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
-			    else:
-				Aspect_Ratio = 0
-			    Length = min(dimA, dimB) * um_pix
-			    Width = max(dimA, dimB) * um_pix
-			    CircularED = np.sqrt(4 * area / np.pi) * um_pix
-			    Chords = cv2.arcLength(c, True) * um_pix
-			    Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
-			    Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
-			    Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
-			    Feret_diam = diaFeret * um_pix
-			
-			    csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
-		        else:
-			    dimArea = area / pixelsPerMetric
-			    dimPerimeter = perimeter / pixelsPerMetric
-			    diaFeret = max(dimA, dimB)
-			    # Execute this block for datasets other than 'hw_patterns'
-			    if (dimA and dimB) != 0:
-				Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
-			    else:
-				Aspect_Ratio = 0
-			    Length = min(dimA, dimB)
-			    Width = max(dimA, dimB)
-			    
-			    csvwriter.writerow([Length, Width, test_img])
-                    
+                            if (dimA and dimB) != 0:
+                                Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
+                            else:
+                                Aspect_Ratio = 0
+                            Length = min(dimA, dimB) * um_pix
+                            Width = max(dimA, dimB) * um_pix
+                            CircularED = np.sqrt(4 * area / np.pi) * um_pix
+                            Chords = cv2.arcLength(c, True) * um_pix
+                            Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
+                            Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
+                            Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
+                            Feret_diam = diaFeret * um_pix
 
+                            csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
+                        else:
+                            dimArea = area / pixelsPerMetric
+                            dimPerimeter = perimeter / pixelsPerMetric
+                            diaFeret = max(dimA, dimB)
+                            # Execute this block for 'hw_patterns'
+                            if (dimA and dimB) != 0:
+                                Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
+                            else:
+                                Aspect_Ratio = 0
+                            Length = min(dimA, dimB)
+                            Width = max(dimA, dimB)
 
-
+                            csvwriter.writerow([Length, Width, test_img])
