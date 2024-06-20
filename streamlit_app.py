@@ -266,20 +266,26 @@ with col1:
         countdown_placeholder = st.empty()
         progress_bar = st.progress(0)
         output_placeholder = st.empty()
+        error_placeholder = st.empty()
     
         with st.spinner('Running task...'):
             progress_interval = 1  # Update every second
             elapsed_time = 0
             output_lines = []  # To store all output lines for display
-    
+            error_lines = []  # To store error lines
+
             # Run command in a separate thread or async function for real-time updates
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     
             while process.poll() is None:
                 line = process.stdout.readline()
+                error = process.stderr.readline()
                 if line:
                     output_lines.append(line.strip())
                     output_placeholder.text("\n".join(output_lines[-10:]))  # Display last 10 lines
+                if error:
+                    error_lines.append(error.strip())
+                    error_placeholder.text("\n".join(error_lines[-10:]))  # Display last 10 errors
                 
                 # Update progress and countdown
                 elapsed_time = time.time() - start_time
@@ -295,18 +301,16 @@ with col1:
     
             # Ensure the progress bar is full at the end
             progress_bar.progress(1.0)
-            remaining_time = max(0, end_time - time.time())
-            hours, remainder = divmod(remaining_time, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            countdown_str = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-            countdown_placeholder.markdown(f"**Time remaining: {countdown_str}**")
+            
             # Capture remaining output
             stdout, stderr = process.communicate()
             if stdout:
                 output_lines.extend(stdout.splitlines())
                 output_placeholder.text("\n".join(output_lines[-10:]))
+            if stderr:
+                error_lines.extend(stderr.splitlines())
+                error_placeholder.text("\n".join(error_lines[-10:]))
     
-        st.text(stdout)
         st.session_state.stderr = stderr  # Store stderr in session state
     
         # Reset the show_errors state if there are new errors
