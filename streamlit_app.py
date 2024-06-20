@@ -3,10 +3,11 @@ import subprocess
 import os
 import json
 from google.cloud import storage
-from datetime import datetime, timedelta
+from datetime import datetime
 from google.api_core import page_iterator
 from io import BytesIO
 from PIL import Image
+from datetime import timedelta
 import time
 
 # Absolute path to main.py
@@ -150,14 +151,9 @@ def estimate_eta(task, num_images=0):
     if task == 'inference':
         avg_time_per_image = data.get(task, {}).get('average_time_per_image', 1)
         buffer = data.get(task, {}).get('buffer', 1)
-        task_time = avg_time_per_image * num_images * buffer
+        return avg_time_per_image * num_images * buffer
     else:
-        task_time = data.get(task, {}).get('average_time', 60)
-    
-    download_time = data.get('download', {}).get('average_time', 60)
-    upload_time = data.get('upload', {}).get('average_time', 60)
-    
-    return download_time + task_time + upload_time
+        return data.get(task, {}).get('average_time', 60)
 
 # Define a function to read ETA data
 def read_eta_data():
@@ -169,30 +165,8 @@ def read_eta_data():
         return {
             "prepare": {"average_time": 300},
             "evaluate": {"average_time": 1800},
-            "inference": {"average_time_per_image": 5, "buffer": 1.1},
-            "download": {"average_time": 60},
-            "upload": {"average_time": 60}
+            "inference": {"average_time_per_image": 5, "buffer": 1.1}
         }
-
-def format_eta(seconds):
-    """
-    Format seconds into HH:MM:SS string.
-    """
-    return str(timedelta(seconds=int(seconds)))
-
-def countdown_timer(eta_seconds):
-    """
-    Display a countdown timer in Streamlit.
-    """
-    placeholder = st.empty()
-    while eta_seconds > 0:
-        mins, secs = divmod(eta_seconds, 60)
-        hours, mins = divmod(mins, 60)
-        time_left = f'{int(hours):02}:{int(mins):02}:{int(secs):02}'
-        placeholder.markdown(f"**Time remaining: {time_left}**")
-        time.sleep(1)
-        eta_seconds -= 1
-    placeholder.markdown("**Time remaining: 00:00:00**")
 
 # Initialize session state
 if 'show_errors' not in st.session_state:
@@ -257,67 +231,85 @@ with col1:
             eta = estimate_eta('inference', num_images)
         else:
             eta = estimate_eta(task)
+        
+        # st.info(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
     
         command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
-    
+        st.info(f"Running: {command}")
+        
         # Start countdown and progress bar
         start_time = time.time()
         end_time = start_time + eta
         countdown_placeholder = st.empty()
         progress_bar = st.progress(0)
-        output_placeholder = st.empty()
-        error_placeholder = st.empty()
-    
-        with st.spinner('Running task...'):
-            progress_interval = 1  # Update every second
-            elapsed_time = 0
-            output_lines = []  # To store all output lines for display
-            error_lines = []  # To store error lines
 
-            # Run command in a separate thread or async function for real-time updates
-            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    
-            while process.poll() is None:
-                line = process.stdout.readline()
-                error = process.stderr.readline()
-                if line:
-                    output_lines.append(line.strip())
-                    output_placeholder.text("\n".join(output_lines[-10:]))  # Display last 10 lines
-                if error:
-                    error_lines.append(error.strip())
-                    error_placeholder.text("\n".join(error_lines[-10:]))  # Display last 10 errors
-                
-                # Update progress and countdown
-                elapsed_time = time.time() - start_time
-                remaining_time = max(0, end_time - time.time())
+        with st.spinner('Running task...'):
+            while time.time() < end_time:
+                remaining_time = end_time - time.time()
                 hours, remainder = divmod(remaining_time, 3600)
                 minutes, seconds = divmod(remainder, 60)
                 countdown_str = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-                countdown_placeholder.markdown(f"**Time remaining: {countdown_str}**")
+                
+                countdown_placeholder.text(f"Estimated Time Remaining: {countdown_str}")
+                elapsed_time = time.time() - start_time
                 progress_percentage = min(elapsed_time / eta, 1.0)
                 progress_bar.progress(progress_percentage)
-    
-                time.sleep(progress_interval)
-    
+                
+                time.sleep(1)  # Update every second
+            
             # Ensure the progress bar is full at the end
             progress_bar.progress(1.0)
             
-            # Capture remaining output
-            stdout, stderr = process.communicate()
-            if stdout:
-                output_lines.extend(stdout.splitlines())
-                output_placeholder.text("\n".join(output_lines[-10:]))
-            if stderr:
-                error_lines.extend(stderr.splitlines())
-                error_placeholder.text("\n".join(error_lines[-10:]))
-    
+            stdout, stderr = run_command(command)
+        
+        st.text(stdout)
         st.session_state.stderr = stderr  # Store stderr in session state
-    
+
         # Reset the show_errors state if there are new errors
         if stderr:
             st.session_state.show_errors = True
         else:
             st.success(f"{task.capitalize()} task completed successfully!")
+
+    
+    # if st.button("Run Task"):
+    #     visualize_flag = "--visualize"  # Always true
+    #     upload_flag = "--upload"  # Always true
+    #     download_flag = "--download" 
+
+    #     # command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
+    #     command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
+    #     st.info(f"Running: {command}")
+        
+    #     with st.spinner('Running task...'):
+    #         progress_bar = st.progress(0)
+    #         for i in range(0, 100, 10):  # Simulate progress
+    #             progress_bar.progress(i)
+
+    #         stdout, stderr = run_command(command)
+    #         progress_bar.progress(100)
+
+    #     st.text(stdout)
+
+    #     st.session_state.stderr = stderr  # Store stderr in session state
+
+    #     # Reset the show_errors state if there are new errors
+    #     if stderr:
+    #         st.session_state.show_errors = True
+    #     else:
+    #         st.success(f"{task.capitalize()} task completed successfully!")
+
+with col2:
+    confirm_deletion = st.checkbox("Confirm Deletion")
+    if st.button("Remove Dataset"):
+        if confirm_deletion:
+            del st.session_state.datasets[dataset_name]
+            save_dataset_names_to_gcs(st.session_state.datasets)
+            st.success(f"Dataset '{dataset_name}' deleted.")
+            st.session_state.confirm_delete = False  # Automatically uncheck after deletion
+            st.experimental_rerun()  # Refresh to reflect deletion
+        else:
+            st.warning("Please check the confirmation box to delete the dataset.")
 
 # Conditionally show the upload section
 if use_new_data:
