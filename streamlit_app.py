@@ -232,7 +232,7 @@ with col1:
         else:
             eta = estimate_eta(task)
         
-        st.info(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
+        # st.info(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
     
         command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
         st.info(f"Running: {command}")
