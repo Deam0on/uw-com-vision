@@ -3,11 +3,10 @@ import subprocess
 import os
 import json
 from google.cloud import storage
-from datetime import datetime
+from datetime import datetime, timedelta
 from google.api_core import page_iterator
 from io import BytesIO
 from PIL import Image
-from datetime import timedelta
 import time
 
 # Absolute path to main.py
@@ -57,8 +56,9 @@ def run_command(command):
         if output:
             stdout.append(output.strip())
     process.stdout.close()
+    stderr_output = process.stderr.read()
     process.stderr.close()
-    return '\n'.join(stdout), '\n'.join(stderr), process.returncode == 0
+    return '\n'.join(stdout), stderr_output, process.returncode == 0
 
 # Function to list .png files in a GCS folder
 def list_png_files_in_gcs_folder(bucket_name, folder):
@@ -239,7 +239,7 @@ with col1:
         command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
         st.info(f"Running: {command}")
 
-        def update_progress_bar_and_countdown(start_time, eta, phase, phase_completed=False):
+        def update_progress_bar_and_countdown(start_time, eta, phase):
             end_time = start_time + eta
             while time.time() < end_time:
                 elapsed_time = time.time() - start_time
@@ -251,7 +251,8 @@ with col1:
                 progress_percentage = min(elapsed_time / total_eta, 1.0)
                 progress_bar.progress(progress_percentage)
                 time.sleep(1)
-                if phase_completed:
+                if phase == "Task in progress" and not process.poll() is None:
+                    # If task phase and the command finished, exit the loop
                     break
 
         with st.spinner('Running task...'):
@@ -263,10 +264,11 @@ with col1:
             update_progress_bar_and_countdown(start_time, download_eta, "Downloading")
 
             # Task Phase
-            start_time = time.time()  # Reset start time for task phase
-            update_progress_bar_and_countdown(start_time, task_eta, "Task in progress")
+            task_start_time = time.time()  # Reset start time for task phase
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            update_progress_bar_and_countdown(task_start_time, task_eta, "Task in progress")
 
-            stdout, stderr, success = run_command(command)
+            stdout, stderr = process.communicate()
 
             # Upload Phase
             start_time = time.time()  # Reset start time for upload phase
