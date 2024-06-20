@@ -234,40 +234,47 @@ with col1:
         
         # Calculate ETAs
         download_eta, task_eta, upload_eta = estimate_eta(task)
+        total_eta = download_eta + task_eta + upload_eta
         
         command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
         st.info(f"Running: {command}")
-        
+
+        def update_progress_bar_and_countdown(start_time, eta, phase, phase_completed=False):
+            end_time = start_time + eta
+            while time.time() < end_time:
+                elapsed_time = time.time() - start_time
+                remaining_time = end_time - time.time()
+                hours, remainder = divmod(remaining_time, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                countdown_str = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+                countdown_placeholder.text(f"{phase} - Time Remaining: {countdown_str}")
+                progress_percentage = min(elapsed_time / total_eta, 1.0)
+                progress_bar.progress(progress_percentage)
+                time.sleep(1)
+                if phase_completed:
+                    break
+
         with st.spinner('Running task...'):
             progress_bar = st.progress(0)
             countdown_placeholder = st.empty()
             start_time = time.time()
 
-            def update_countdown(phase, eta):
-                end_time = start_time + eta
-                while time.time() < end_time:
-                    elapsed_time = time.time() - start_time
-                    remaining_time = end_time - time.time()
-                    hours, remainder = divmod(remaining_time, 3600)
-                    minutes, seconds = divmod(remainder, 60)
-                    countdown_str = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-                    countdown_placeholder.text(f"{phase} - Time Remaining: {countdown_str}")
-                    progress_percentage = min(elapsed_time / total_eta, 1.0)
-                    progress_bar.progress(progress_percentage)
-                    time.sleep(1)
+            # Download Phase
+            update_progress_bar_and_countdown(start_time, download_eta, "Downloading")
 
-            total_eta = download_eta + task_eta + upload_eta
-            st.info(f"Total Estimated Time to Complete: {str(timedelta(seconds=total_eta))}")
-
-            # Update countdowns for each phase
-            update_countdown("Downloading", download_eta)
+            # Task Phase
             start_time = time.time()  # Reset start time for task phase
-            stdout, stderr = run_command(command)
-            update_countdown("Task in progress", task_eta)
-            start_time = time.time()  # Reset start time for upload phase
-            update_countdown("Uploading", upload_eta)
+            update_progress_bar_and_countdown(start_time, task_eta, "Task in progress")
 
+            stdout, stderr, success = run_command(command)
+
+            # Upload Phase
+            start_time = time.time()  # Reset start time for upload phase
+            update_progress_bar_and_countdown(start_time, upload_eta, "Uploading")
+
+            # Ensure the progress bar is full at the end
             progress_bar.progress(100)
+            countdown_placeholder.text("Task Completed")
 
         st.text(stdout)
         st.session_state.stderr = stderr  # Store stderr in session state
