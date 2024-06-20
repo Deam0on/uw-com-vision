@@ -8,6 +8,7 @@ from google.api_core import page_iterator
 from io import BytesIO
 from PIL import Image
 from datetime import timedelta
+import time
 
 # Absolute path to main.py
 MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
@@ -219,8 +220,6 @@ threshold = st.slider(
 # Align checkbox and button to the right side
 col1, col2 = st.columns([3, 1])
 with col1:
-    # Execute task
-
     if st.button("Run Task"):
         visualize_flag = "--visualize"  # Always true
         upload_flag = "--upload"  # Always true
@@ -235,20 +234,37 @@ with col1:
         
         st.info(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
     
-        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
+        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
         st.info(f"Running: {command}")
         
+        # Start countdown and progress bar
+        start_time = time.time()
+        end_time = start_time + eta
+        countdown_placeholder = st.empty()
+        progress_bar = st.progress(0)
+
         with st.spinner('Running task...'):
-            progress_bar = st.progress(0)
-            for i in range(0, 100, 10):  # Simulate progress
-                progress_bar.progress(i)
+            while time.time() < end_time:
+                remaining_time = end_time - time.time()
+                hours, remainder = divmod(remaining_time, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                countdown_str = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+                
+                countdown_placeholder.text(f"Estimated Time Remaining: {countdown_str}")
+                elapsed_time = time.time() - start_time
+                progress_percentage = min(elapsed_time / eta, 1.0)
+                progress_bar.progress(progress_percentage)
+                
+                time.sleep(1)  # Update every second
+            
+            # Ensure the progress bar is full at the end
+            progress_bar.progress(1.0)
             
             stdout, stderr = run_command(command)
-            progress_bar.progress(100)
         
         st.text(stdout)
         st.session_state.stderr = stderr  # Store stderr in session state
-    
+
         # Reset the show_errors state if there are new errors
         if stderr:
             st.session_state.show_errors = True
