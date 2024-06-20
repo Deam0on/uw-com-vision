@@ -1,0 +1,5 @@
+{
+  "prepare": {"average_time": 300},
+  "evaluate": {"average_time": 1800},
+  "inference": {"average_time_per_image": 5, "buffer": 1.1}
+}
