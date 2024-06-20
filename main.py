@@ -154,7 +154,7 @@ def main():
         # run_inference(args.dataset_name, output_dir, args.visualize)
         run_inference(args.dataset_name, output_dir, args.visualize, args.threshold)
 
- elapsed_time = time.time() - start_time
+elapsed_time = time.time() - start_time
 
 if args.task != 'inference':
     update_eta_data(args.task, elapsed_time)
