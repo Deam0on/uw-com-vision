@@ -164,23 +164,6 @@ st.title("PaCE Neural Network Control Panel")
 st.header("Script controls")
 use_new_data = st.checkbox("Use new data from bucket", value=False)
 
-# Conditionally show the upload section
-if use_new_data:
-    st.header("Upload Files to GCS")
-    upload_folder = st.selectbox(
-        "Select folder to upload to",
-        [f"{GCS_DATASET_FOLDER}/{dataset_name}", GCS_INFERENCE_FOLDER]
-    )
-    overwrite = st.checkbox("Overwrite existing data in the folder")
-    uploaded_files = st.file_uploader(
-        "Choose files to upload",
-        accept_multiple_files=True
-    )
-    if st.button("Upload Files") and uploaded_files:
-        with st.spinner('Uploading files...'):
-            upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files, overwrite)
-        st.success("Files uploaded successfully.")
-
 new_dataset = st.checkbox("New dataset")
 if new_dataset:
     new_dataset_name = st.text_input("Enter new dataset name")
@@ -252,22 +235,22 @@ with col2:
         else:
             st.warning("Please check the confirmation box to delete the dataset.")
 
-# # Conditionally show the upload section
-# if use_new_data:
-#     st.header("Upload Files to GCS")
-#     upload_folder = st.selectbox(
-#         "Select folder to upload to",
-#         [f"{GCS_DATASET_FOLDER}/{dataset_name}", GCS_INFERENCE_FOLDER]
-#     )
-#     overwrite = st.checkbox("Overwrite existing data in the folder")
-#     uploaded_files = st.file_uploader(
-#         "Choose files to upload",
-#         accept_multiple_files=True
-#     )
-#     if st.button("Upload Files") and uploaded_files:
-#         with st.spinner('Uploading files...'):
-#             upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files, overwrite)
-#         st.success("Files uploaded successfully.")
+# Conditionally show the upload section
+if use_new_data:
+    st.header("Upload Files to GCS")
+    upload_folder = st.selectbox(
+        "Select folder to upload to",
+        [f"{GCS_DATASET_FOLDER}/{dataset_name}", GCS_INFERENCE_FOLDER]
+    )
+    overwrite = st.checkbox("Overwrite existing data in the folder")
+    uploaded_files = st.file_uploader(
+        "Choose files to upload",
+        accept_multiple_files=True
+    )
+    if st.button("Upload Files") and uploaded_files:
+        with st.spinner('Uploading files...'):
+            upload_files_to_gcs(GCS_BUCKET_NAME, upload_folder, uploaded_files, overwrite)
+        st.success("Files uploaded successfully.")
 
 # Show errors and warnings
 if st.session_state.show_errors:
