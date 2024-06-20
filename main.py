@@ -43,8 +43,8 @@ def upload_data_to_bucket():
     os.system(f"gsutil -m cp -r /home/deamoon_uw_nn/output/ {archive_path}")
 
 def read_eta_data():
-    if os.path.exists(ETA_FILE):
-        with open(ETA_FILE, 'r') as file:
+    if os.path.exists("/home/deamoon_uw_nn/uw-com-vision/eta_data.json"):
+        with open("/home/deamoon_uw_nn/uw-com-vision/eta_data.json", 'r') as file:
             return json.load(file)
     else:
         return {
@@ -66,7 +66,7 @@ def update_eta_data(task, elapsed_time):
     else:
         data[task] = {"average_time": elapsed_time}
     
-    with open(ETA_FILE, 'w') as file:
+    with open("/home/deamoon_uw_nn/uw-com-vision/eta_data.json", 'w') as file:
         json.dump(data, file, indent=2)
 
 def estimate_eta(task, num_images=0):
@@ -118,7 +118,6 @@ def main():
 
     img_dir = os.path.join("/home/deamoon_uw_nn/DATASET", args.dataset_name)  # Set the fixed path for image directory
     output_dir = "/home/deamoon_uw_nn/split_dir"  # Set the fixed path for output directory
-    ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
 
     if args.download:
         print(f"Downloading data for dataset {args.dataset_name} from bucket...")
