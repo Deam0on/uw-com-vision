@@ -7,6 +7,7 @@ from datetime import datetime
 from google.api_core import page_iterator
 from io import BytesIO
 from PIL import Image
+from datetime import timedelta
 
 # Absolute path to main.py
 MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
@@ -143,6 +144,29 @@ def format_and_sort_folders(folders):
     formatted_folders.sort(key=lambda x: x[1], reverse=True)
     return formatted_folders
 
+# Define a function to read and calculate ETA
+def estimate_eta(task, num_images=0):
+    data = read_eta_data()
+    if task == 'inference':
+        avg_time_per_image = data.get(task, {}).get('average_time_per_image', 1)
+        buffer = data.get(task, {}).get('buffer', 1)
+        return avg_time_per_image * num_images * buffer
+    else:
+        return data.get(task, {}).get('average_time', 60)
+
+# Define a function to read ETA data
+def read_eta_data():
+    ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
+    if os.path.exists(ETA_FILE):
+        with open(ETA_FILE, 'r') as file:
+            return json.load(file)
+    else:
+        return {
+            "prepare": {"average_time": 300},
+            "evaluate": {"average_time": 1800},
+            "inference": {"average_time_per_image": 5, "buffer": 1.1}
+        }
+
 # Initialize session state
 if 'show_errors' not in st.session_state:
     st.session_state.show_errors = False
@@ -196,32 +220,68 @@ threshold = st.slider(
 col1, col2 = st.columns([3, 1])
 with col1:
     # Execute task
+
     if st.button("Run Task"):
         visualize_flag = "--visualize"  # Always true
         upload_flag = "--upload"  # Always true
-        download_flag = "--download" 
-
-        # command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
-        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
+        download_flag = "--download"
+    
+        # Calculate ETA
+        if task == 'inference':
+            num_images = len(os.listdir(f"/home/deamoon_uw_nn/DATASET/{dataset_name}"))
+            eta = estimate_eta('inference', num_images)
+        else:
+            eta = estimate_eta(task)
+        
+        st.info(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
+    
+        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
         st.info(f"Running: {command}")
         
         with st.spinner('Running task...'):
             progress_bar = st.progress(0)
             for i in range(0, 100, 10):  # Simulate progress
                 progress_bar.progress(i)
-
+            
             stdout, stderr = run_command(command)
             progress_bar.progress(100)
-
+        
         st.text(stdout)
-
         st.session_state.stderr = stderr  # Store stderr in session state
-
+    
         # Reset the show_errors state if there are new errors
         if stderr:
             st.session_state.show_errors = True
         else:
             st.success(f"{task.capitalize()} task completed successfully!")
+
+    
+    # if st.button("Run Task"):
+    #     visualize_flag = "--visualize"  # Always true
+    #     upload_flag = "--upload"  # Always true
+    #     download_flag = "--download" 
+
+    #     # command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
+    #     command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
+    #     st.info(f"Running: {command}")
+        
+    #     with st.spinner('Running task...'):
+    #         progress_bar = st.progress(0)
+    #         for i in range(0, 100, 10):  # Simulate progress
+    #             progress_bar.progress(i)
+
+    #         stdout, stderr = run_command(command)
+    #         progress_bar.progress(100)
+
+    #     st.text(stdout)
+
+    #     st.session_state.stderr = stderr  # Store stderr in session state
+
+    #     # Reset the show_errors state if there are new errors
+    #     if stderr:
+    #         st.session_state.show_errors = True
+    #     else:
+    #         st.success(f"{task.capitalize()} task completed successfully!")
 
 with col2:
     confirm_deletion = st.checkbox("Confirm Deletion")
