@@ -8,8 +8,27 @@ from data_preparation import split_dataset
 from train_model import train_on_dataset
 from evaluate_model import evaluate_model
 from inference import run_inference
+import subprocess
 
 ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
+
+def run_command_real_time(command):
+    """
+    Execute a shell command and yield output line by line in real-time.
+
+    Parameters:
+    - command: Command to execute.
+
+    Yields:
+    - str: Output line.
+    """
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    for stdout_line in iter(process.stdout.readline, ""):
+        yield stdout_line
+    process.stdout.close()
+    return_code = process.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, command)
 
 def download_data_from_bucket():
     """
@@ -138,7 +157,9 @@ def main():
 
     elif args.task == 'train':
         print(f"Training model on dataset {args.dataset_name}...")
-        train_on_dataset(args.dataset_name, output_dir)
+        command = f"python3 train_model.py --dataset_name {args.dataset_name} --output_dir {output_dir}"
+        for output_line in run_command_real_time(command):
+            print(output_line, end='')  # Print the output line in real-time
 
     elif args.task == 'evaluate':
         print(f"Evaluating model on dataset {args.dataset_name}...")
