@@ -151,22 +151,28 @@ def estimate_eta(task, num_images=0):
     if task == 'inference':
         avg_time_per_image = data.get(task, {}).get('average_time_per_image', 1)
         buffer = data.get(task, {}).get('buffer', 1)
-        return avg_time_per_image * num_images * buffer
+        inference_time = avg_time_per_image * num_images * buffer
+        download_time = data.get('download', {}).get('average_time', 60)
+        upload_time = data.get('upload', {}).get('average_time', 60)
+        return inference_time + download_time + upload_time
     else:
-        return data.get(task, {}).get('average_time', 60)
+        task_time = data.get(task, {}).get('average_time', 60)
+        download_time = data.get('download', {}).get('average_time', 60)
+        upload_time = data.get('upload', {}).get('average_time', 60)
+        return task_time + download_time + upload_time
 
-# Define a function to read ETA data
-def read_eta_data():
-    ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
-    if os.path.exists(ETA_FILE):
-        with open(ETA_FILE, 'r') as file:
-            return json.load(file)
-    else:
-        return {
-            "prepare": {"average_time": 300},
-            "evaluate": {"average_time": 1800},
-            "inference": {"average_time_per_image": 5, "buffer": 1.1}
-        }
+# # Define a function to read ETA data
+# def read_eta_data():
+#     ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
+#     if os.path.exists(ETA_FILE):
+#         with open(ETA_FILE, 'r') as file:
+#             return json.load(file)
+#     else:
+#         return {
+#             "prepare": {"average_time": 300},
+#             "evaluate": {"average_time": 1800},
+#             "inference": {"average_time_per_image": 5, "buffer": 1.1}
+#         }
 
 # Initialize session state
 if 'show_errors' not in st.session_state:
@@ -220,11 +226,12 @@ threshold = st.slider(
 # Align checkbox and button to the right side
 col1, col2 = st.columns([3, 1])
 with col1:
+    # Update the task execution button code to handle the combined ETA
     if st.button("Run Task"):
         visualize_flag = "--visualize"  # Always true
         upload_flag = "--upload"  # Always true
         download_flag = "--download"
-    
+        
         # Calculate ETA
         if task == 'inference':
             num_images = len(os.listdir(f"/home/deamoon_uw_nn/DATASET/{dataset_name}"))
@@ -232,39 +239,28 @@ with col1:
         else:
             eta = estimate_eta(task)
         
-        # st.info(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
+        st.info(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
     
         command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
         st.info(f"Running: {command}")
         
-        # Start countdown and progress bar
-        start_time = time.time()
-        end_time = start_time + eta
-        countdown_placeholder = st.empty()
-        progress_bar = st.progress(0)
-
         with st.spinner('Running task...'):
-            while time.time() < end_time:
-                remaining_time = end_time - time.time()
-                hours, remainder = divmod(remaining_time, 3600)
-                minutes, seconds = divmod(remainder, 60)
-                countdown_str = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-                
-                countdown_placeholder.text(f"Estimated Time Remaining: {countdown_str}")
-                elapsed_time = time.time() - start_time
-                progress_percentage = min(elapsed_time / eta, 1.0)
-                progress_bar.progress(progress_percentage)
-                
-                time.sleep(1)  # Update every second
-            
-            # Ensure the progress bar is full at the end
-            progress_bar.progress(1.0)
+            progress_bar = st.progress(0)
+            start_time = datetime.now()
+            eta_timedelta = timedelta(seconds=eta)
+    
+            while (datetime.now() - start_time) < eta_timedelta:
+                elapsed_time = (datetime.now() - start_time).total_seconds()
+                progress = min(elapsed_time / eta, 1)
+                progress_bar.progress(progress)
+                time.sleep(1)  # Update progress every second
             
             stdout, stderr = run_command(command)
+            progress_bar.progress(100)
         
         st.text(stdout)
         st.session_state.stderr = stderr  # Store stderr in session state
-
+    
         # Reset the show_errors state if there are new errors
         if stderr:
             st.session_state.show_errors = True
