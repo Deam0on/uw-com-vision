@@ -150,9 +150,14 @@ def estimate_eta(task, num_images=0):
     if task == 'inference':
         avg_time_per_image = data.get(task, {}).get('average_time_per_image', 1)
         buffer = data.get(task, {}).get('buffer', 1)
-        return avg_time_per_image * num_images * buffer
+        task_time = avg_time_per_image * num_images * buffer
     else:
-        return data.get(task, {}).get('average_time', 60)
+        task_time = data.get(task, {}).get('average_time', 60)
+    
+    download_time = data.get('download', {}).get('average_time', 60)
+    upload_time = data.get('upload', {}).get('average_time', 60)
+    
+    return download_time + task_time + upload_time
 
 # Define a function to read ETA data
 def read_eta_data():
@@ -253,8 +258,6 @@ with col1:
         else:
             eta = estimate_eta(task)
         
-        st.info(f"Starting task: {task}")
-    
         command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
         
         # Start countdown and progress bar
