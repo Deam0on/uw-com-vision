@@ -56,125 +56,6 @@ import re
 from numpy import sqrt
 from data_preparation import split_dataset
 
-# def register_datasets(dataset_info, test_size=0.2):
-#     """
-#     Registers datasets in Detectron2.
-
-#     Parameters:
-#     - dataset_info: Dictionary containing dataset names and their info.
-#     - test_size: Proportion of the dataset to include in the test split.
-#     """
-#     for dataset_name, info in dataset_info.items():
-#         img_dir, label_dir, thing_classes = info
-
-#         # Load split data if available
-#         split_dir = "/home/deamoon_uw_nn/split_dir/"
-#         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
-
-#         if os.path.exists(split_file):
-#             with open(split_file, 'r') as f:
-#                 split_data = json.load(f)
-#             train_files = split_data['train']
-#             test_files = split_data['test']
-#         else:
-#             print("No split training data found!")
-
-#         # Register training dataset
-#         DatasetCatalog.register(
-#             f"{dataset_name}_train",
-#             lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
-#             get_split_dicts(img_dir, label_dir, files)
-#         )
-#         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
-
-#         # Register testing dataset
-#         DatasetCatalog.register(
-#             f"{dataset_name}_test",
-#             lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
-#             get_split_dicts(img_dir, label_dir, files)
-#         )
-#         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
-
-# def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size=0.2):
-# def load_or_split_dataset(img_dir, label_dir, dataset_name, output_dir="./split_dir", test_size=0.2):
-#     """
-#     Loads the dataset splits from CSV files or creates new splits if they don't exist.
-
-#     Parameters:
-#     - img_dir: Directory containing images.
-#     - label_dir: Directory containing labels.
-#     - dataset_name: Name of the dataset.
-#     - output_dir: Directory to save or load split CSV files.
-#     - test_size: Proportion of the dataset to include in the test split.
-
-#     Returns:
-#     - train_files: List of training label files.
-#     - test_files: List of testing label files.
-#     """
-#     train_csv_path = os.path.join(output_dir, f"{dataset_name}_train_split.csv")
-#     test_csv_path = os.path.join(output_dir, f"{dataset_name}_test_split.csv")
-
-#     if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
-#         # Load splits from CSV
-#         with open(train_csv_path, 'r') as train_csv:
-#             reader = csv.reader(train_csv)
-#             next(reader)  # Skip header
-#             train_files = [row[0] for row in reader]
-
-#         with open(test_csv_path, 'r') as test_csv:
-#             reader = csv.reader(test_csv)
-#             next(reader)  # Skip header
-#             test_files = [row[0] for row in reader]
-        
-#         print(f"Loaded training split from {train_csv_path}")
-#         print(f"Loaded testing split from {test_csv_path}")
-#     else:
-#         # Create new splits and save them
-#         train_files, test_files = split_dataset(img_dir, label_dir, dataset_name, output_dir, test_size)
-    
-#     return train_files, test_files
-
-# def register_datasets(dataset_info, output_dir, test_size=0.2):
-# def register_datasets(dataset_info, test_size=0.2):
-#     """
-#     Registers the datasets in the Detectron2 framework.
-
-#     Parameters:
-#     - dataset_info: Dictionary containing dataset names and their info.
-#     - test_size: Proportion of the dataset to include in the test split.
-#     """
-#     for dataset_name, info in dataset_info.items():
-#         img_dir, label_dir, thing_classes = info
-
-#         # Load or split the dataset
-#         split_dir = "/home/deamoon_uw_nn/split_dir/"
-#         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
-        
-#         if os.path.exists(split_file):
-#             with open(split_file, 'r') as f:
-#                 split_data = json.load(f)
-#             train_files = split_data['train']
-#             test_files = split_data['test']
-#         else:
-#             # train_files, test_files = split_dataset(img_dir, dataset_name, test_size=0.2)
-#             print(f"No split found at {split_file}")
-
-#         # Register training dataset
-#         DatasetCatalog.register(
-#             f"{dataset_name}_train",
-#             lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
-#             get_split_dicts(img_dir, label_dir, files)
-#         )
-#         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
-
-#         # Register testing dataset
-#         DatasetCatalog.register(
-#             f"{dataset_name}_test",
-#             lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
-#             get_split_dicts(img_dir, label_dir, files)
-#         )
-#         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
-
 def register_datasets(dataset_info, test_size=0.2):
     """
     Registers the datasets in the Detectron2 framework.
@@ -216,78 +97,6 @@ def register_datasets(dataset_info, test_size=0.2):
             get_split_dicts(img_dir, label_dir, files, category_json, category_key)
         )
         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
-
-# def get_split_dicts(img_dir, label_dir, files):
-#     """
-#     Generates a list of dictionaries for Detectron2 dataset registration.
-    
-#     Parameters:
-#     - img_dir: Directory containing images.
-#     - label_dir: Directory containing labels.
-#     - files: List of label files to process.
-    
-#     Returns:
-#     - dataset_dicts: List of dictionaries with image and annotation data.
-#     """
-#     dataset_dicts = []
-#     idx = 0
-#     for file in files:
-#         json_file = os.path.join(label_dir, file)
-#         with open(json_file) as f:
-#             imgs_anns = json.load(f)
-
-#         record = {}
-#         filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
-#         record["file_name"] = filename
-#         record["image_id"] = idx
-#         record["height"] = imgs_anns["metadata"]["height"]
-#         record["width"] = imgs_anns["metadata"]["width"]
-#         idx += 1
-#         annos = imgs_anns["instances"]
-#         objs = []
-
-#         for anno in annos:
-#             categoryName = anno["className"]
-#             type = anno["type"]
-
-#             if type == "ellipse":
-#                 cx = anno["cx"]
-#                 cy = anno["cy"]
-#                 rx = anno["rx"]
-#                 ry = anno["ry"]
-#                 theta = anno["angle"]
-#                 ellipse = ((cx, cy), (rx, ry), theta)
-#                 circ = shapely.geometry.Point(ellipse[0]).buffer(1)
-#                 ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
-#                 ellr = shapely.affinity.rotate(ell, ellipse[2])
-#                 px, py = ellr.exterior.coords.xy
-#                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
-#                 poly = [p for x in poly for p in x]
-#             elif type == "polygon":
-#                 px = anno["points"][0:-1:2]
-#                 py = anno["points"][1:-1:2]
-#                 px.append(anno["points"][0])
-#                 py.append(anno["points"][-1])
-#                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
-#                 poly = [p for x in poly for p in x]
-
-#             if "throat" in categoryName:
-#                 category_id = 0
-#             elif "pore" in categoryName:
-#                 category_id = 1
-#             else:
-#                 raise ValueError("Category Name Not Found: " + categoryName)
-
-#             obj = {
-#                 "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
-#                 "bbox_mode": BoxMode.XYXY_ABS,
-#                 "segmentation": [poly],
-#                 "category_id": category_id,
-#             }
-#             objs.append(obj)
-#         record["annotations"] = objs
-#         dataset_dicts.append(record)
-#     return dataset_dicts
 
 def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
     """
@@ -666,12 +475,6 @@ def GetInference(predictor, im, x_pred, metadata, test_img):
 
     Assumes the global variables `im`, `predictor`, `metadata`, `test_img`, and `x_pred` are defined.
     """
-    # dataset_info = read_dataset_info('./uw-com-vision/dataset_info.json')
-    # register_datasets(dataset_info)
-    
-    # trained_model_paths = get_trained_model_paths("./trained_models")
-    # selected_model_dataset = dataset_name  # User-selected model
-    # predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
     outputs = predictor(im)
 
     # Get all instances
@@ -707,7 +510,6 @@ def read_dataset_info(file_path):
         # Convert list values back to tuples for consistency with the original data
         dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
     return dataset_info
-
 
 def run_inference(dataset_name, output_dir, visualize=False):
     """
@@ -778,29 +580,25 @@ def run_inference(dataset_name, output_dir, visualize=False):
     
                 # Use canny edge detection
                 edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-    
-                reader = easyocr.Reader(['en'])
-                result = reader.readtext(gray, detail=0, paragraph=False, contrast_ths=0.85, adjust_contrast=0.85, add_margin=0.25, width_ths=0.25, decoder='beamsearch')
-                if result:  # Ensure result is not empty
-                    pxum_r = result[0]
-                    psum = re.sub("[^0-9]", "", pxum_r)
-                else:
-                    pxum_r = ''
-                    psum = '0'
 
-                lines_list = []
-                lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=1)
-    
-                if lines is not None:
-                    for points in lines:
-                        x1, y1, x2, y2 = points[0]
-                        cv2.line(im, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        lines_list.append([(x1, y1), (x2, y2)])
-                        scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-                        um_pix = float(psum) / scale_len
-                else:
-                    um_pix = 1
-                    psum = '0'
+                if dataset_name != 'hw_patterns':
+                    # Execute this block for datasets other than 'hw_patterns'
+                    reader = easyocr.Reader(['en'])
+                    result = reader.readtext(gray, detail=0, paragraph=False, contrast_ths=0.85, adjust_contrast=0.85, add_margin=0.25, width_ths=0.25, decoder='beamsearch')
+                    if result:  # Ensure result is not empty
+                        pxum_r = result[0]
+                        psum = re.sub("[^0-9]", "", pxum_r)
+
+                    lines_list = []
+                    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=1)
+        
+                    if lines is not None:
+                        for points in lines:
+                            x1, y1, x2, y2 = points[0]
+                            cv2.line(im, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                            lines_list.append([(x1, y1), (x2, y2)])
+                            scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+                            um_pix = float(psum) / scale_len
     
                 GetInference(predictor, im, x_pred, metadata, test_img)  # Ensure this function is correctly defined elsewhere
                 GetCounts(predictor, im, TList, PList)  # Ensure this function is correctly defined elsewhere
@@ -812,8 +610,6 @@ def run_inference(dataset_name, output_dir, visualize=False):
                 num_instances = mask_array.shape[0]
                 mask_array = np.moveaxis(mask_array, 0, -1)
                 output = np.zeros_like(im)
-
-                print(f"Number of instances for x_pred: {x_pred} is: {num_instances}")
 
                 for i in range(num_instances):
                     # Initialize a new output array for each mask
@@ -829,8 +625,6 @@ def run_inference(dataset_name, output_dir, visualize=False):
                     single_im_mask = cv2.cvtColor(single_output, cv2.COLOR_BGR2GRAY)
                     single_cnts = cv2.findContours(single_im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                     single_cnts = imutils.grab_contours(single_cnts)
-                
-                    print(f"Mask {i}: Found {len(single_cnts)} contours.")
                 
                     for c in single_cnts:
                         pixelsPerMetric = 1 # or 0.85, correction
@@ -856,273 +650,39 @@ def run_inference(dataset_name, output_dir, visualize=False):
                         dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
                         dimA = dA / pixelsPerMetric
                         dimB = dB / pixelsPerMetric
-                        dimArea = area / pixelsPerMetric
-                        dimPerimeter = perimeter / pixelsPerMetric
-                        diaFeret = max(dimA, dimB)
-                        if (dimA and dimB) != 0:
-                            Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
-                        else:
-                            Aspect_Ratio = 0
-                        Length = min(dimA, dimB) * um_pix
-                        Width = max(dimA, dimB) * um_pix
-                        CircularED = np.sqrt(4 * area / np.pi) * um_pix
-                        Chords = cv2.arcLength(c, True) * um_pix
-                        Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
-                        Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
-                        Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
-                        Feret_diam = diaFeret * um_pix
-                
-                        test_count = test_count + 1
-                        print(f"Debug test_count is: {test_count}")
-                        csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
+
+                        if dataset_name != 'hw_patterns':
+							dimArea = area / pixelsPerMetric
+	                        dimPerimeter = perimeter / pixelsPerMetric
+	                        diaFeret = max(dimA, dimB)
+                            # Execute this block for datasets other than 'hw_patterns'
+							if (dimA and dimB) != 0:
+								Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
+							else:
+								Aspect_Ratio = 0
+							Length = min(dimA, dimB) * um_pix
+							Width = max(dimA, dimB) * um_pix
+							CircularED = np.sqrt(4 * area / np.pi) * um_pix
+							Chords = cv2.arcLength(c, True) * um_pix
+							Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
+							Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
+							Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
+							Feret_diam = diaFeret * um_pix
+							
+							csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
+						else:
+							dimArea = area / pixelsPerMetric
+	                        dimPerimeter = perimeter / pixelsPerMetric
+	                        diaFeret = max(dimA, dimB)
+                            # Execute this block for datasets other than 'hw_patterns'
+							if (dimA and dimB) != 0:
+								Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
+							else:
+								Aspect_Ratio = 0
+							Length = min(dimA, dimB)
+							Width = max(dimA, dimB)
+							
+							csvwriter.writerow([Length, Width, test_img])
 
 
 
-                # for i in range(num_instances):
-                #     mask = mask_array[:, :, i:(i + 1)]
-                #     output = np.where(mask == True, 255, output)
-                # imm = Image.fromarray(output)
-                # imm.save(os.path.join(output_dir, 'predicted_masks.jpg'))
-                # cv2.imwrite(os.path.join(output_dir, 'Masks.jpg'), output)  # Save mask
-                # im_mask = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
-                # cnts = cv2.findContours(im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                # cnts = imutils.grab_contours(cnts)
-
-                # print(len(cnts))
-    
-                # if len(cnts) > 0:
-                #     (cnts, _) = contours.sort_contours(cnts)
-                #     pixelsPerMetric = 1 # 0.85
-    
-                #     for c in cnts:
-                #         if cv2.contourArea(c) < 100:
-                #             continue
-                #         area = cv2.contourArea(c)
-                #         perimeter = cv2.arcLength(c, True)
-    
-                #         orig = im_mask.copy()
-                #         box = cv2.minAreaRect(c)
-                #         box = cv2.boxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
-                #         box = np.array(box, dtype="int")
-                #         box = perspective.order_points(box)
-                #         cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
-                #         for (x, y) in box:
-                #             cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
-                #         (tl, tr, br, bl) = box
-                #         (tltrX, tltrY) = midpoint(tl, tr)
-                #         (blbrX, blbrY) = midpoint(bl, br)
-                #         (tlblX, tlblY) = midpoint(tl, bl)
-                #         (trbrX, trbrY) = midpoint(tr, br)
-                #         dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
-                #         dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
-                #         # if pixelsPerMetric is None:
-                #         #     pixelsPerMetric = dB / width
-                #         dimA = dA / pixelsPerMetric
-                #         dimB = dB / pixelsPerMetric
-                #         dimArea = area / pixelsPerMetric
-                #         dimPerimeter = perimeter / pixelsPerMetric
-                #         diaFeret = max(dimA, dimB)
-                #         if (dimA and dimB) != 0:
-                #             Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
-                #         else:
-                #             Aspect_Ratio = 0
-                #         Length = min(dimA, dimB) * um_pix
-                #         Width = max(dimA, dimB) * um_pix
-                #         CircularED = np.sqrt(4 * area / np.pi) * um_pix
-                #         Chords = cv2.arcLength(c, True) * um_pix
-                #         Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
-                #         Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
-                #         Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
-                #         Feret_diam = diaFeret * um_pix
-
-                #         test_count = test_count + 1
-                #         print(f"Debug test_count is: {test_count}")
-    
-                #         csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
-    
-        tT = sum(TList)
-        tP = sum(PList)
-        print("No. (Total) of Pores:  " + repr(tP))
-        print("No. (Total) of Pore Throats:  " + repr(tT))
-
-
-# def run_inference(dataset_name, output_dir, visualize=False):
-#     """
-#     Runs inference on images in the specified directory using the provided model.
-
-#     Parameters:
-#     - dataset_name: Name of the dataset.
-#     - output_dir: Directory to save inference results.
-#     - visualize: Boolean, if True, save visualizations of predictions.
-#     """
-#     dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
-#     register_datasets(dataset_info)
-    
-#     trained_model_paths = get_trained_model_paths("/home/deamoon_uw_nn/split_dir")
-#     selected_model_dataset = dataset_name  # User-selected model
-#     predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
-    
-#     metadata = MetadataCatalog.get(f"{dataset_name}_train")
-    
-#     image_folder_path = get_image_folder_path()
-    
-#     # Path to save outputs
-#     path = output_dir
-#     os.makedirs(path, exist_ok=True)
-#     inpath = image_folder_path
-#     images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
-    
-#     Img_ID = []
-#     EncodedPixels = []
-#     conv = lambda l: ' '.join(map(str, l))
-    
-#     for name in images_name:
-#         image = cv2.imread(inpath + "/" + name)
-#         outputs = predictor(image)
-#         masks = postprocess_masks(
-#             np.asarray(outputs["instances"].to('cpu')._fields['pred_masks']),
-#             outputs["instances"].to('cpu')._fields['scores'].numpy(), image)
-    
-#         if masks:  # If any objects are detected in this image
-#             for i in range(len(masks)):  # Loop all instances
-#                 Img_ID.append(name.replace('.tif', ''))
-#                 EncodedPixels.append(conv(rle_encoding(masks[i])))
-    
-#     # Save inference results
-#     df = pd.DataFrame({"ImageId": Img_ID, "EncodedPixels": EncodedPixels})
-#     df.to_csv(os.path.join(path, "R50_flip_results.csv"), index=False, sep=',')
-    
-#     for x_pred in [0, 1]:
-#         TList = []
-#         PList = []
-#         csv_filename = f'results_x_pred_{x_pred}.csv'
-#         test_img_path = image_folder_path
-    
-#         # Open CSV file before processing images
-#         with open(csv_filename, 'w', newline='') as csvfile:
-#             csvwriter = csv.writer(csvfile)
-#             csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
-    
-#             for test_img in os.listdir(test_img_path):
-#                 input_path = os.path.join(test_img_path, test_img)
-#                 im = cv2.imread(input_path)
-    
-#                 # Convert image to grayscale
-#                 gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    
-#                 # Use canny edge detection
-#                 edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-    
-#                 reader = easyocr.Reader(['en'])
-#                 result = reader.readtext(gray, detail=0, paragraph=False, contrast_ths=0.85, adjust_contrast=0.85, add_margin=0.25, width_ths=0.25, decoder='beamsearch')
-#                 pxum_r = result[0]
-#                 psum = re.sub("[^0-9]", "", pxum_r)
-    
-#                 lines_list = []
-#                 lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=1)
-    
-#                 for points in lines:
-#                     x1, y1, x2, y2 = points[0]
-#                     cv2.line(im, (x1, y1), (x2, y2), (0, 255, 0), 2)
-#                     lines_list.append([(x1, y1), (x2, y2)])
-#                     scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-#                     um_pix = float(psum) / scale_len
-
-#                 # if dataset_name == "polyhipes":
-#                 #     reader = easyocr.Reader(['en'])
-#                 #     result = reader.readtext(gray, detail=0, paragraph=False, contrast_ths=0.85, adjust_contrast=0.85, add_margin=0.25, width_ths=0.25, decoder='beamsearch')
-                
-#                 #     if result:  # Add a check to ensure result is not empty
-#                 #         pxum_r = result[0]
-#                 #         psum = re.sub("[^0-9]", "", pxum_r)
-                
-#                 #         lines_list = []
-#                 #         lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=1)
-                
-#                 #         if lines is not None:  # Add a check to ensure lines is not None
-#                 #             for points in lines:
-#                 #                 x1, y1, x2, y2 = points[0]
-#                 #                 cv2.line(im, (x1, y1), (x2, y2), (0, 255, 0), 2)
-#                 #                 lines_list.append([(x1, y1), (x2, y2)])
-#                 #                 scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-#                 #                 um_pix = float(psum) / scale_len
-#                 #         else:
-#                 #             um_pix = 1
-#                 #             psum = 0
-
-#                 # else:
-#                 #     um_pix = 1
-#                 #     psum = 0
-    
-#                 GetInference(predictor, im, x_pred, metadata, test_img)  # Ensure this function is correctly defined elsewhere
-#                 GetCounts(predictor, im, TList, PList)  # Ensure this function is correctly defined elsewhere
-    
-#                 outputs = predictor(im)
-#                 inst_out = outputs['instances']
-#                 filtered_instances = inst_out[inst_out.pred_classes == x_pred]
-#                 mask_array = filtered_instances.pred_masks.to("cpu").numpy()
-#                 num_instances = mask_array.shape[0]
-#                 mask_array = np.moveaxis(mask_array, 0, -1)
-#                 output = np.zeros_like(im)
-    
-#                 for i in range(num_instances):
-#                     mask = mask_array[:, :, i:(i + 1)]
-#                     output = np.where(mask == True, 255, output)
-#                 imm = Image.fromarray(output)
-#                 imm.save(os.path.join(output_dir, 'predicted_masks.jpg'))
-#                 cv2.imwrite(os.path.join(output_dir, 'Masks.jpg'), output)  # Save mask
-#                 im_mask = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY)
-#                 cnts = cv2.findContours(im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-#                 cnts = imutils.grab_contours(cnts)
-    
-#                 if len(cnts) > 0:
-#                     (cnts, _) = contours.sort_contours(cnts)
-#                     pixelsPerMetric = 0.85
-    
-#                     for c in cnts:
-#                         if cv2.contourArea(c) < 100:
-#                             continue
-#                         area = cv2.contourArea(c)
-#                         perimeter = cv2.arcLength(c, True)
-    
-#                         orig = im_mask.copy()
-#                         box = cv2.minAreaRect(c)
-#                         box = cv2.boxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
-#                         box = np.array(box, dtype="int")
-#                         box = perspective.order_points(box)
-#                         cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
-#                         for (x, y) in box:
-#                             cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
-#                         (tl, tr, br, bl) = box
-#                         (tltrX, tltrY) = midpoint(tl, tr)
-#                         (blbrX, blbrY) = midpoint(bl, br)
-#                         (tlblX, tlblY) = midpoint(tl, bl)
-#                         (trbrX, trbrY) = midpoint(tr, br)
-#                         dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
-#                         dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
-#                         if pixelsPerMetric is None:
-#                             pixelsPerMetric = dB / width
-#                         dimA = dA / pixelsPerMetric
-#                         dimB = dB / pixelsPerMetric
-#                         dimArea = area / pixelsPerMetric
-#                         dimPerimeter = perimeter / pixelsPerMetric
-#                         diaFeret = max(dimA, dimB)
-#                         if (dimA and dimB) != 0:
-#                             Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
-#                         else:
-#                             Aspect_Ratio = 0
-#                         Length = min(dimA, dimB) * um_pix
-#                         Width = max(dimA, dimB) * um_pix
-#                         CircularED = np.sqrt(4 * area / np.pi) * um_pix
-#                         Chords = cv2.arcLength(c, True) * um_pix
-#                         Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
-#                         Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
-#                         Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
-#                         Feret_diam = diaFeret * um_pix
-    
-#                         csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
-    
-#         tT = sum(TList)
-#         tP = sum(PList)
-#         print("No. (Total) of Pores:  " + repr(tP))
-#         print("No. (Total) of Pore Throats:  " + repr(tT))
