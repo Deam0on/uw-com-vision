@@ -10,13 +10,11 @@ from inference import run_inference
 import json
 import time
 
+ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
+
 def download_data_from_bucket():
     """
     Download data from a Google Cloud Storage bucket to a local directory.
-    
-    Parameters:
-    - bucket_url: URL of the Google Cloud Storage bucket.
-    - local_dir: Local directory to store downloaded data.
     """
     dirpath = Path('/home/deamoon_uw_nn') / 'DATASET'
     if dirpath.exists() and dirpath.is_dir():
@@ -27,10 +25,6 @@ def download_data_from_bucket():
 def upload_data_to_bucket():
     """
     Upload data from local directories to a Google Cloud Storage bucket.
-
-    Parameters:
-    - local_dirs: List of local directories or files to upload.
-    - bucket_url: URL of the Google Cloud Storage bucket.
     """
     # Create a directory with the current time-date stamp
     time_offset = timedelta(hours=2)
@@ -43,8 +37,8 @@ def upload_data_to_bucket():
     os.system(f"gsutil -m cp -r /home/deamoon_uw_nn/output/ {archive_path}")
 
 def read_eta_data():
-    if os.path.exists("/home/deamoon_uw_nn/uw-com-vision/eta_data.json"):
-        with open("/home/deamoon_uw_nn/uw-com-vision/eta_data.json", 'r') as file:
+    if os.path.exists(ETA_FILE):
+        with open(ETA_FILE, 'r') as file:
             return json.load(file)
     else:
         return {
@@ -53,20 +47,26 @@ def read_eta_data():
             "inference": {"average_time_per_image": 5, "buffer": 1.1}
         }
 
-def update_eta_data(task, elapsed_time):
+def update_eta_data(task, time_taken, num_images=0):
     data = read_eta_data()
-    if task in data:
-        if 'average_time' in data[task]:
-            current_avg = data[task]['average_time']
-            data[task]['average_time'] = (current_avg + elapsed_time) / 2
-        elif 'average_time_per_image' in data[task]:
-            avg_time_per_image = data[task]['average_time_per_image']
-            num_images = elapsed_time['num_images']
-            data[task]['average_time_per_image'] = (avg_time_per_image + elapsed_time['total_time'] / num_images) / 2
+
+    if task == 'inference':
+        # Calculate average time per image
+        avg_time_per_image = time_taken / max(num_images, 1)
+        current_avg = data.get(task, {}).get('average_time_per_image', avg_time_per_image)
+        buffer = data.get(task, {}).get('buffer', 1.1)
+
+        # Update average time per image
+        new_avg_time_per_image = (current_avg + avg_time_per_image) / 2
+        data[task] = {"average_time_per_image": new_avg_time_per_image, "buffer": buffer}
     else:
-        data[task] = {"average_time": elapsed_time}
-    
-    with open("/home/deamoon_uw_nn/uw-com-vision/eta_data.json", 'w') as file:
+        current_avg = data.get(task, {}).get('average_time', time_taken)
+
+        # Update average time for task
+        new_avg_time = (current_avg + time_taken) / 2
+        data[task] = {"average_time": new_avg_time}
+
+    with open(ETA_FILE, 'w') as file:
         json.dump(data, file, indent=2)
 
 def estimate_eta(task, num_images=0):
@@ -126,43 +126,60 @@ def main():
     else:
         eta = estimate_eta(args.task)
 
-    # print(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
-    start_time = time.time()
-
+    # Start time for the total operation
+    total_start_time = datetime.now()
+    
     if args.download:
         print(f"Downloading data for dataset {args.dataset_name} from bucket...")
         download_data_from_bucket()
 
     if args.task == 'prepare':
         print(f"Preparing dataset {args.dataset_name}...")
+        task_start_time = datetime.now()
         split_dataset(img_dir, args.dataset_name)
+        task_end_time = datetime.now()
 
     elif args.task == 'train':
         print(f"Training model on dataset {args.dataset_name}...")
         train_on_dataset(args.dataset_name, output_dir)
-        
+
     elif args.task == 'evaluate':
         print(f"Evaluating model on dataset {args.dataset_name}...")
+        task_start_time = datetime.now()
         evaluate_model(args.dataset_name, output_dir, args.visualize)
-        
+        task_end_time = datetime.now()
+
     elif args.task == 'inference':
         print(f"Running inference on dataset {args.dataset_name}...")
+
+        # Remove old inference results
         os.system("rm -f *.png")
         os.system("rm -f *.csv")
         os.system("rm -f *.jpg")
-        # run_inference(args.dataset_name, output_dir, args.visualize)
-        run_inference(args.dataset_name, output_dir, args.visualize, args.threshold)
-        
+
+        # Count the number of images after downloading
+        num_images = len([f for f in os.listdir(img_dir) if f.endswith(('.tif', '.png', '.jpg'))])
+
+        # Start time for the inference task
+        task_start_time = datetime.now()
+        run_inference(args.dataset_name, output_dir, args.visualize)
+        task_end_time = datetime.now()
+
+        # Update ETA for inference
+        inference_time_taken = (task_end_time - task_start_time).total_seconds()
+        update_eta_data('inference', inference_time_taken, num_images)
+
+    # End time for the total operation
+    total_end_time = datetime.now()
+    total_time_taken = (total_end_time - total_start_time).total_seconds()
+    
     if args.upload:
         print(f"Uploading results for dataset {args.dataset_name} to bucket...")
         upload_data_to_bucket()
 
-    elapsed_time = time.time() - start_time
-    
+    # Update ETA for other tasks
     if args.task != 'inference':
-        update_eta_data(args.task, elapsed_time)
-    else:
-        update_eta_data(args.task, {'total_time': elapsed_time, 'num_images': num_images})
+        update_eta_data(args.task, total_time_taken)
 
 if __name__ == "__main__":
     main()
