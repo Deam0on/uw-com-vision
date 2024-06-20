@@ -8,33 +8,8 @@ from data_preparation import split_dataset
 from train_model import train_on_dataset
 from evaluate_model import evaluate_model
 from inference import run_inference
-import subprocess
 
 ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
-
-def run_command_real_time(command):
-    """
-    Execute a shell command and yield output line by line in real-time.
-
-    Parameters:
-    - command: Command to execute.
-
-    Yields:
-    - str: Output line.
-    """
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    while True:
-        output = process.stdout.readline()
-        error = process.stderr.readline()
-        if output == '' and error == '' and process.poll() is not None:
-            break
-        if output:
-            yield 'stdout', output.strip()
-        if error:
-            yield 'stderr', error.strip()
-    return_code = process.poll()
-    if return_code:
-        yield 'error', f"Command failed with exit status {return_code}"
 
 def download_data_from_bucket():
     """
@@ -163,12 +138,7 @@ def main():
 
     elif args.task == 'train':
         print(f"Training model on dataset {args.dataset_name}...")
-        command = f"python3 train_model.py --dataset_name {args.dataset_name} --output_dir {output_dir}"
-        for output_type, output_line in run_command_real_time(command):
-            if output_type == 'stdout':
-                print(output_line)
-            elif output_type == 'stderr':
-                print(f"Error: {output_line}")
+        train_on_dataset(args.dataset_name, output_dir)
 
     elif args.task == 'evaluate':
         print(f"Evaluating model on dataset {args.dataset_name}...")
