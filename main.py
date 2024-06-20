@@ -126,7 +126,7 @@ def main():
     else:
         eta = estimate_eta(args.task)
 
-    print(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
+    # print(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
     start_time = time.time()
 
     if args.download:
