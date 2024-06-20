@@ -3,11 +3,10 @@ import subprocess
 import os
 import json
 from google.cloud import storage
-from datetime import datetime
+from datetime import datetime, timedelta
 from google.api_core import page_iterator
 from io import BytesIO
 from PIL import Image
-from datetime import timedelta
 import time
 
 # Absolute path to main.py
@@ -151,24 +150,44 @@ def estimate_eta(task, num_images=0):
     if task == 'inference':
         avg_time_per_image = data.get(task, {}).get('average_time_per_image', 1)
         buffer = data.get(task, {}).get('buffer', 1)
-        inference_time = avg_time_per_image * num_images * buffer
-        download_time = data.get('download', {}).get('average_time', 60)
-        upload_time = data.get('upload', {}).get('average_time', 60)
-        return inference_time + download_time + upload_time
+        return avg_time_per_image * num_images * buffer
     else:
-        task_time = data.get(task, {}).get('average_time', 60)
-        download_time = data.get('download', {}).get('average_time', 60)
-        upload_time = data.get('upload', {}).get('average_time', 60)
-        return task_time + download_time + upload_time
+        return data.get(task, {}).get('average_time', 60)
 
-# # Define a function to read ETA data
+# Define a function to read ETA data
 def read_eta_data():
     ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
     if os.path.exists(ETA_FILE):
         with open(ETA_FILE, 'r') as file:
             return json.load(file)
     else:
-        print(f"No ETA data found!")
+        return {
+            "prepare": {"average_time": 300},
+            "evaluate": {"average_time": 1800},
+            "inference": {"average_time_per_image": 5, "buffer": 1.1},
+            "download": {"average_time": 60},
+            "upload": {"average_time": 60}
+        }
+
+def format_eta(seconds):
+    """
+    Format seconds into HH:MM:SS string.
+    """
+    return str(timedelta(seconds=int(seconds)))
+
+def countdown_timer(eta_seconds):
+    """
+    Display a countdown timer in Streamlit.
+    """
+    placeholder = st.empty()
+    while eta_seconds > 0:
+        mins, secs = divmod(eta_seconds, 60)
+        hours, mins = divmod(mins, 60)
+        time_left = f'{int(hours):02}:{int(mins):02}:{int(secs):02}'
+        placeholder.markdown(f"**Time remaining: {time_left}**")
+        time.sleep(1)
+        eta_seconds -= 1
+    placeholder.markdown("**Time remaining: 00:00:00**")
 
 # Initialize session state
 if 'show_errors' not in st.session_state:
@@ -267,34 +286,6 @@ with col1:
             st.session_state.show_errors = True
         else:
             st.success(f"{task.capitalize()} task completed successfully!")
-
-    
-    # if st.button("Run Task"):
-    #     visualize_flag = "--visualize"  # Always true
-    #     upload_flag = "--upload"  # Always true
-    #     download_flag = "--download" 
-
-    #     # command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
-    #     command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
-    #     st.info(f"Running: {command}")
-        
-    #     with st.spinner('Running task...'):
-    #         progress_bar = st.progress(0)
-    #         for i in range(0, 100, 10):  # Simulate progress
-    #             progress_bar.progress(i)
-
-    #         stdout, stderr = run_command(command)
-    #         progress_bar.progress(100)
-
-    #     st.text(stdout)
-
-    #     st.session_state.stderr = stderr  # Store stderr in session state
-
-    #     # Reset the show_errors state if there are new errors
-    #     if stderr:
-    #         st.session_state.show_errors = True
-    #     else:
-    #         st.success(f"{task.capitalize()} task completed successfully!")
 
 with col2:
     confirm_deletion = st.checkbox("Confirm Deletion")
