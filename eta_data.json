@@ -1,18 +1,21 @@
 {
     "prepare": {
-        "average_time": 10
+        "average_time": 20
     },
     "evaluate": {
-        "average_time": 10
+        "average_time": 20
+    },
+    "train": {
+        "average_time": 1800
     },
     "inference": {
-        "average_time_per_image": 5,
-        "buffer": 1.1        
+        "average_time_per_image": 10,
+        "buffer": 1.1
     },
     "download": {
-        "average_time": 10
+        "average_time": 30
     },
     "upload": {
-        "average_time": 10
+        "average_time": 30
     }
 }
