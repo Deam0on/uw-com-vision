@@ -222,12 +222,12 @@ threshold = st.slider(
 # Align checkbox and button to the right side
 col1, col2 = st.columns([3, 1])
 with col1:
-    # Update the task execution button code to handle the combined ETA
+    # Execute task
     if st.button("Run Task"):
         visualize_flag = "--visualize"  # Always true
         upload_flag = "--upload"  # Always true
         download_flag = "--download"
-        
+    
         # Calculate ETA
         if task == 'inference':
             num_images = len(os.listdir(f"/home/deamoon_uw_nn/DATASET/{dataset_name}"))
@@ -235,25 +235,30 @@ with col1:
         else:
             eta = estimate_eta(task)
         
-        st.info(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
-    
-        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
+        # Initialize countdown
+        eta_seconds = int(eta)
+        
+        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
         st.info(f"Running: {command}")
         
         with st.spinner('Running task...'):
             progress_bar = st.progress(0)
-            start_time = datetime.now()
-            eta_timedelta = timedelta(seconds=eta)
-    
-            while (datetime.now() - start_time) < eta_timedelta:
-                elapsed_time = (datetime.now() - start_time).total_seconds()
-                progress = min(elapsed_time / eta, 1)
-                progress_bar.progress(progress)
-                time.sleep(1)  # Update progress every second
+            countdown_thread = st.empty()
+            
+            # Start the countdown timer in a separate thread
+            from threading import Thread
+            countdown_thread = Thread(target=countdown_timer, args=(eta_seconds,))
+            countdown_thread.start()
+            
+            # Update progress bar
+            for i in range(0, 100, 10):  # Simulate progress
+                progress_bar.progress(i)
+                time.sleep(eta_seconds / 10)
             
             stdout, stderr = run_command(command)
             progress_bar.progress(100)
         
+        countdown_thread.join()  # Wait for the countdown to finish
         st.text(stdout)
         st.session_state.stderr = stderr  # Store stderr in session state
     
