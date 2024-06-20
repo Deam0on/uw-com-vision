@@ -155,6 +155,15 @@ if new_dataset:
 task = st.selectbox("Select Task", ["prepare", "train", "evaluate", "inference"])
 dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys()))
 
+threshold = st.slider(
+    "Select Detection Threshold",
+    min_value=0.0,
+    max_value=1.0,
+    value=0.65,
+    step=0.01,
+    help="Adjust the detection threshold for the model."
+)
+
 # Align checkbox and button to the right side
 col1, col2 = st.columns([3, 1])
 with col1:
