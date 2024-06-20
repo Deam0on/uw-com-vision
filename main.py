@@ -154,16 +154,16 @@ def main():
         # run_inference(args.dataset_name, output_dir, args.visualize)
         run_inference(args.dataset_name, output_dir, args.visualize, args.threshold)
 
-elapsed_time = time.time() - start_time
-
-if args.task != 'inference':
-    update_eta_data(args.task, elapsed_time)
-else:
-    update_eta_data(args.task, {'total_time': elapsed_time, 'num_images': num_images})
+    elapsed_time = time.time() - start_time
     
-    if args.upload:
-        print(f"Uploading results for dataset {args.dataset_name} to bucket...")
-        upload_data_to_bucket()
+    if args.task != 'inference':
+        update_eta_data(args.task, elapsed_time)
+    else:
+        update_eta_data(args.task, {'total_time': elapsed_time, 'num_images': num_images})
+        
+        if args.upload:
+            print(f"Uploading results for dataset {args.dataset_name} to bucket...")
+            upload_data_to_bucket()
 
 if __name__ == "__main__":
     main()
