@@ -23,12 +23,18 @@ def run_command_real_time(command):
     - str: Output line.
     """
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    for stdout_line in iter(process.stdout.readline, ""):
-        yield stdout_line
-    process.stdout.close()
-    return_code = process.wait()
+    while True:
+        output = process.stdout.readline()
+        error = process.stderr.readline()
+        if output == '' and error == '' and process.poll() is not None:
+            break
+        if output:
+            yield 'stdout', output.strip()
+        if error:
+            yield 'stderr', error.strip()
+    return_code = process.poll()
     if return_code:
-        raise subprocess.CalledProcessError(return_code, command)
+        yield 'error', f"Command failed with exit status {return_code}"
 
 def download_data_from_bucket():
     """
@@ -158,8 +164,11 @@ def main():
     elif args.task == 'train':
         print(f"Training model on dataset {args.dataset_name}...")
         command = f"python3 train_model.py --dataset_name {args.dataset_name} --output_dir {output_dir}"
-        for output_line in run_command_real_time(command):
-            print(output_line, end='')  # Print the output line in real-time
+        for output_type, output_line in run_command_real_time(command):
+            if output_type == 'stdout':
+                print(output_line)
+            elif output_type == 'stderr':
+                print(f"Error: {output_line}")
 
     elif args.task == 'evaluate':
         print(f"Evaluating model on dataset {args.dataset_name}...")
