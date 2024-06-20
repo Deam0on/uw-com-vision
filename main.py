@@ -119,10 +119,6 @@ def main():
     img_dir = os.path.join("/home/deamoon_uw_nn/DATASET", args.dataset_name)  # Set the fixed path for image directory
     output_dir = "/home/deamoon_uw_nn/split_dir"  # Set the fixed path for output directory
 
-    if args.download:
-        print(f"Downloading data for dataset {args.dataset_name} from bucket...")
-        download_data_from_bucket()
-
     # Estimate and display ETA before task execution
     if args.task == 'inference':
         num_images = len([f for f in os.listdir(img_dir) if f.endswith('.tif')])
@@ -132,6 +128,10 @@ def main():
 
     print(f"Estimated Time to Complete: {str(timedelta(seconds=eta))}")
     start_time = time.time()
+
+    if args.download:
+        print(f"Downloading data for dataset {args.dataset_name} from bucket...")
+        download_data_from_bucket()
 
     if args.task == 'prepare':
         print(f"Preparing dataset {args.dataset_name}...")
@@ -152,6 +152,10 @@ def main():
         os.system("rm -f *.jpg")
         # run_inference(args.dataset_name, output_dir, args.visualize)
         run_inference(args.dataset_name, output_dir, args.visualize, args.threshold)
+        
+    if args.upload:
+        print(f"Uploading results for dataset {args.dataset_name} to bucket...")
+        upload_data_to_bucket()
 
     elapsed_time = time.time() - start_time
     
@@ -159,10 +163,6 @@ def main():
         update_eta_data(args.task, elapsed_time)
     else:
         update_eta_data(args.task, {'total_time': elapsed_time, 'num_images': num_images})
-        
-        if args.upload:
-            print(f"Uploading results for dataset {args.dataset_name} to bucket...")
-            upload_data_to_bucket()
 
 if __name__ == "__main__":
     main()
