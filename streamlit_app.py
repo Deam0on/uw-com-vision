@@ -241,7 +241,6 @@ threshold = st.slider(
 # Align checkbox and button to the right side
 col1, col2 = st.columns([3, 1])
 with col1:
-    # Execute task
     if st.button("Run Task"):
         visualize_flag = "--visualize"  # Always true
         upload_flag = "--upload"  # Always true
@@ -254,50 +253,44 @@ with col1:
         else:
             eta = estimate_eta(task)
         
-        # Initialize countdown
-        eta_seconds = int(eta)
+        st.info(f"Starting task: {task}")
+    
+        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
         
-        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} {visualize_flag} {download_flag} {upload_flag}"
-        st.info(f"Running: {command}")
-        
+        # Start countdown and progress bar
+        start_time = time.time()
+        end_time = start_time + eta
+        countdown_placeholder = st.empty()
+        progress_bar = st.progress(0)
+
         with st.spinner('Running task...'):
-            progress_bar = st.progress(0)
-            countdown_thread = st.empty()
+            while time.time() < end_time:
+                remaining_time = end_time - time.time()
+                hours, remainder = divmod(remaining_time, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                countdown_str = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+                
+                countdown_placeholder.markdown(f"**Time remaining: {countdown_str}**")
+                elapsed_time = time.time() - start_time
+                progress_percentage = min(elapsed_time / eta, 1.0)
+                progress_bar.progress(progress_percentage)
+                
+                time.sleep(1)  # Update every second
             
-            # Start the countdown timer in a separate thread
-            from threading import Thread
-            countdown_thread = Thread(target=countdown_timer, args=(eta_seconds,))
-            countdown_thread.start()
-            
-            # Update progress bar
-            for i in range(0, 100, 10):  # Simulate progress
-                progress_bar.progress(i)
-                time.sleep(eta_seconds / 10)
+            # Ensure the progress bar is full at the end
+            progress_bar.progress(1.0)
             
             stdout, stderr = run_command(command)
-            progress_bar.progress(100)
         
-        countdown_thread.join()  # Wait for the countdown to finish
+        countdown_placeholder.markdown("**Time remaining: 00:00:00**")
         st.text(stdout)
         st.session_state.stderr = stderr  # Store stderr in session state
-    
+
         # Reset the show_errors state if there are new errors
         if stderr:
             st.session_state.show_errors = True
         else:
             st.success(f"{task.capitalize()} task completed successfully!")
-
-with col2:
-    confirm_deletion = st.checkbox("Confirm Deletion")
-    if st.button("Remove Dataset"):
-        if confirm_deletion:
-            del st.session_state.datasets[dataset_name]
-            save_dataset_names_to_gcs(st.session_state.datasets)
-            st.success(f"Dataset '{dataset_name}' deleted.")
-            st.session_state.confirm_delete = False  # Automatically uncheck after deletion
-            st.experimental_rerun()  # Refresh to reflect deletion
-        else:
-            st.warning("Please check the confirmation box to delete the dataset.")
 
 # Conditionally show the upload section
 if use_new_data:
