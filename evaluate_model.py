@@ -92,6 +92,24 @@ def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
         dataset_dicts.append(record)
     return dataset_dicts
 
+def get_trained_model_paths(base_dir):
+    """
+    Retrieves paths to trained models in a given base directory.
+
+    Parameters:
+    - base_dir: Directory containing trained models.
+
+    Returns:
+    - model_paths: Dictionary with dataset names as keys and model paths as values.
+    """
+    model_paths = {}
+    for dataset_name in os.listdir(base_dir):
+        model_dir = os.path.join(base_dir, dataset_name)
+        model_path = os.path.join(model_dir, "model_final.pth")
+        if os.path.exists(model_path):
+            model_paths[dataset_name] = model_path
+    return model_paths
+
 def register_datasets(dataset_name, dataset_info, test_size=0.2):
     img_dir, label_dir, thing_classes = dataset_info[dataset_name]
     
