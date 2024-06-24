@@ -22,9 +22,6 @@ def read_dataset_info(file_path):
     return dataset_info
 
 def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
-    """
-    Generates a list of dictionaries for Detectron2 dataset registration.
-    """
     dataset_info = read_dataset_info(category_json)
     
     if category_key not in dataset_info:
@@ -32,15 +29,15 @@ def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
     
     category_names = dataset_info[category_key][2]
     category_name_to_id = {name: idx for idx, name in enumerate(category_names)}
-    
+
     dataset_dicts = []
     idx = 0
     for file in files:
         json_file = os.path.join(label_dir, file)
         if not os.path.exists(json_file):
             print(f"Label file not found: {json_file}")
-            continue  # Skip missing files
-
+            continue
+        
         with open(json_file) as f:
             imgs_anns = json.load(f)
 
@@ -59,7 +56,11 @@ def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
             type = anno["type"]
 
             if type == "ellipse":
-                cx, cy, rx, ry, theta = anno["cx"], anno["cy"], anno["rx"], anno["ry"], anno["angle"]
+                cx = anno["cx"]
+                cy = anno["cy"]
+                rx = anno["rx"]
+                ry = anno["ry"]
+                theta = anno["angle"]
                 ellipse = ((cx, cy), (rx, ry), theta)
                 circ = shapely.geometry.Point(ellipse[0]).buffer(1)
                 ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
@@ -68,7 +69,8 @@ def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
                 poly = [p for x in poly for p in x]
             elif type == "polygon":
-                px, py = anno["points"][0:-1:2], anno["points"][1:-1:2]
+                px = anno["points"][0:-1:2]
+                py = anno["points"][1:-1:2]
                 px.append(anno["points"][0])
                 py.append(anno["points"][-1])
                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
@@ -90,98 +92,54 @@ def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
         dataset_dicts.append(record)
     return dataset_dicts
 
-def register_datasets(dataset_info, test_size=0.2):
-    """
-    Registers the datasets in the Detectron2 framework.
-    """
-    for dataset_name, info in dataset_info.items():
-        img_dir, label_dir, thing_classes = info
+def register_datasets(dataset_name, dataset_info, test_size=0.2):
+    img_dir, label_dir, thing_classes = dataset_info[dataset_name]
+    
+    split_dir = "/home/deamoon_uw_nn/split_dir/"
+    split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+    category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
+    category_key = dataset_name
+    
+    if os.path.exists(split_file):
+        with open(split_file, 'r') as f:
+            split_data = json.load(f)
+        train_files = split_data['train']
+        test_files = split_data['test']
+    else:
+        print(f"No split found at {split_file}")
 
-        split_dir = "/home/deamoon_uw_nn/split_dir/"
-        split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
-        category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
-        category_key = dataset_name
-        
-        if os.path.exists(split_file):
-            with open(split_file, 'r') as f:
-                split_data = json.load(f)
-            train_files = split_data['train']
-            test_files = split_data['test']
-        else:
-            print(f"No split found at {split_file}")
+    DatasetCatalog.register(
+        f"{dataset_name}_train",
+        lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
+        get_split_dicts(img_dir, label_dir, files, category_json, category_key)
+    )
+    MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
 
-        DatasetCatalog.register(
-            f"{dataset_name}_train",
-            lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
-            get_split_dicts(img_dir, label_dir, files, category_json, category_key)
-        )
-        MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
-
-        DatasetCatalog.register(
-            f"{dataset_name}_test",
-            lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
-            get_split_dicts(img_dir, label_dir, files, category_json, category_key)
-        )
-        MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
-
-def get_trained_model_paths(base_dir):
-    """
-    Retrieves paths to trained models in a given base directory.
-    """
-    model_paths = {}
-    for dataset_name in os.listdir(base_dir):
-        model_dir = os.path.join(base_dir, dataset_name)
-        model_path = os.path.join(model_dir, "model_final.pth")
-        if os.path.exists(model_path):
-            model_paths[dataset_name] = model_path
-    return model_paths
-
-def load_model(cfg, model_path, dataset_name):
-    """
-    Loads a trained model with a specific configuration.
-    """
-    cfg.MODEL.WEIGHTS = model_path
-    thing_classes = MetadataCatalog.get(f"{dataset_name}_train").thing_classes
-    cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
-    predictor = DefaultPredictor(cfg)
-    return predictor
-
-def choose_and_use_model(model_paths, dataset_name):
-    """
-    Selects and loads a trained model for a specific dataset.
-    """
-    if dataset_name not in model_paths:
-        print(f"No model found for dataset {dataset_name}")
-        return None
-
-    model_path = model_paths[dataset_name]
-    cfg = get_cfg()
-    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
-    cfg.MODEL.DEVICE = "cuda"
-    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.45
-
-    predictor = load_model(cfg, model_path, dataset_name)
-    return predictor
+    DatasetCatalog.register(
+        f"{dataset_name}_test",
+        lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
+        get_split_dicts(img_dir, label_dir, files, category_json, category_key)
+    )
+    MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
 
 def evaluate_model(dataset_name, output_dir, visualize=False):
-    """
-    Evaluates a trained model on the specified dataset.
-    """
     dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
-    register_datasets({dataset_name: dataset_info[dataset_name]})
+    register_datasets(dataset_name, dataset_info)
     
     trained_model_paths = get_trained_model_paths("/home/deamoon_uw_nn/split_dir")
     predictor = choose_and_use_model(trained_model_paths, dataset_name)
-    if predictor is None:
-        return
-
+    
     cfg = get_cfg()
-    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
-    cfg.MODEL.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
     evaluator = COCOEvaluator(f"{dataset_name}_test", cfg, False, output_dir=output_dir)
-    val_loader = build_detection_test_loader(cfg, f"{dataset_name}_test")
     
+    # Ensure no cached data is used
+    coco_format_cache = os.path.join("/home/deamoon_uw_nn/split_dir", f"{dataset_name}_test_coco_format.json")
+    if os.path.exists(coco_format_cache):
+        os.remove(coco_format_cache)
+
+    val_loader = build_detection_test_loader(cfg, f"{dataset_name}_test")
+
     metrics = inference_on_dataset(predictor.model, val_loader, evaluator)
     print(f"Evaluation metrics: {metrics}")
 
@@ -190,7 +148,6 @@ def evaluate_model(dataset_name, output_dir, visualize=False):
     with open(csv_path, mode='w', newline='') as csv_file:
         fieldnames = ['metric', 'value']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        
         writer.writeheader()
         for key, value in metrics.items():
             writer.writerow({'metric': key, 'value': value})
@@ -201,9 +158,6 @@ def evaluate_model(dataset_name, output_dir, visualize=False):
         visualize_predictions(predictor, dataset_name, output_dir)
 
 def visualize_predictions(predictor, dataset_name, output_dir):
-    """
-    Visualizes predictions on the evaluation dataset.
-    """
     dataset_dicts = DatasetCatalog.get(f"{dataset_name}_test")
     metadata = MetadataCatalog.get(f"{dataset_name}_test")
 
@@ -218,3 +172,5 @@ def visualize_predictions(predictor, dataset_name, output_dir):
         vis_path = os.path.join(output_dir, os.path.basename(d["file_name"]))
         cv2.imwrite(vis_path, vis_output)
         print(f"Saved visualization to {vis_path}")
+
+# The functions should now work as expected when called from `main.py`.
