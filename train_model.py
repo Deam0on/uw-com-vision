@@ -69,6 +69,8 @@ def register_datasets(dataset_info, test_size=0.2):
         img_dir, label_dir, thing_classes = info
         split_dir = "/home/deamoon_uw_nn/split_dir/"
         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+        category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
+        category_key = dataset_name
         
         if os.path.exists(split_file):
             with open(split_file, 'r') as f:
@@ -78,8 +80,9 @@ def register_datasets(dataset_info, test_size=0.2):
         else:
             print(f"No split found at {split_file}")
             continue  # Skip if no split file
-
+        print("-------------------------------")
         print(f"Registering datasets for {dataset_name}")
+        print("-------------------------------")
         DatasetCatalog.register(
             f"{dataset_name}_train",
             lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
