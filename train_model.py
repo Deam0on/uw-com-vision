@@ -65,21 +65,10 @@ from data_preparation import split_dataset
 #     return train_files, test_files
 
 def register_datasets(dataset_info, test_size=0.2):
-    """
-    Registers the datasets in the Detectron2 framework.
-
-    Parameters:
-    - dataset_info: Dictionary containing dataset names and their info.
-    - test_size: Proportion of the dataset to include in the test split.
-    """
     for dataset_name, info in dataset_info.items():
         img_dir, label_dir, thing_classes = info
-
-        # Load or split the dataset
         split_dir = "/home/deamoon_uw_nn/split_dir/"
         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
-        category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
-        category_key = dataset_name
         
         if os.path.exists(split_file):
             with open(split_file, 'r') as f:
@@ -87,10 +76,10 @@ def register_datasets(dataset_info, test_size=0.2):
             train_files = split_data['train']
             test_files = split_data['test']
         else:
-            # train_files, test_files = split_dataset(img_dir, dataset_name, test_size=0.2)
             print(f"No split found at {split_file}")
+            continue  # Skip if no split file
 
-        # Register training dataset
+        print(f"Registering datasets for {dataset_name}")
         DatasetCatalog.register(
             f"{dataset_name}_train",
             lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
@@ -98,13 +87,13 @@ def register_datasets(dataset_info, test_size=0.2):
         )
         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
 
-        # Register testing dataset
         DatasetCatalog.register(
             f"{dataset_name}_test",
             lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
             get_split_dicts(img_dir, label_dir, files, category_json, category_key)
         )
         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
+
 
 # def split_dataset(img_dir, label_dir, dataset_name, test_size=0.2, seed=42):
 #     """
@@ -291,77 +280,55 @@ def register_datasets(dataset_info, test_size=0.2):
 #     return dataset_dicts
 
 def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
-    """
-    Generates a list of dictionaries for Detectron2 dataset registration.
-    
-    Parameters:
-    - img_dir: Directory containing images.
-    - label_dir: Directory containing labels.
-    - files: List of label files to process.
-    - category_json: Path to the JSON file containing category information.
-    - category_key: Key in JSON to select category names.
-    
-    Returns:
-    - dataset_dicts: List of dictionaries with image and annotation data.
-    """
-    # Load category names and create a mapping to category IDs
     dataset_info = read_dataset_info(category_json)
-    
-    # Check if category_key exists
     if category_key not in dataset_info:
         raise ValueError(f"Category key '{category_key}' not found in JSON")
-    
-    category_names = dataset_info[category_key][2]  # Extract category names from the JSON
+    category_names = dataset_info[category_key][2]
     category_name_to_id = {name: idx for idx, name in enumerate(category_names)}
-    
-    print(f"Category Mapping: {category_name_to_id}")  # Debug: print category mapping
 
     dataset_dicts = []
     idx = 0
     for file in files:
         json_file = os.path.join(label_dir, file)
+        if not os.path.exists(json_file):
+            print(f"Label file not found: {json_file}")
+            continue  # Skip missing files
+
         with open(json_file) as f:
             imgs_anns = json.load(f)
 
-        record = {}
-        filename = os.path.join(img_dir, imgs_anns["metadata"]["name"])
-        record["file_name"] = filename
-        record["image_id"] = idx
-        record["height"] = imgs_anns["metadata"]["height"]
-        record["width"] = imgs_anns["metadata"]["width"]
+        record = {
+            "file_name": os.path.join(img_dir, imgs_anns["metadata"]["name"]),
+            "image_id": idx,
+            "height": imgs_anns["metadata"]["height"],
+            "width": imgs_anns["metadata"]["width"]
+        }
         idx += 1
         annos = imgs_anns["instances"]
         objs = []
 
         for anno in annos:
             categoryName = anno["className"]
+            if categoryName not in category_name_to_id:
+                raise ValueError(f"Category Name Not Found: {categoryName}")
+            category_id = category_name_to_id[categoryName]
             type = anno["type"]
 
             if type == "ellipse":
-                cx = anno["cx"]
-                cy = anno["cy"]
-                rx = anno["rx"]
-                ry = anno["ry"]
-                theta = anno["angle"]
+                cx, cy, rx, ry, theta = anno["cx"], anno["cy"], anno["rx"], anno["ry"], anno["angle"]
                 ellipse = ((cx, cy), (rx, ry), theta)
-                circ = shapely.geometry.Point(ellipse[0]).buffer(1)
-                ell = shapely.affinity.scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
-                ellr = shapely.affinity.rotate(ell, ellipse[2])
+                circ = Point(ellipse[0]).buffer(1)
+                ell = scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
+                ellr = rotate(ell, ellipse[2])
                 px, py = ellr.exterior.coords.xy
                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
                 poly = [p for x in poly for p in x]
             elif type == "polygon":
-                px = anno["points"][0:-1:2]
-                py = anno["points"][1:-1:2]
+                px, py = anno["points"][0:-1:2], anno["points"][1:-1:2]
                 px.append(anno["points"][0])
                 py.append(anno["points"][-1])
                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
                 poly = [p for x in poly for p in x]
-
-            if categoryName in category_name_to_id:
-                category_id = category_name_to_id[categoryName]
-            else:
-                raise ValueError(f"Category Name Not Found: {categoryName}")
 
             obj = {
                 "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
@@ -373,6 +340,7 @@ def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
         record["annotations"] = objs
         dataset_dicts.append(record)
     return dataset_dicts
+
     
 def custom_mapper(dataset_dicts):
     """
@@ -425,19 +393,15 @@ def read_dataset_info(file_path):
     return dataset_info
 
 def train_on_dataset(dataset_name, output_dir):
-    """
-    Trains a model on the specified dataset.
-
-    Parameters:
-    - dataset_name: Name of the dataset to train on.
-    - output_dir: Directory to save the trained model.
-    """
-
-    # Example usage
     dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
-    register_datasets(dataset_info)
+    register_datasets({dataset_name: dataset_info[dataset_name]})
 
-    # Load configuration
+    print(DatasetCatalog.get("hw_patterns_train"))
+    print(DatasetCatalog.get("hw_patterns_test"))
+    split_file = os.path.join("/home/deamoon_uw_nn/split_dir/", f"{dataset_name}_split.json")
+    print(f"Split file for {dataset_name}: {split_file}")
+
+
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.DATASETS.TRAIN = (f"{dataset_name}_train",)
@@ -465,3 +429,4 @@ def train_on_dataset(dataset_name, output_dir):
     model_path = os.path.join(dataset_output_dir, "model_final.pth")
     torch.save(trainer.model.state_dict(), model_path)
     print(f"Model trained on {dataset_name} saved to {model_path}")
+
