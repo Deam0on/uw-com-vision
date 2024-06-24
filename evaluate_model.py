@@ -15,6 +15,49 @@ from detectron2.engine import DefaultPredictor
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 import csv
 
+def choose_and_use_model(model_paths, dataset_name, threshold):
+    """
+    Selects and loads a trained model for a specific dataset.
+
+    Parameters:
+    - model_paths: Dictionary of model paths.
+    - dataset_name: Name of the dataset for which the model is used.
+    - threshold: Detection threshold for ROI heads score.
+
+    Returns:
+    - predictor: Predictor object for inference.
+    """
+    if dataset_name not in model_paths:
+        print(f"No model found for dataset {dataset_name}")
+        return None
+
+    model_path = model_paths[dataset_name]
+    cfg = get_cfg()
+    cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
+    cfg.MODEL.DEVICE = "cuda"
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = threshold  # Set threshold here
+
+    predictor = load_model(cfg, model_path, dataset_name)
+    return predictor
+
+def load_model(cfg, model_path, dataset_name):
+    """
+    Loads a trained model with a specific configuration.
+
+    Parameters:
+    - cfg: Configuration object for the model.
+    - model_path: Path to the trained model.
+    - dataset_name: Name of the dataset for metadata.
+
+    Returns:
+    - predictor: Loaded predictor object.
+    """
+    cfg.MODEL.WEIGHTS = model_path
+    thing_classes = MetadataCatalog.get(f"{dataset_name}_train").thing_classes
+    cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
+    predictor = DefaultPredictor(cfg)
+    return predictor
+
 def read_dataset_info(file_path):
     with open(file_path, 'r') as file:
         data = json.load(file)
