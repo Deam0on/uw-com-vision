@@ -751,6 +751,8 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             normalized_velocities = (velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
                             
                             # Compute the min, average, and max velocities within the mask
+                            min_velocity = np.min(normalized_velocities)
                             avg_velocity = np.mean(normalized_velocities)
+                            max_velocity = np.max(normalized_velocities)
 
                             csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
