@@ -600,7 +600,8 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
             if dataset_name != 'hw_patterns':
                 csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
             else:
-                 csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'name'])
+                csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'min_velocity', 'avg_velocity', 'max_velocity', 'name'])
+
     
             for test_img in os.listdir(test_img_path):
                 input_path = os.path.join(test_img_path, test_img)
@@ -728,4 +729,14 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
 
                             csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
                         else:
-                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, test_img])
+                            mask = np.zeros(image.shape[:2], dtype=np.uint8)
+                            cv2.drawContours(mask, [c], -1, 255, -1)
+                            masked_image = cv2.bitwise_and(image, image, mask=mask)
+                            hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
+                            velocities = hsv_image[..., 2] / 255.0  # Normalize the V channel to [0, 1]
+                            velocities = velocities[mask == 255]  # Only consider the velocities within the mask
+                            min_velocity = np.min(velocities)
+                            avg_velocity = np.mean(velocities)
+                            max_velocity = np.max(velocities)
+
+                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
