@@ -729,7 +729,8 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
 
                             csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
                         else:
-                            mask = np.zeros(image.shape[:2], dtype=np.uint8)
+                            # mask = np.zeros(image.shape[:2], dtype=np.uint8)
+                            mask = single_output
                             cv2.drawContours(mask, [c], -1, 255, -1)
                             masked_image = cv2.bitwise_and(image, image, mask=mask)
                             hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
