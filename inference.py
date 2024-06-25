@@ -600,7 +600,7 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
             if dataset_name != 'hw_patterns':
                 csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
             else:
-                 csvwriter.writerow(['length', 'width','name'])
+                 csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'name'])
     
             for test_img in os.listdir(test_img_path):
                 input_path = os.path.join(test_img_path, test_img)
@@ -692,17 +692,33 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                         dimA = dA / pixelsPerMetric
                         dimB = dB / pixelsPerMetric
 
+                        dimArea = area / pixelsPerMetric
+                        dimPerimeter = perimeter / pixelsPerMetric
+                        diaFeret = max(dimA, dimB)
+                        # Execute this block for datasets other than 'hw_patterns'
+                        if (dimA and dimB) != 0:
+                            Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
+                        else:
+                            Aspect_Ratio = 0
+                        Length = min(dimA, dimB) * um_pix
+                        Width = max(dimA, dimB) * um_pix
+
+                        ellipse = cv2.fitEllipse(c)
+                        (x, y), (major_axis, minor_axis), angle = ellipse
+                        
+                        if major_axis > minor_axis:
+                            a = major_axis / 2.0
+                            b = minor_axis / 2.0
+                        else:
+                            a = minor_axis / 2.0
+                            b = major_axis / 2.0
+                        eccentricity = np.sqrt(1 - (b**2 / a**2))
+    
+                        # Assuming pixelsPerMetric and um_pix are defined earlier in the code
+                        major_axis_length = major_axis / pixelsPerMetric * um_pix
+                        minor_axis_length = minor_axis / pixelsPerMetric * um_pix
+
                         if dataset_name != 'hw_patterns':
-                            dimArea = area / pixelsPerMetric
-                            dimPerimeter = perimeter / pixelsPerMetric
-                            diaFeret = max(dimA, dimB)
-                            # Execute this block for datasets other than 'hw_patterns'
-                            if (dimA and dimB) != 0:
-                                Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
-                            else:
-                                Aspect_Ratio = 0
-                            Length = min(dimA, dimB) * um_pix
-                            Width = max(dimA, dimB) * um_pix
                             CircularED = np.sqrt(4 * area / np.pi) * um_pix
                             Chords = cv2.arcLength(c, True) * um_pix
                             Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
@@ -712,15 +728,4 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
 
                             csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
                         else:
-                            dimArea = area / pixelsPerMetric
-                            dimPerimeter = perimeter / pixelsPerMetric
-                            diaFeret = max(dimA, dimB)
-                            # Execute this block for 'hw_patterns'
-                            if (dimA and dimB) != 0:
-                                Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
-                            else:
-                                Aspect_Ratio = 0
-                            Length = min(dimA, dimB)
-                            Width = max(dimA, dimB)
-
-                            csvwriter.writerow([Length, Width, test_img])
+                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, test_img])
