@@ -731,7 +731,7 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                         else:
                             # Calculate global min and max velocities for the entire image
                             hsv_image_global = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
-                            global_velocities = hsv_image_global[..., 2] / 255.0  # Normalize the V channel to [0, 1]
+                            global_velocities = hsv_image_global[..., 2]  # Normalize the V channel to [0, 1]
                             
                             global_min_velocity = np.min(global_velocities)
                             global_max_velocity = np.max(global_velocities)
