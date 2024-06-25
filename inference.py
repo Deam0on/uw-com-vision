@@ -735,6 +735,8 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             
                             global_min_velocity = np.min(global_velocities)
                             global_max_velocity = np.max(global_velocities)
+
+                            print(f"Global min: {global_min_velocity}, max: {global_max_velocity}")
                             
                             # Normalize the global velocities
                             # normalized_global_velocities = (global_velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
