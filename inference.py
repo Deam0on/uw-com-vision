@@ -600,7 +600,7 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
             if dataset_name != 'hw_patterns':
                 csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
             else:
-                csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'min_velocity', 'avg_velocity', 'max_velocity','avg_direction', 'name'])
+                csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'min_velocity', 'avg_velocity', 'max_velocity', 'name'])
 
     
             for test_img in os.listdir(test_img_path):
@@ -740,11 +740,11 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             max_velocity = np.max(velocities)
                             # Calculate average direction
                             # Assuming you have access to the flow vectors as `flow_vectors`
-                            flow_vectors_masked = flow_vectors[mask == 255]  # Filter the flow vectors within the mask
-                            angles = np.arctan2(flow_vectors_masked[:, 1], flow_vectors_masked[:, 0])  # Calculate angles in radians
-                            avg_direction = np.mean(angles)  # Calculate the average direction in radians
+                            # flow_vectors_masked = flow_vectors[mask == 255]  # Filter the flow vectors within the mask
+                            # angles = np.arctan2(flow_vectors_masked[:, 1], flow_vectors_masked[:, 0])  # Calculate angles in radians
+                            # avg_direction = np.mean(angles)  # Calculate the average direction in radians
                             
-                            # Convert average direction from radians to degrees
-                            avg_direction_degrees = np.degrees(avg_direction)
+                            # # Convert average direction from radians to degrees
+                            # avg_direction_degrees = np.degrees(avg_direction)
 
-                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, avg_direction_degrees, test_img])
+                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
