@@ -737,7 +737,7 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             global_max_velocity = np.max(global_velocities)
                             
                             # Normalize the global velocities
-                            normalized_global_velocities = (global_velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
+                            # normalized_global_velocities = (global_velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
                             
                             # Now process each contour (mask) as before
                             mask = np.zeros(im.shape[:2], dtype=np.uint8)
@@ -748,8 +748,8 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
                             
                             # Extract the V channel for velocities
-                            velocities = hsv_image[..., 2] / 255.0  # Normalize the V channel to [0, 1]
-                            velocities = velocities[mask == 255]  # Only consider the velocities within the mask
+                            velocities = hsv_image[..., 2]  # Normalize the V channel to [0, 1]
+                            # velocities = velocities[mask == 255]  # Only consider the velocities within the mask
                             
                             # Normalize velocities within the mask based on the global min and max
                             normalized_velocities = (velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
