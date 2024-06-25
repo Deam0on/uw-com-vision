@@ -729,10 +729,9 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
 
                             csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
                         else:
-                            # mask = np.zeros(image.shape[:2], dtype=np.uint8)
-                            mask = single_output
+                            mask = np.zeros(im.shape[:2], dtype=np.uint8)
                             cv2.drawContours(mask, [c], -1, 255, -1)
-                            masked_image = cv2.bitwise_and(image, image, mask=mask)
+                            masked_image = cv2.bitwise_and(im, im, mask=mask)
                             hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
                             velocities = hsv_image[..., 2] / 255.0  # Normalize the V channel to [0, 1]
                             velocities = velocities[mask == 255]  # Only consider the velocities within the mask
