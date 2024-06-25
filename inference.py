@@ -536,6 +536,59 @@ def read_dataset_info(file_path):
         dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
     return dataset_info
 
+def rgb_to_hsv(r, g, b):
+    MAX_PIXEL_VALUE = 255.0
+
+    r = r / MAX_PIXEL_VALUE
+    g = g / MAX_PIXEL_VALUE
+    b = b / MAX_PIXEL_VALUE
+
+    max_val = max(r, g, b)
+    min_val = min(r, g, b)
+    v = max_val
+
+    if max_val == 0.0:
+        s = 0
+        h = 0
+    elif (max_val - min_val) == 0.0:
+        s = 0
+        h = 0
+    else:
+        s = (max_val - min_val) / max_val
+
+        if max_val == r:
+            h = 60 * ((g - b) / (max_val - min_val)) + 0
+        elif max_val == g:
+            h = 60 * ((b - r) / (max_val - min_val)) + 120
+        else:
+            h = 60 * ((r - g) / (max_val - min_val)) + 240
+
+    if h < 0:
+        h = h + 360.0
+
+    h = h / 2
+    s = s * MAX_PIXEL_VALUE
+    v = v * MAX_PIXEL_VALUE
+
+    return h, s, v
+
+def hue_to_wavelength(hue):
+    # There is nothing corresponding to magenta in the light spectrum,
+    # So let's assume that we only use hue values between 0 and 270.
+    assert hue >= 0
+    assert hue <= 270
+
+    # Estimating that the usable part of the visible spectrum is 450-620nm,
+    # with wavelength (in nm) and hue value (in degrees), you can improvise this:
+    wavelength = 620 - 170 / 270 * hue
+    return wavelength
+
+def rgb_to_wavelength(r, g, b):
+    h, s, v = rgb_to_hsv(r, g, b)
+    wavelength = hue_to_wavelength(h)
+    return wavelength
+
+
 # def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
 #     """
 #     Runs inference on images in the specified directory using the provided model.
@@ -766,7 +819,6 @@ def read_dataset_info(file_path):
 
 #                             csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
 
-
 def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
     """
     Runs inference on images in the specified directory using the provided model.
@@ -787,6 +839,7 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
     
     image_folder_path = get_image_folder_path()
     
+    # Path to save outputs
     path = output_dir
     os.makedirs(path, exist_ok=True)
     inpath = image_folder_path
@@ -824,12 +877,15 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
             else:
                 csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'min_velocity', 'avg_velocity', 'max_velocity', 'name'])
 
+    
             for test_img in os.listdir(test_img_path):
                 input_path = os.path.join(test_img_path, test_img)
                 im = cv2.imread(input_path)
     
+                # Convert image to grayscale
                 gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
     
+                # Use canny edge detection
                 edges = cv2.Canny(gray, 50, 150, apertureSize=3)
 
                 if dataset_name != 'hw_patterns':
@@ -870,13 +926,19 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                 mask_array = np.moveaxis(mask_array, 0, -1)
                 output = np.zeros_like(im)
 
-                hsv_image_global = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
-                global_velocities = hsv_image_global[..., 2]
-                
-                global_min_velocity = np.min(global_velocities)
-                global_max_velocity = np.max(global_velocities)
-    
-                print(f"Global min: {global_min_velocity}, max: {global_max_velocity}")
+                global_min_wavelength = float('inf')
+                global_max_wavelength = float('-inf')
+
+                for i in range(im.shape[0]):
+                    for j in range(im.shape[1]):
+                        b, g, r = im[i, j]
+                        wavelength = rgb_to_wavelength(r, g, b)
+                        if wavelength < global_min_wavelength:
+                            global_min_wavelength = wavelength
+                        if wavelength > global_max_wavelength:
+                            global_max_wavelength = wavelength
+
+                print(f"Global min wavelength: {global_min_wavelength}, max wavelength: {global_max_wavelength}")
 
                 for i in range(num_instances):
                     single_output = np.zeros_like(output)
@@ -952,13 +1014,18 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             mask = np.zeros(im.shape[:2], dtype=np.uint8)
                             cv2.drawContours(mask, [c], -1, 255, -1)
                             masked_image = cv2.bitwise_and(im, im, mask=mask)
-                            hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
-                            velocities = hsv_image[..., 2]
-                            velocities = velocities[mask == 255]
-                            normalized_velocities = (velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
-                            min_velocity = np.min(normalized_velocities)
-                            avg_velocity = np.mean(normalized_velocities)
-                            max_velocity = np.max(normalized_velocities)
+
+                            wavelengths = []
+
+                            for i in range(masked_image.shape[0]):
+                                for j in range(masked_image.shape[1]):
+                                    if mask[i, j] == 255:
+                                        b, g, r = masked_image[i, j]
+                                        wavelength = rgb_to_wavelength(r, g, b)
+                                        wavelengths.append(wavelength)
+
+                            min_velocity = (min(wavelengths) - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
+                            avg_velocity = (sum(wavelengths) / len(wavelengths) - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
+                            max_velocity = (max(wavelengths) - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
 
                             csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
-
