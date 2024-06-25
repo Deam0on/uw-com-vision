@@ -634,7 +634,7 @@ def detect_arrows(image):
         [vx, vy, x, y] = cv2.fitLine(contour, cv2.DIST_L2, 0, 0.01, 0.01)
         
         # Calculate the direction vector
-        direction = (vx, vy)
+        direction = (vx[0], vy[0])
         flow_vectors.append(direction)
     
     return flow_vectors
@@ -1079,12 +1079,20 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
 
 
                             # Compute velocities within the mask
+                            # flow_vectors = detect_arrows(masked_image)
+                            # avg_direction = np.mean(flow_vectors, axis=0)
+
                             flow_vectors = detect_arrows(masked_image)
-                            avg_direction = np.mean(flow_vectors, axis=0)
+                            if flow_vectors:
+                                avg_direction = np.mean(flow_vectors, axis=0)
+                            else:
+                                avg_direction = (0, 0)
+
+                            avg_direction_x, avg_direction_y = avg_direction[0], avg_direction[1]
                             
                             # if flow_vectors:
                             #     avg_direction = np.mean(flow_vectors, axis=0)
                             # else:
                             #     avg_direction = (0, 0)
 
-                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, global_min_wavelength, avg_velocity, global_max_wavelength, avg_direction, test_img])
+                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, global_min_wavelength, avg_velocity, global_max_wavelength, avg_direction_x, avg_direction_y, test_img])
