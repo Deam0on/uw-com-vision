@@ -658,8 +658,6 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                 
                 global_min_velocity = np.min(global_velocities)
                 global_max_velocity = np.max(global_velocities)
-    
-                print(f"Global min: {global_min_velocity}, max: {global_max_velocity}")
 
                 for i in range(num_instances):
                     # Initialize a new output array for each mask
@@ -737,18 +735,6 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
 
                             csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
                         else:
-                            # Calculate global min and max velocities for the entire image
-                            # hsv_image_global = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
-                            # global_velocities = hsv_image_global[..., 2]  # Normalize the V channel to [0, 1]
-                            
-                            # global_min_velocity = np.min(global_velocities)
-                            # global_max_velocity = np.max(global_velocities)
-
-                            # print(f"Global min: {global_min_velocity}, max: {global_max_velocity}")
-                            
-                            # Normalize the global velocities
-                            # normalized_global_velocities = (global_velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
-                            
                             # Now process each contour (mask) as before
                             mask = np.zeros(im.shape[:2], dtype=np.uint8)
                             cv2.drawContours(mask, [c], -1, 255, -1)
@@ -765,9 +751,6 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             normalized_velocities = (velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
                             
                             # Compute the min, average, and max velocities within the mask
-                            min_velocity = np.min(normalized_velocities)
                             avg_velocity = np.mean(normalized_velocities)
-                            max_velocity = np.max(normalized_velocities)
-
 
                             csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
