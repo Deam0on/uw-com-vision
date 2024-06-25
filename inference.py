@@ -899,6 +899,8 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
     Img_ID = []
     EncodedPixels = []
 
+    conv = lambda l: ' '.join(map(str, l))
+
     for name in images_name:
         image = cv2.imread(os.path.join(inpath, name))
         outputs = predictor(image)
