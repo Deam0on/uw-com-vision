@@ -588,6 +588,45 @@ def rgb_to_wavelength(r, g, b):
     wavelength = hue_to_wavelength(h)
     return wavelength
 
+def detect_arrows(image):
+    """
+    Detect arrows in the image and compute their directions.
+    
+    Parameters:
+    - image: Input image.
+    
+    Returns:
+    - flow_vectors: List of detected flow vectors (directions).
+    """
+    # Convert to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Use edge detection
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    
+    # Find contours
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    flow_vectors = []
+    
+    for contour in contours:
+        if cv2.contourArea(contour) < 100:  # Filter out small contours
+            continue
+        
+        # Approximate the contour
+        epsilon = 0.03 * cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, epsilon, True)
+        
+        if len(approx) == 7:  # Arrows typically have 7 points
+            # Fit a line to the contour points
+            [vx, vy, x, y] = cv2.fitLine(contour, cv2.DIST_L2, 0, 0.01, 0.01)
+            
+            # Calculate the direction vector
+            direction = (vx, vy)
+            flow_vectors.append(direction)
+    
+    return flow_vectors
+
 
 # def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
 #     """
@@ -1026,4 +1065,13 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
 
                             avg_velocity = sum(wavelengths) / len(wavelengths)
 
-                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, global_min_wavelength, avg_velocity, global_max_wavelength, test_img])
+
+                            # Compute velocities within the mask
+                            flow_vectors = detect_arrows(masked_image)
+                            
+                            if flow_vectors:
+                                avg_direction = np.mean(flow_vectors, axis=0)
+                            else:
+                                avg_direction = (0, 0)
+
+                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, global_min_wavelength, avg_velocity, global_max_wavelength, avg_direction, test_img])
