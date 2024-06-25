@@ -735,16 +735,6 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
                             velocities = hsv_image[..., 2] / 255.0  # Normalize the V channel to [0, 1]
                             velocities = velocities[mask == 255]  # Only consider the velocities within the mask
-                            min_velocity = np.min(velocities)
                             avg_velocity = np.mean(velocities)
-                            max_velocity = np.max(velocities)
-                            # Calculate average direction
-                            # Assuming you have access to the flow vectors as `flow_vectors`
-                            # flow_vectors_masked = flow_vectors[mask == 255]  # Filter the flow vectors within the mask
-                            # angles = np.arctan2(flow_vectors_masked[:, 1], flow_vectors_masked[:, 0])  # Calculate angles in radians
-                            # avg_direction = np.mean(angles)  # Calculate the average direction in radians
-                            
-                            # # Convert average direction from radians to degrees
-                            # avg_direction_degrees = np.degrees(avg_direction)
 
-                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
+                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, avg_velocity, test_img])
