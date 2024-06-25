@@ -405,30 +405,9 @@ st.sidebar.write("""
 
 st.sidebar.subheader("Tutorials")
 st.sidebar.write("""
-- [Getting Started with Streamlit](https://docs.streamlit.io/library/get-started)
-- [Using Google Cloud Storage](https://cloud.google.com/storage/docs/uploading-objects)
-- [Setting up Your Environment](https://docs.python.org/3/tutorial/venv.html)
-""")
-
-with st.expander("General Tips"):
-    st.write("""
-    - **Dataset Preparation:** Ensure your dataset is well-structured.
-    - **Inference:** Use the slider to adjust the detection threshold.
-    - **Uploading Files:** Use the 'Upload Files' section to add new data.
-    """)
-
-with st.expander("How to Use the Application"):
-    st.write("""
     - **Step 1:** Select the task you want to run (prepare, train, evaluate, inference).
     - **Step 2:** Choose the dataset name from the dropdown.
     - **Step 3:** Adjust the detection threshold using the slider.
     - **Step 4:** Optionally, use new data from the bucket by checking the respective box.
     - **Step 5:** Click 'Run Task' to execute the selected task.
-    """)
-
-with st.expander("Useful Links"):
-    st.markdown("""
-    - [Getting Started with Streamlit](https://docs.streamlit.io/library/get-started)
-    - [Using Google Cloud Storage](https://cloud.google.com/storage/docs/uploading-objects)
-    - [Setting up Your Environment](https://docs.python.org/3/tutorial/venv.html)
     """)
