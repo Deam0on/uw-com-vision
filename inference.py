@@ -875,7 +875,7 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
             if dataset_name != 'hw_patterns':
                 csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
             else:
-                csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'min_velocity', 'avg_velocity', 'max_velocity', 'name'])
+                csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'Global_min_velocity', 'avg_velocity', 'Global_max_velocity', 'name'])
 
     
             for test_img in os.listdir(test_img_path):
@@ -938,7 +938,7 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                         if wavelength > global_max_wavelength:
                             global_max_wavelength = wavelength
 
-                print(f"Global min wavelength: {global_min_wavelength}, max wavelength: {global_max_wavelength}")
+                # print(f"Global min wavelength: {global_min_wavelength}, max wavelength: {global_max_wavelength}")
 
                 for i in range(num_instances):
                     single_output = np.zeros_like(output)
@@ -1024,8 +1024,6 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                                         wavelength = rgb_to_wavelength(r, g, b)
                                         wavelengths.append(wavelength)
 
-                            min_velocity = (min(wavelengths) - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
-                            avg_velocity = (sum(wavelengths) / len(wavelengths) - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
-                            max_velocity = (max(wavelengths) - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
+                            avg_velocity = sum(wavelengths) / len(wavelengths)
 
-                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
+                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, global_min_wavelength, avg_velocity, global_max_wavelength, test_img])
