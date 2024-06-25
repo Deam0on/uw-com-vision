@@ -653,6 +653,14 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                 mask_array = np.moveaxis(mask_array, 0, -1)
                 output = np.zeros_like(im)
 
+                hsv_image_global = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
+                global_velocities = hsv_image_global[..., 2]  # Normalize the V channel to [0, 1]
+                
+                global_min_velocity = np.min(global_velocities)
+                global_max_velocity = np.max(global_velocities)
+    
+                print(f"Global min: {global_min_velocity}, max: {global_max_velocity}")
+
                 for i in range(num_instances):
                     # Initialize a new output array for each mask
                     single_output = np.zeros_like(output)
@@ -730,13 +738,13 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
                         else:
                             # Calculate global min and max velocities for the entire image
-                            hsv_image_global = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
-                            global_velocities = hsv_image_global[..., 2]  # Normalize the V channel to [0, 1]
+                            # hsv_image_global = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
+                            # global_velocities = hsv_image_global[..., 2]  # Normalize the V channel to [0, 1]
                             
-                            global_min_velocity = np.min(global_velocities)
-                            global_max_velocity = np.max(global_velocities)
+                            # global_min_velocity = np.min(global_velocities)
+                            # global_max_velocity = np.max(global_velocities)
 
-                            print(f"Global min: {global_min_velocity}, max: {global_max_velocity}")
+                            # print(f"Global min: {global_min_velocity}, max: {global_max_velocity}")
                             
                             # Normalize the global velocities
                             # normalized_global_velocities = (global_velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
