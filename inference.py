@@ -536,6 +536,237 @@ def read_dataset_info(file_path):
         dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
     return dataset_info
 
+# def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
+#     """
+#     Runs inference on images in the specified directory using the provided model.
+
+#     Parameters:
+#     - dataset_name: Name of the dataset.
+#     - output_dir: Directory to save inference results.
+#     - visualize: Boolean, if True, save visualizations of predictions.
+#     """
+#     dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
+#     register_datasets(dataset_info)
+    
+#     trained_model_paths = get_trained_model_paths("/home/deamoon_uw_nn/split_dir")
+#     selected_model_dataset = dataset_name  # User-selected model
+#     # predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
+#     predictor = choose_and_use_model(trained_model_paths, selected_model_dataset, threshold)
+    
+    
+#     metadata = MetadataCatalog.get(f"{dataset_name}_train")
+    
+#     image_folder_path = get_image_folder_path()
+    
+#     # Path to save outputs
+#     path = output_dir
+#     os.makedirs(path, exist_ok=True)
+#     inpath = image_folder_path
+#     images_name = [f for f in os.listdir(inpath) if f.endswith('.tif')]
+    
+#     Img_ID = []
+#     EncodedPixels = []
+
+#     test_count = 0
+        
+#     conv = lambda l: ' '.join(map(str, l))
+    
+#     for name in images_name:
+#         image = cv2.imread(os.path.join(inpath, name))
+#         outputs = predictor(image)
+#         masks = postprocess_masks(
+#             np.asarray(outputs["instances"].to('cpu')._fields['pred_masks']),
+#             outputs["instances"].to('cpu')._fields['scores'].numpy(), image)
+    
+#         if masks:  # If any objects are detected in this image
+#             for i in range(len(masks)):  # Loop all instances
+#                 Img_ID.append(name.replace('.tif', ''))
+#                 EncodedPixels.append(conv(rle_encoding(masks[i])))
+    
+#     # Save inference results
+#     df = pd.DataFrame({"ImageId": Img_ID, "EncodedPixels": EncodedPixels})
+#     df.to_csv(os.path.join(path, "R50_flip_results.csv"), index=False, sep=',')
+
+#     for x_pred in [0, 1]:
+#         TList = []
+#         PList = []
+#         csv_filename = f'results_x_pred_{x_pred}.csv'
+#         test_img_path = image_folder_path
+    
+#         # Open CSV file before processing images
+#         with open(csv_filename, 'w', newline='') as csvfile:
+#             csvwriter = csv.writer(csvfile)
+
+#             if dataset_name != 'hw_patterns':
+#                 csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
+#             else:
+#                 csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'min_velocity', 'avg_velocity', 'max_velocity', 'name'])
+
+    
+#             for test_img in os.listdir(test_img_path):
+#                 input_path = os.path.join(test_img_path, test_img)
+#                 im = cv2.imread(input_path)
+    
+#                 # Convert image to grayscale
+#                 gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    
+#                 # Use canny edge detection
+#                 edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+
+#                 if dataset_name != 'hw_patterns':
+#                     # Execute this block for datasets other than 'hw_patterns'
+#                     reader = easyocr.Reader(['en'])
+#                     result = reader.readtext(gray, detail=0, paragraph=False, contrast_ths=0.85, adjust_contrast=0.85, add_margin=0.25, width_ths=0.25, decoder='beamsearch')
+#                     if result:  # Ensure result is not empty
+#                         pxum_r = result[0]
+#                         psum = re.sub("[^0-9]", "", pxum_r)
+#                     else:
+#                         pxum_r = ''
+#                         psum = '0'
+
+#                     lines_list = []
+#                     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=100, minLineLength=100, maxLineGap=1)
+        
+#                     if lines is not None:
+#                         for points in lines:
+#                             x1, y1, x2, y2 = points[0]
+#                             cv2.line(im, (x1, y1), (x2, y2), (0, 255, 0), 2)
+#                             lines_list.append([(x1, y1), (x2, y2)])
+#                             scale_len = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+#                             um_pix = float(psum) / scale_len
+#                     else:
+#                         um_pix = 1
+#                         psum = '0'
+#                 else:
+#                     # Placeholder: You can add any specific handling for 'hw_patterns' here if needed.
+#                     um_pix = 1
+#                     psum = '0'
+    
+#                 GetInference(predictor, im, x_pred, metadata, test_img)  # Ensure this function is correctly defined elsewhere
+#                 GetCounts(predictor, im, TList, PList)  # Ensure this function is correctly defined elsewhere
+    
+#                 outputs = predictor(im)
+#                 inst_out = outputs['instances']
+#                 filtered_instances = inst_out[inst_out.pred_classes == x_pred]
+#                 mask_array = filtered_instances.pred_masks.to("cpu").numpy()
+#                 num_instances = mask_array.shape[0]
+#                 mask_array = np.moveaxis(mask_array, 0, -1)
+#                 output = np.zeros_like(im)
+
+#                 hsv_image_global = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
+#                 global_velocities = hsv_image_global[..., 2]  # Normalize the V channel to [0, 1]
+                
+#                 global_min_velocity = np.min(global_velocities)
+#                 global_max_velocity = np.max(global_velocities)
+
+#                 for i in range(num_instances):
+#                     # Initialize a new output array for each mask
+#                     single_output = np.zeros_like(output)
+#                     mask = mask_array[:, :, i:(i + 1)]
+#                     single_output = np.where(mask == True, 255, single_output)
+                    
+#                     # Save each mask image separately for debugging
+#                     mask_filename = os.path.join(output_dir, f'mask_{i}.jpg')
+#                     cv2.imwrite(mask_filename, single_output)
+                    
+#                     # Convert the single mask to grayscale for contour detection
+#                     single_im_mask = cv2.cvtColor(single_output, cv2.COLOR_BGR2GRAY)
+#                     single_cnts = cv2.findContours(single_im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#                     single_cnts = imutils.grab_contours(single_cnts)
+                
+#                     for c in single_cnts:
+#                         pixelsPerMetric = 1  # or 0.85, correction
+#                         if cv2.contourArea(c) < 100:
+#                             continue
+#                         area = cv2.contourArea(c)
+#                         perimeter = cv2.arcLength(c, True)
+                
+#                         orig = single_im_mask.copy()
+#                         box = cv2.minAreaRect(c)
+#                         box = cv2.boxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
+#                         box = np.array(box, dtype="int")
+#                         box = perspective.order_points(box)
+#                         cv2.drawContours(orig, [box.astype("int")], -1, (0, 255, 0), 2)
+#                         for (x, y) in box:
+#                             cv2.circle(orig, (int(x), int(y)), 5, (0, 0, 255), -1)
+#                         (tl, tr, br, bl) = box
+#                         (tltrX, tltrY) = midpoint(tl, tr)
+#                         (blbrX, blbrY) = midpoint(bl, br)
+#                         (tlblX, tlblY) = midpoint(tl, bl)
+#                         (trbrX, trbrY) = midpoint(tr, br)
+#                         dA = dist.euclidean((tltrX, tltrY), (blbrX, blbrY))
+#                         dB = dist.euclidean((tlblX, tlblY), (trbrX, trbrY))
+#                         dimA = dA / pixelsPerMetric
+#                         dimB = dB / pixelsPerMetric
+
+#                         dimArea = area / pixelsPerMetric
+#                         dimPerimeter = perimeter / pixelsPerMetric
+#                         diaFeret = max(dimA, dimB)
+#                         # Execute this block for datasets other than 'hw_patterns'
+#                         if (dimA and dimB) != 0:
+#                             Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
+#                         else:
+#                             Aspect_Ratio = 0
+#                         Length = min(dimA, dimB) * um_pix
+#                         Width = max(dimA, dimB) * um_pix
+
+#                         ellipse = cv2.fitEllipse(c)
+#                         (x, y), (major_axis, minor_axis), angle = ellipse
+                        
+#                         if major_axis > minor_axis:
+#                             a = major_axis / 2.0
+#                             b = minor_axis / 2.0
+#                         else:
+#                             a = minor_axis / 2.0
+#                             b = major_axis / 2.0
+#                         eccentricity = np.sqrt(1 - (b**2 / a**2))
+    
+#                         # Assuming pixelsPerMetric and um_pix are defined earlier in the code
+#                         major_axis_length = major_axis / pixelsPerMetric * um_pix
+#                         minor_axis_length = minor_axis / pixelsPerMetric * um_pix
+
+#                         if dataset_name != 'hw_patterns':
+#                             CircularED = np.sqrt(4 * area / np.pi) * um_pix
+#                             Chords = cv2.arcLength(c, True) * um_pix
+#                             Roundness = 1 / Aspect_Ratio if Aspect_Ratio != 0 else 0
+#                             Sphericity = (2 * np.sqrt(np.pi * dimArea)) / dimPerimeter * um_pix
+#                             Circularity = 4 * np.pi * (dimArea / (dimPerimeter) ** 2) * um_pix
+#                             Feret_diam = diaFeret * um_pix
+
+#                             csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
+#                         else:
+#                             hsv_image_global = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
+#                             global_velocities = hsv_image_global[..., 2] / 255.0  # Normalize the V channel to [0, 1]
+                            
+#                             global_min_velocity = np.min(global_velocities)
+#                             global_max_velocity = np.max(global_velocities)
+                            
+#                             # Normalize the global velocities
+#                             normalized_global_velocities = (global_velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
+                            
+#                             # Now process each contour (mask) as before
+#                             mask = np.zeros(im.shape[:2], dtype=np.uint8)
+#                             cv2.drawContours(mask, [c], -1, 255, -1)
+#                             masked_image = cv2.bitwise_and(im, im, mask=mask)
+                            
+#                             # Convert the masked image to HSV
+#                             hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
+                            
+#                             # Extract the V channel for velocities
+#                             velocities = hsv_image[..., 2] / 255.0  # Normalize the V channel to [0, 1]
+#                             velocities = velocities[mask == 255]  # Only consider the velocities within the mask
+                            
+#                             # Normalize velocities within the mask based on the global min and max
+#                             normalized_velocities = (velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
+                            
+#                             # Compute the min, average, and max velocities within the mask
+#                             min_velocity = np.min(normalized_velocities)
+#                             avg_velocity = np.mean(normalized_velocities)
+#                             max_velocity = np.max(normalized_velocities)
+
+#                             csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
+
+
 def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
     """
     Runs inference on images in the specified directory using the provided model.
@@ -550,15 +781,12 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
     
     trained_model_paths = get_trained_model_paths("/home/deamoon_uw_nn/split_dir")
     selected_model_dataset = dataset_name  # User-selected model
-    # predictor = choose_and_use_model(trained_model_paths, selected_model_dataset)
     predictor = choose_and_use_model(trained_model_paths, selected_model_dataset, threshold)
-    
     
     metadata = MetadataCatalog.get(f"{dataset_name}_train")
     
     image_folder_path = get_image_folder_path()
     
-    # Path to save outputs
     path = output_dir
     os.makedirs(path, exist_ok=True)
     inpath = image_folder_path
@@ -567,10 +795,6 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
     Img_ID = []
     EncodedPixels = []
 
-    test_count = 0
-        
-    conv = lambda l: ' '.join(map(str, l))
-    
     for name in images_name:
         image = cv2.imread(os.path.join(inpath, name))
         outputs = predictor(image)
@@ -578,12 +802,11 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
             np.asarray(outputs["instances"].to('cpu')._fields['pred_masks']),
             outputs["instances"].to('cpu')._fields['scores'].numpy(), image)
     
-        if masks:  # If any objects are detected in this image
-            for i in range(len(masks)):  # Loop all instances
+        if masks:
+            for i in range(len(masks)):
                 Img_ID.append(name.replace('.tif', ''))
                 EncodedPixels.append(conv(rle_encoding(masks[i])))
     
-    # Save inference results
     df = pd.DataFrame({"ImageId": Img_ID, "EncodedPixels": EncodedPixels})
     df.to_csv(os.path.join(path, "R50_flip_results.csv"), index=False, sep=',')
 
@@ -593,7 +816,6 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
         csv_filename = f'results_x_pred_{x_pred}.csv'
         test_img_path = image_folder_path
     
-        # Open CSV file before processing images
         with open(csv_filename, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
 
@@ -602,22 +824,18 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
             else:
                 csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'min_velocity', 'avg_velocity', 'max_velocity', 'name'])
 
-    
             for test_img in os.listdir(test_img_path):
                 input_path = os.path.join(test_img_path, test_img)
                 im = cv2.imread(input_path)
     
-                # Convert image to grayscale
                 gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
     
-                # Use canny edge detection
                 edges = cv2.Canny(gray, 50, 150, apertureSize=3)
 
                 if dataset_name != 'hw_patterns':
-                    # Execute this block for datasets other than 'hw_patterns'
                     reader = easyocr.Reader(['en'])
                     result = reader.readtext(gray, detail=0, paragraph=False, contrast_ths=0.85, adjust_contrast=0.85, add_margin=0.25, width_ths=0.25, decoder='beamsearch')
-                    if result:  # Ensure result is not empty
+                    if result:
                         pxum_r = result[0]
                         psum = re.sub("[^0-9]", "", pxum_r)
                     else:
@@ -638,12 +856,11 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                         um_pix = 1
                         psum = '0'
                 else:
-                    # Placeholder: You can add any specific handling for 'hw_patterns' here if needed.
                     um_pix = 1
                     psum = '0'
     
-                GetInference(predictor, im, x_pred, metadata, test_img)  # Ensure this function is correctly defined elsewhere
-                GetCounts(predictor, im, TList, PList)  # Ensure this function is correctly defined elsewhere
+                GetInference(predictor, im, x_pred, metadata, test_img)
+                GetCounts(predictor, im, TList, PList)
     
                 outputs = predictor(im)
                 inst_out = outputs['instances']
@@ -654,28 +871,27 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                 output = np.zeros_like(im)
 
                 hsv_image_global = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
-                global_velocities = hsv_image_global[..., 2]  # Normalize the V channel to [0, 1]
+                global_velocities = hsv_image_global[..., 2]
                 
                 global_min_velocity = np.min(global_velocities)
                 global_max_velocity = np.max(global_velocities)
+    
+                print(f"Global min: {global_min_velocity}, max: {global_max_velocity}")
 
                 for i in range(num_instances):
-                    # Initialize a new output array for each mask
                     single_output = np.zeros_like(output)
                     mask = mask_array[:, :, i:(i + 1)]
                     single_output = np.where(mask == True, 255, single_output)
                     
-                    # Save each mask image separately for debugging
                     mask_filename = os.path.join(output_dir, f'mask_{i}.jpg')
                     cv2.imwrite(mask_filename, single_output)
                     
-                    # Convert the single mask to grayscale for contour detection
                     single_im_mask = cv2.cvtColor(single_output, cv2.COLOR_BGR2GRAY)
                     single_cnts = cv2.findContours(single_im_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                     single_cnts = imutils.grab_contours(single_cnts)
                 
                     for c in single_cnts:
-                        pixelsPerMetric = 1  # or 0.85, correction
+                        pixelsPerMetric = 1
                         if cv2.contourArea(c) < 100:
                             continue
                         area = cv2.contourArea(c)
@@ -702,7 +918,6 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                         dimArea = area / pixelsPerMetric
                         dimPerimeter = perimeter / pixelsPerMetric
                         diaFeret = max(dimA, dimB)
-                        # Execute this block for datasets other than 'hw_patterns'
                         if (dimA and dimB) != 0:
                             Aspect_Ratio = max(dimB, dimA) / min(dimA, dimB)
                         else:
@@ -721,7 +936,6 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             b = major_axis / 2.0
                         eccentricity = np.sqrt(1 - (b**2 / a**2))
     
-                        # Assuming pixelsPerMetric and um_pix are defined earlier in the code
                         major_axis_length = major_axis / pixelsPerMetric * um_pix
                         minor_axis_length = minor_axis / pixelsPerMetric * um_pix
 
@@ -735,33 +949,16 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
 
                             csvwriter.writerow([Length, Width, CircularED, Aspect_Ratio, Circularity, Chords, Feret_diam, Roundness, Sphericity, psum, test_img])
                         else:
-                            hsv_image_global = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
-                            global_velocities = hsv_image_global[..., 2] / 255.0  # Normalize the V channel to [0, 1]
-                            
-                            global_min_velocity = np.min(global_velocities)
-                            global_max_velocity = np.max(global_velocities)
-                            
-                            # Normalize the global velocities
-                            normalized_global_velocities = (global_velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
-                            
-                            # Now process each contour (mask) as before
                             mask = np.zeros(im.shape[:2], dtype=np.uint8)
                             cv2.drawContours(mask, [c], -1, 255, -1)
                             masked_image = cv2.bitwise_and(im, im, mask=mask)
-                            
-                            # Convert the masked image to HSV
                             hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
-                            
-                            # Extract the V channel for velocities
-                            velocities = hsv_image[..., 2] / 255.0  # Normalize the V channel to [0, 1]
-                            velocities = velocities[mask == 255]  # Only consider the velocities within the mask
-                            
-                            # Normalize velocities within the mask based on the global min and max
+                            velocities = hsv_image[..., 2]
+                            velocities = velocities[mask == 255]
                             normalized_velocities = (velocities - global_min_velocity) / (global_max_velocity - global_min_velocity)
-                            
-                            # Compute the min, average, and max velocities within the mask
                             min_velocity = np.min(normalized_velocities)
                             avg_velocity = np.mean(normalized_velocities)
                             max_velocity = np.max(normalized_velocities)
 
                             csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
+
