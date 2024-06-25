@@ -737,7 +737,7 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
                             
                             # Extract the V channel for velocities
-                            velocities = hsv_image[..., 2] / 255.0  # Normalize the V channel to [0, 1]
+                            velocities = hsv_image[..., 2]  # Normalize the V channel to [0, 1]
                             velocities = velocities[mask == 255]  # Only consider the velocities within the mask
                             
                             # Compute the min, average, and max velocities within the mask
@@ -746,11 +746,11 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                             max_velocity = np.max(velocities)
                             
                             # Normalize velocities to range from 0 to 1
-                            normalized_velocities = (velocities - min_velocity) / (max_velocity - min_velocity)
+                            # normalized_velocities = (velocities - min_velocity) / (max_velocity - min_velocity)
                             
-                            # Now compute the normalized min, average, and max velocities within the mask
-                            min_velocity = np.min(normalized_velocities)
-                            avg_velocity = np.mean(normalized_velocities)
-                            max_velocity = np.max(normalized_velocities)
+                            # # Now compute the normalized min, average, and max velocities within the mask
+                            # min_velocity = np.min(normalized_velocities)
+                            # avg_velocity = np.mean(normalized_velocities)
+                            # max_velocity = np.max(normalized_velocities)
 
                             csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, min_velocity, avg_velocity, max_velocity, test_img])
