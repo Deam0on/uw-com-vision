@@ -620,16 +620,22 @@ def detect_arrows(image):
             continue
         
         # Approximate the contour
-        epsilon = 0.03 * cv2.arcLength(contour, True)
-        approx = cv2.approxPolyDP(contour, epsilon, True)
+        # epsilon = 0.03 * cv2.arcLength(contour, True)
+        # approx = cv2.approxPolyDP(contour, epsilon, True)
         
-        if len(approx) == 7:  # Arrows typically have 7 points
-            # Fit a line to the contour points
-            [vx, vy, x, y] = cv2.fitLine(contour, cv2.DIST_L2, 0, 0.01, 0.01)
+        # if len(approx) == 7:  # Arrows typically have 7 points
+        #     # Fit a line to the contour points
+        #     [vx, vy, x, y] = cv2.fitLine(contour, cv2.DIST_L2, 0, 0.01, 0.01)
             
-            # Calculate the direction vector
-            direction = (vx, vy)
-            flow_vectors.append(direction)
+        #     # Calculate the direction vector
+        #     direction = (vx, vy)
+        #     flow_vectors.append(direction)
+    # Fit a line to the contour points
+        [vx, vy, x, y] = cv2.fitLine(contour, cv2.DIST_L2, 0, 0.01, 0.01)
+        
+        # Calculate the direction vector
+        direction = (vx, vy)
+        flow_vectors.append(direction)
     
     return flow_vectors
 
