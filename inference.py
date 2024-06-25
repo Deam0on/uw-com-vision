@@ -596,7 +596,11 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
         # Open CSV file before processing images
         with open(csv_filename, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
-            csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
+
+            if dataset_name != 'hw_patterns':
+                csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
+            else:
+                 csvwriter.writerow(['length', 'width','name'])
     
             for test_img in os.listdir(test_img_path):
                 input_path = os.path.join(test_img_path, test_img)
