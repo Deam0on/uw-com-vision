@@ -371,9 +371,15 @@ if st.session_state.show_images:
             csv_bytes = blob.download_as_bytes()
             csv_name = os.path.basename(blob.name)
             if csv_name == 'results_x_pred_1.csv':
-                download_name = 'results_pores.csv'
+                if dataset_name != 'hw_patterns':
+                    download_name = 'results_pores.csv'
+                else:
+                    download_name = 'results_flows.csv'
             elif csv_name == 'results_x_pred_0.csv':
-                download_name = 'results_throats.csv'
+                if dataset_name != 'hw_patterns':
+                    download_name = 'results_throats.csv'
+                else:
+                    download_name = 'results_cyclones.csv'
             else:
                 continue  # Skip files that don't match the specific names
             st.download_button(
