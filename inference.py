@@ -928,7 +928,7 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
             if dataset_name != 'hw_patterns':
                 csvwriter.writerow(['length', 'width', 'circularED', 'aspectRatio', 'circularity', 'chords', 'ferret', 'round', 'sphere', 'psum', 'name'])
             else:
-                csvwriter.writerow(['length', 'width', 'E_major', 'E_minor', 'Eccentricity', 'Global_min_velocity', 'avg_velocity', 'Global_max_velocity', 'name'])
+                csvwriter.writerow(['E_major', 'E_minor', 'Eccentricity', 'D10_avg_velocity', 'avg_velocity', 'D90_avg_velocity', 'avg_direction_x', 'avg_direction_y', 'magnitude', 'angle', 'angle_degrees', 'name'])
 
     
             for test_img in os.listdir(test_img_path):
@@ -1077,7 +1077,16 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                                         wavelength = rgb_to_wavelength(b, g, r)
                                         wavelengths.append(wavelength)
                             
-                            avg_velocity = sum(wavelengths) / len(wavelengths)
+                            # avg_velocity = sum(wavelengths) / len(wavelengths)
+                            # Calculate D10 and D90
+                            wavelengths = sorted(wavelengths)
+                            D10 = np.percentile(wavelengths, 10)
+                            D90 = np.percentile(wavelengths, 90)
+                            
+                            # Normalize avg_velocity, D10, and D90 based on global min and max wavelength
+                            avg_velocity = ((sum(wavelengths) / len(wavelengths)) - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
+                            normalized_D10 = (D10 - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
+                            normalized_D90 = (D90 - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
 
 
                             # Compute velocities within the mask
@@ -1091,10 +1100,21 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                                 avg_direction = (0, 0)
 
                             avg_direction_x, avg_direction_y = avg_direction[0], avg_direction[1]
+                            # Calculate magnitude
+                            magnitude = math.sqrt(avg_direction_x**2 + avg_direction_y**2)
+                            # print(f"Magnitude: {magnitude}")
+                            
+                            # Calculate angle in radians
+                            angle = math.atan2(avg_direction_y, avg_direction_x)
+                            # print(f"Angle (radians): {angle}")
+                            
+                            # Convert angle to degrees
+                            angle_degrees = math.degrees(angle)
+                            # print(f"Angle (degrees): {angle_degrees}")
                             
                             # if flow_vectors:
                             #     avg_direction = np.mean(flow_vectors, axis=0)
                             # else:
                             #     avg_direction = (0, 0)
 
-                            csvwriter.writerow([Length, Width, major_axis_length, minor_axis_length, eccentricity, global_min_wavelength, avg_velocity, global_max_wavelength, avg_direction_x, avg_direction_y, test_img])
+                            csvwriter.writerow([major_axis_length, minor_axis_length, eccentricity, normalized_D10, avg_velocity, normalized_D90, avg_direction_x, avg_direction_y, magnitude, angle, angle_degrees, test_img])
