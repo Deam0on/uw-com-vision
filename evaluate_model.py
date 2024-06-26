@@ -188,7 +188,10 @@ def evaluate_model(dataset_name, output_dir, visualize=False):
     register_datasets(dataset_name, dataset_info)
     
     trained_model_paths = get_trained_model_paths("/home/deamoon_uw_nn/split_dir")
-    predictor = choose_and_use_model(trained_model_paths, dataset_name)
+
+    threshold = 0.45
+    
+    predictor = choose_and_use_model(model_paths, dataset_name, threshold)
     
     cfg = get_cfg()
 
