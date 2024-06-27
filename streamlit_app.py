@@ -276,70 +276,69 @@ threshold = st.slider(
 )
 
 # Align checkbox and button to the right side
-col1, col2 = st.columns([3, 1])
-with col1:
-    # Update the task execution button code to handle the combined ETA
-    if st.button("Run Task"):
-        visualize_flag = "--visualize"  # Always true
-        upload_flag = "--upload"  # Always true
-        download_flag = "--download"
-        
-        # Calculate ETAs
-        download_eta, task_eta, upload_eta = estimate_eta(task)
-        total_eta = download_eta + task_eta + upload_eta
-        
-        command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
-        st.info(f"Running: {command}")
+# col1, col2 = st.columns([3, 1])
+# with col1:
+# Update the task execution button code to handle the combined ETA
+if st.button("Run Task"):
+    visualize_flag = "--visualize"  # Always true
+    upload_flag = "--upload"  # Always true
+    download_flag = "--download"
+    
+    # Calculate ETAs
+    download_eta, task_eta, upload_eta = estimate_eta(task)
+    total_eta = download_eta + task_eta + upload_eta
+    
+    command = f"python3 {MAIN_SCRIPT_PATH} --task {task} --dataset_name {dataset_name} --threshold {threshold} {visualize_flag} {download_flag} {upload_flag}"
+    st.info(f"Running: {command}")
 
-        def update_progress_bar_and_countdown(start_time, eta, phase):
-            end_time = start_time + eta
-            while time.time() < end_time:
-                elapsed_time = time.time() - start_time
-                remaining_time = end_time - time.time()
-                hours, remainder = divmod(remaining_time, 3600)
-                minutes, seconds = divmod(remainder, 60)
-                countdown_str = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
-                countdown_placeholder.text(f"{phase} - Time Remaining: {countdown_str}")
-                progress_percentage = min(elapsed_time / total_eta, 1.0)
-                progress_bar.progress(progress_percentage)
-                time.sleep(1)
-                if phase == "Task in progress" and not process.poll() is None:
-                    # If task phase and the command finished, exit the loop
-                    break
+    def update_progress_bar_and_countdown(start_time, eta, phase):
+        end_time = start_time + eta
+        while time.time() < end_time:
+            elapsed_time = time.time() - start_time
+            remaining_time = end_time - time.time()
+            hours, remainder = divmod(remaining_time, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            countdown_str = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+            countdown_placeholder.text(f"{phase} - Time Remaining: {countdown_str}")
+            progress_percentage = min(elapsed_time / total_eta, 1.0)
+            progress_bar.progress(progress_percentage)
+            time.sleep(1)
+            if phase == "Task in progress" and not process.poll() is None:
+                # If task phase and the command finished, exit the loop
+                break
 
-        with st.spinner('Running task...'):
-            progress_bar = st.progress(0)
-            countdown_placeholder = st.empty()
-            start_time = time.time()
+    with st.spinner('Running task...'):
+        progress_bar = st.progress(0)
+        countdown_placeholder = st.empty()
+        start_time = time.time()
 
-            # Download Phase
-            update_progress_bar_and_countdown(start_time, download_eta, "Downloading")
+        # Download Phase
+        update_progress_bar_and_countdown(start_time, download_eta, "Downloading")
 
-            # Task Phase
-            task_start_time = time.time()  # Reset start time for task phase
-            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            update_progress_bar_and_countdown(task_start_time, task_eta, "Task in progress")
+        # Task Phase
+        task_start_time = time.time()  # Reset start time for task phase
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        update_progress_bar_and_countdown(task_start_time, task_eta, "Task in progress")
 
-            stdout, stderr = process.communicate()
+        stdout, stderr = process.communicate()
 
-            # Upload Phase
-            start_time = time.time()  # Reset start time for upload phase
-            update_progress_bar_and_countdown(start_time, upload_eta, "Uploading")
+        # Upload Phase
+        start_time = time.time()  # Reset start time for upload phase
+        update_progress_bar_and_countdown(start_time, upload_eta, "Uploading")
 
-            # Ensure the progress bar is full at the end
-            progress_bar.progress(100)
-            countdown_placeholder.text("Task Completed")
+        # Ensure the progress bar is full at the end
+        progress_bar.progress(100)
+        countdown_placeholder.text("Task Completed")
 
-        st.text(stdout)
-        st.session_state.stderr = stderr  # Store stderr in session state
+    st.text(stdout)
+    st.session_state.stderr = stderr  # Store stderr in session state
 
-        # Reset the show_errors state if there are new errors
-        if stderr:
-            st.session_state.show_errors = True
-        else:
-            st.success(f"{task.capitalize()} task completed successfully!")
+    # Reset the show_errors state if there are new errors
+    if stderr:
+        st.session_state.show_errors = True
+    else:
+        st.success(f"{task.capitalize()} task completed successfully!")
 
-with col2:
     # confirm_deletion = st.checkbox("Confirm Deletion")
     # if st.button("Remove Dataset"):
     #     if confirm_deletion:
