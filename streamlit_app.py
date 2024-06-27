@@ -22,6 +22,13 @@ GCS_INFERENCE_FOLDER = 'DATASET/INFERENCE'
 GCS_ARCHIVE_FOLDER = 'Archive'
 GCS_DATASET_INFO_PATH = 'dataset_info.json'
 
+# Mapping for upload folder display names
+upload_folder_mapping = {
+    f"{GCS_DATASET_FOLDER}/{dataset_name}": "TRAINING DATA",
+    GCS_INFERENCE_FOLDER: "MEASUREMENT DATA"
+}
+reverse_upload_folder_mapping = {v: k for k, v in upload_folder_mapping.items()}
+
 def check_password():
     def password_entered():
         if st.session_state["password"] == ADMIN_PASSWORD:
@@ -351,12 +358,15 @@ if st.button("Run Task"):
     #         st.warning("Please check the confirmation box to delete the dataset.")
 
 # Conditionally show the upload section
+# Conditionally show the upload section
 if use_new_data:
     st.header("Upload Files to GCS")
-    upload_folder = st.selectbox(
+    upload_folder_display_names = [upload_folder_mapping[f"{GCS_DATASET_FOLDER}/{dataset_name}"], upload_folder_mapping[GCS_INFERENCE_FOLDER]]
+    selected_upload_folder_display = st.selectbox(
         "Select folder to upload to",
-        [f"{GCS_DATASET_FOLDER}/{dataset_name}", GCS_INFERENCE_FOLDER]
+        upload_folder_display_names
     )
+    upload_folder = reverse_upload_folder_mapping[selected_upload_folder_display]
     overwrite = st.checkbox("Overwrite existing data in the folder")
     uploaded_files = st.file_uploader(
         "Choose files to upload",
