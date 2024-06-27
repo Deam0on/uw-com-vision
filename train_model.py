@@ -44,8 +44,9 @@ def custom_mapper(dataset_dicts):
     Returns:
     - dataset_dicts: Updated dictionary with transformed image and annotations.
     """
-    dataset_dicts = copy.deepcopy(dataset_dicts)  # it will be modified by code below
+    dataset_dicts = copy.deepcopy(dataset_dicts)  # It will be modified by the code below
     image = utils.read_image(dataset_dicts["file_name"], format="BGR")
+    
     transform_list = [
         T.Resize((800, 800)),
         T.RandomBrightness(0.8, 1.8),
@@ -56,17 +57,21 @@ def custom_mapper(dataset_dicts):
         T.RandomFlip(prob=0.4, horizontal=False, vertical=True),
     ]
 
+    # Apply transformations
     image, transforms = T.apply_transform_gens(transform_list, image)
     dataset_dicts["image"] = torch.as_tensor(image.transpose(2, 0, 1).astype("float32"))
 
+    # Transform annotations
     annos = [
         utils.transform_instance_annotations(obj, transforms, image.shape[:2])
         for obj in dataset_dicts.pop("annotations")
         if obj.get("iscrowd", 0) == 0
     ]
 
+    # Create instances from annotations
     instances = utils.annotations_to_instances(annos, image.shape[:2])
     dataset_dicts["instances"] = utils.filter_empty_instances(instances)
+    
     return dataset_dicts
 
 class CustomTrainer(DefaultTrainer):
@@ -78,15 +83,28 @@ class CustomTrainer(DefaultTrainer):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
 
 def train_on_dataset(dataset_name, output_dir):
+    """
+    Trains a model on the specified dataset.
+
+    Parameters:
+    - dataset_name: Name of the dataset.
+    - output_dir: Directory to save the trained model.
+    """
+    # Read dataset information
     dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
+    
+    # Register datasets
     register_datasets({dataset_name: dataset_info[dataset_name]})
 
-    print(DatasetCatalog.get("hw_patterns_train"))
-    print(DatasetCatalog.get("hw_patterns_test"))
+    # Debug prints for verification
+    print(DatasetCatalog.get(f"{dataset_name}_train"))
+    print(DatasetCatalog.get(f"{dataset_name}_test"))
+    
+    # Path for the split file
     split_file = os.path.join("/home/deamoon_uw_nn/split_dir/", f"{dataset_name}_split.json")
     print(f"Split file for {dataset_name}: {split_file}")
 
-
+    # Configuration for training
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.DATASETS.TRAIN = (f"{dataset_name}_train",)
@@ -99,19 +117,22 @@ def train_on_dataset(dataset_name, output_dir):
     cfg.SOLVER.STEPS = []
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
 
+    # Set the number of classes
     thing_classes = MetadataCatalog.get(f"{dataset_name}_train").thing_classes
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
     cfg.MODEL.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+    # Output directory for the dataset
     dataset_output_dir = os.path.join(output_dir, dataset_name)
     os.makedirs(dataset_output_dir, exist_ok=True)
     cfg.OUTPUT_DIR = dataset_output_dir
 
+    # Initialize and start the trainer
     trainer = DefaultTrainer(cfg)
     trainer.resume_or_load(resume=False)
     trainer.train()
 
+    # Save the trained model
     model_path = os.path.join(dataset_output_dir, "model_final.pth")
     torch.save(trainer.model.state_dict(), model_path)
     print(f"Model trained on {dataset_name} saved to {model_path}")
-
