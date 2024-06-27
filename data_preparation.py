@@ -10,7 +10,6 @@ def split_dataset(img_dir, dataset_name, test_size=0.2, seed=42):
     
     Parameters:
     - img_dir: Directory containing images.
-    - label_dir: Directory containing labels.
     - dataset_name: Name of the dataset.
     - test_size: Proportion of the dataset to include in the test split.
     - seed: Random seed for reproducibility.
@@ -34,6 +33,26 @@ def split_dataset(img_dir, dataset_name, test_size=0.2, seed=42):
     print(f"Training & Testing data succesfully split into {split_file}")
 
     return train_files, test_files
+
+# def split_dataset(img_dir, dataset_name, test_size=0.2):
+#     """
+#     Splits the dataset into training and testing sets.
+
+#     Parameters:
+#     - img_dir: Directory containing images.
+#     - dataset_name: Name of the dataset.
+#     - test_size: Proportion of the dataset to include in the test split.
+
+#     Returns:
+#     - train_files: List of training files.
+#     - test_files: List of testing files.
+#     """
+#     files = [f for f in os.listdir(img_dir) if f.endswith('.json')]
+#     random.shuffle(files)
+#     split_index = int(len(files) * (1 - test_size))
+#     train_files = files[:split_index]
+#     test_files = files[split_index:]
+#     return train_files, test_files
 
 # def split_dataset(img_dir, dataset_name, output_dir, test_size=0.2, seed=42):
 #     """
