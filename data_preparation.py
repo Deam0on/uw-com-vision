@@ -3,6 +3,18 @@ import json
 import csv
 import random
 from sklearn.model_selection import train_test_split
+import shapely.geometry
+import shapely.affinity
+import numpy as np
+from detectron2.data import DatasetCatalog, MetadataCatalog
+from detectron2.structures import BoxMode
+from detectron2.engine import DefaultPredictor
+from detectron2.config import get_cfg
+from detectron2 import model_zoo
+
+# Constant paths
+SPLIT_DIR = "/home/deamoon_uw_nn/split_dir/"
+CATEGORY_JSON = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
 
 def split_dataset(img_dir, dataset_name, test_size=0.2, seed=42):
     """
@@ -27,12 +39,11 @@ def split_dataset(img_dir, dataset_name, test_size=0.2, seed=42):
     # Split the label files into training and testing sets
     train_files, test_files = train_test_split(label_files, test_size=test_size, random_state=seed)
 
-    # Directory to save the split information
-    split_dir = "/home/deamoon_uw_nn/split_dir/"
-    os.makedirs(split_dir, exist_ok=True)
+    # Create directory to save the split information if it doesn't exist
+    os.makedirs(SPLIT_DIR, exist_ok=True)
     
     # Path to save the split JSON file
-    split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+    split_file = os.path.join(SPLIT_DIR, f"{dataset_name}_split.json")
     split_data = {'train': train_files, 'test': test_files}
     
     # Save the split data to a JSON file
@@ -57,12 +68,10 @@ def register_datasets(dataset_info, dataset_name, test_size=0.2):
 
     img_dir, label_dir, thing_classes = dataset_info[dataset_name]
     
-    print(f"Processing dataset: {dataset_name}, Info: {dataset_info[dataset_name]}")  # Debug: print dataset being processed
+    print(f"Processing dataset: {dataset_name}, Info: {dataset_info[dataset_name]}")
 
     # Load or split the dataset
-    split_dir = "/home/deamoon_uw_nn/split_dir/"
-    split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
-    category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
+    split_file = os.path.join(SPLIT_DIR, f"{dataset_name}_split.json")
     category_key = dataset_name
     
     if os.path.exists(split_file):
@@ -74,7 +83,7 @@ def register_datasets(dataset_info, dataset_name, test_size=0.2):
         # Create split data if it doesn't exist
         train_files, test_files = split_dataset(img_dir, dataset_name, test_size=test_size)
         split_data = {'train': train_files, 'test': test_files}
-        os.makedirs(split_dir, exist_ok=True)
+        os.makedirs(SPLIT_DIR, exist_ok=True)
         with open(split_file, 'w') as f:
             json.dump(split_data, f)
         print(f"Split created and saved at {split_file}")
@@ -83,7 +92,7 @@ def register_datasets(dataset_info, dataset_name, test_size=0.2):
     DatasetCatalog.register(
         f"{dataset_name}_train",
         lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
-        get_split_dicts(img_dir, label_dir, files, category_json, category_key)
+        get_split_dicts(img_dir, label_dir, files, CATEGORY_JSON, category_key)
     )
     MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
 
@@ -91,7 +100,7 @@ def register_datasets(dataset_info, dataset_name, test_size=0.2):
     DatasetCatalog.register(
         f"{dataset_name}_test",
         lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
-        get_split_dicts(img_dir, label_dir, files, category_json, category_key)
+        get_split_dicts(img_dir, label_dir, files, CATEGORY_JSON, category_key)
     )
     MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
 
@@ -112,18 +121,16 @@ def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
     # Load category names and create a mapping to category IDs
     dataset_info = read_dataset_info(category_json)
     
-    # Check if category_key exists
     if category_key not in dataset_info:
         raise ValueError(f"Category key '{category_key}' not found in JSON")
     
     category_names = dataset_info[category_key][2]  # Extract category names from the JSON
     category_name_to_id = {name: idx for idx, name in enumerate(category_names)}
     
-    print(f"Category Mapping: {category_name_to_id}")  # Debug: print category mapping
+    print(f"Category Mapping: {category_name_to_id}")
 
     dataset_dicts = []
-    idx = 0
-    for file in files:
+    for idx, file in enumerate(files):
         json_file = os.path.join(label_dir, file)
         with open(json_file) as f:
             imgs_anns = json.load(f)
@@ -134,7 +141,7 @@ def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
         record["image_id"] = idx
         record["height"] = imgs_anns["metadata"]["height"]
         record["width"] = imgs_anns["metadata"]["width"]
-        idx += 1
+        
         annos = imgs_anns["instances"]
         objs = []
 
@@ -166,7 +173,8 @@ def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
             if categoryName in category_name_to_id:
                 category_id = category_name_to_id[categoryName]
             else:
-                raise ValueError(f"Category Name Not Found: {categoryName}")
+                print(f"Warning: Category Name Not Found: {categoryName}")
+                continue
 
             obj = {
                 "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
@@ -235,16 +243,24 @@ def choose_and_use_model(model_paths, dataset_name, threshold):
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.MODEL.DEVICE = "cuda"
-    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = threshold  # Set threshold here
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = threshold
 
     predictor = load_model(cfg, model_path, dataset_name)
     return predictor
 
 def read_dataset_info(file_path):
+    """
+    Reads dataset information from a JSON file.
+
+    Parameters:
+    - file_path: Path to the JSON file.
+
+    Returns:
+    - dataset_info: Dictionary with dataset information.
+    """
     with open(file_path, 'r') as file:
         data = json.load(file)
         # Convert list values back to tuples for consistency with the original data
         dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
-        print("Dataset Info:", dataset_info)  # Debug: print dataset info
+        print("Dataset Info:", dataset_info)
     return dataset_info
-
