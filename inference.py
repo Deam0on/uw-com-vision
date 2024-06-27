@@ -231,6 +231,7 @@ def postprocess_masks(ori_mask, ori_score, image, min_crys_size=2):
     Post-processes masks by removing overlaps, filling small holes, and smoothing boundaries.
 
     Parameters:
+:
     - ori_mask: Original mask predictions.
     - ori_score: Confidence scores for the masks.
     - image: Original image for reference.
@@ -288,7 +289,15 @@ def GetInference(predictor, im, x_pred, metadata, test_img):
     """
     Performs inference on an image and saves the predicted instances.
 
-    Assumes the global variables `im`, `predictor`, `metadata`, `test_img`, and `x_pred` are defined.
+    Parameters:
+    - predictor: The predictor object used for inference.
+    - im: The image to perform inference on.
+    - x_pred: The class to filter predicted instances by.
+    - metadata: Metadata for visualization.
+    - test_img: Path to save the test image.
+
+    Returns:
+    - None
     """
     outputs = predictor(im)
 
@@ -309,7 +318,14 @@ def GetCounts(predictor, im, TList, PList):
     """
     Counts the number of instances for each class in the image.
 
-    Assumes the global variables `im`, `predictor`, `TList`, and `PList` are defined.
+    Parameters:
+    - predictor: The predictor object used for inference.
+    - im: The image to perform inference on.
+    - TList: List to store counts of the first class.
+    - PList: List to store counts of the second class.
+
+    Returns:
+    - None
     """
     outputs = predictor(im)
     classes = outputs["instances"].pred_classes.to("cpu").numpy()
@@ -320,6 +336,17 @@ def GetCounts(predictor, im, TList, PList):
     PList.append(PCount)
 
 def rgb_to_hsv(r, g, b):
+    """
+    Converts RGB color values to HSV color values.
+
+    Parameters:
+    - r: Red component.
+    - g: Green component.
+    - b: Blue component.
+
+    Returns:
+    - tuple: HSV color values.
+    """
     MAX_PIXEL_VALUE = 255.0
 
     r = r / MAX_PIXEL_VALUE
@@ -356,17 +383,33 @@ def rgb_to_hsv(r, g, b):
     return h, s, v
 
 def hue_to_wavelength(hue):
-    # There is nothing corresponding to magenta in the light spectrum,
-    # So let's assume that we only use hue values between 0 and 270.
+    """
+    Converts hue value to wavelength.
+
+    Parameters:
+    - hue: Hue value.
+
+    Returns:
+    - float: Wavelength in nanometers.
+    """
     assert hue >= 0
     assert hue <= 270
 
-    # Estimating that the usable part of the visible spectrum is 450-620nm,
-    # with wavelength (in nm) and hue value (in degrees), you can improvise this:
     wavelength = 620 - 170 / 270 * hue
     return wavelength
 
 def rgb_to_wavelength(r, g, b):
+    """
+    Converts RGB color values to wavelength.
+
+    Parameters:
+    - r: Red component.
+    - g: Green component.
+    - b: Blue component.
+
+    Returns:
+    - float: Wavelength in nanometers.
+    """
     h, s, v = rgb_to_hsv(r, g, b)
     wavelength = hue_to_wavelength(h)
     return wavelength
@@ -413,6 +456,10 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
     - dataset_name: Name of the dataset.
     - output_dir: Directory to save inference results.
     - visualize: Boolean, if True, save visualizations of predictions.
+    - threshold: Threshold for model prediction scores.
+
+    Returns:
+    - None
     """
     dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
     register_datasets(dataset_info, dataset_name)
@@ -526,8 +573,6 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                         if wavelength > global_max_wavelength:
                             global_max_wavelength = wavelength
 
-                # print(f"Global min wavelength: {global_min_wavelength}, max wavelength: {global_max_wavelength}")
-
                 for i in range(num_instances):
                     single_output = np.zeros_like(output)
                     mask = mask_array[:, :, i:(i + 1)]
@@ -612,21 +657,13 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                                         wavelength = rgb_to_wavelength(b, g, r)
                                         wavelengths.append(wavelength)
                             
-                            # avg_velocity = sum(wavelengths) / len(wavelengths)
-                            # Calculate D10 and D90
                             wavelengths = sorted(wavelengths)
                             D10 = np.percentile(wavelengths, 10)
                             D90 = np.percentile(wavelengths, 90)
                             
-                            # Normalize avg_velocity, D10, and D90 based on global min and max wavelength
                             avg_velocity = ((sum(wavelengths) / len(wavelengths)) - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
                             normalized_D10 = (D10 - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
                             normalized_D90 = (D90 - global_min_wavelength) / (global_max_wavelength - global_min_wavelength)
-
-
-                            # Compute velocities within the mask
-                            # flow_vectors = detect_arrows(masked_image)
-                            # avg_direction = np.mean(flow_vectors, axis=0)
 
                             flow_vectors = detect_arrows(masked_image)
                             if flow_vectors:
@@ -635,21 +672,9 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
                                 avg_direction = (0, 0)
 
                             avg_direction_x, avg_direction_y = avg_direction[0], avg_direction[1]
-                            # Calculate magnitude
                             magnitude = math.sqrt(avg_direction_x**2 + avg_direction_y**2)
-                            # print(f"Magnitude: {magnitude}")
                             
-                            # Calculate angle in radians
                             angle = math.atan2(avg_direction_y, avg_direction_x)
-                            # print(f"Angle (radians): {angle}")
-                            
-                            # Convert angle to degrees
                             angle_degrees = math.degrees(angle)
-                            # print(f"Angle (degrees): {angle_degrees}")
                             
-                            # if flow_vectors:
-                            #     avg_direction = np.mean(flow_vectors, axis=0)
-                            # else:
-                            #     avg_direction = (0, 0)
-
                             csvwriter.writerow([major_axis_length, minor_axis_length, eccentricity, normalized_D10, avg_velocity, normalized_D90, avg_direction_x, avg_direction_y, magnitude, angle, angle_degrees, test_img])
