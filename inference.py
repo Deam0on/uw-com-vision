@@ -65,6 +65,7 @@ def register_datasets(dataset_info, test_size=0.2):
     - test_size: Proportion of the dataset to include in the test split.
     """
     for dataset_name, info in dataset_info.items():
+        print(f"Processing dataset: {dataset_name}, Info: {info}")  # Debug: print dataset being processed
         img_dir, label_dir, thing_classes = info
 
         # Load or split the dataset
@@ -102,6 +103,7 @@ def register_datasets(dataset_info, test_size=0.2):
             get_split_dicts(img_dir, label_dir, files, category_json, category_key)
         )
         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
+
 
 def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
     """
@@ -539,7 +541,9 @@ def read_dataset_info(file_path):
         data = json.load(file)
         # Convert list values back to tuples for consistency with the original data
         dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
+        print("Dataset Info:", dataset_info)  # Debug: print dataset info
     return dataset_info
+
 
 def rgb_to_hsv(r, g, b):
     MAX_PIXEL_VALUE = 255.0
