@@ -9,6 +9,9 @@ from io import BytesIO
 from PIL import Image
 import time
 
+# Add these lines at the beginning of the script
+ADMIN_PASSWORD = "deamoon_uw_nn"
+
 # Absolute path to main.py
 MAIN_SCRIPT_PATH = '/home/deamoon_uw_nn/uw-com-vision/main.py'
 
@@ -18,6 +21,24 @@ GCS_DATASET_FOLDER = 'DATASET'
 GCS_INFERENCE_FOLDER = 'DATASET/INFERENCE'
 GCS_ARCHIVE_FOLDER = 'Archive'
 GCS_DATASET_INFO_PATH = 'dataset_info.json'
+
+def check_password():
+    def password_entered():
+        if st.session_state["password"] == ADMIN_PASSWORD:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # First run, show input for password
+        st.text_input("Password", type="password", on_change=password_entered, key="password")
+        return False
+    elif not st.session_state["password_correct"]:
+        st.error("Incorrect password")
+        return False
+    else:
+        return True
 
 def _item_to_value(iterator, item):
     return item
@@ -195,23 +216,54 @@ st.title("PaCE Neural Network Control Panel")
 st.header("Script controls")
 use_new_data = st.checkbox("Use new data from bucket", value=False)
 
-new_dataset = st.checkbox("New dataset")
-if new_dataset:
-    new_dataset_name = st.text_input("Enter new dataset name")
-    if new_dataset_name:
-        path1 = f"/home/deamoon_uw_nn/DATASET/{new_dataset_name}/"
-        path2 = path1
-        new_classes = st.text_input("Enter classes (comma separated)")
-        if st.button("Add Dataset"):
-            classes = [cls.strip() for cls in new_classes.split(',')] if new_classes else []
-            if new_dataset_name and classes:
-                st.session_state.datasets[new_dataset_name] = [path1, path2, classes]
-                save_dataset_names_to_gcs(st.session_state.datasets)
-                st.success(f"Dataset '{new_dataset_name}' added.")
-            else:
-                st.warning("Please enter a valid dataset name and classes.")
+# Wrap the dataset creation and deletion sections with password check
+if check_password():
+    new_dataset = st.checkbox("New dataset")
+    if new_dataset:
+        new_dataset_name = st.text_input("Enter new dataset name")
+        if new_dataset_name:
+            path1 = f"/home/deamoon_uw_nn/DATASET/{new_dataset_name}/"
+            path2 = path1
+            new_classes = st.text_input("Enter classes (comma separated)")
+            if st.button("Add Dataset"):
+                classes = [cls.strip() for cls in new_classes.split(',')] if new_classes else []
+                if new_dataset_name and classes:
+                    st.session_state.datasets[new_dataset_name] = [path1, path2, classes]
+                    save_dataset_names_to_gcs(st.session_state.datasets)
+                    st.success(f"Dataset '{new_dataset_name}' added.")
+                else:
+                    st.warning("Please enter a valid dataset name and classes.")
+                    
+    confirm_deletion = st.checkbox("Confirm Deletion")
+    if st.button("Remove Dataset"):
+        if confirm_deletion:
+            del st.session_state.datasets[dataset_name]
+            save_dataset_names_to_gcs(st.session_state.datasets)
+            st.success(f"Dataset '{dataset_name}' deleted.")
+            st.session_state.confirm_delete = False  # Automatically uncheck after deletion
+            st.experimental_rerun()  # Refresh to reflect deletion
+        else:
+            st.warning("Please check the confirmation box to delete the dataset.")
                 
-task = st.selectbox("Select Task", ["prepare", "train", "evaluate", "inference"])
+# task = st.selectbox("Select Task", ["prepare", "train", "evaluate", "inference"])
+
+# Define the task mapping
+task_mapping = {
+    "inference": "MEASUREMENT",
+    "evaluate": "MODEL EVALUATE",
+    "prepare": "DATA PREPARATION FOR TRAINING",
+    "train": "NEW MODEL TRAINING"
+}
+
+# Change the task order and create a reverse mapping for the command
+tasks_order = ["inference", "evaluate", "prepare", "train"]
+reverse_task_mapping = {v: k for k, v in task_mapping.items()}
+
+# Update task selection with user-friendly names
+task_display_names = [task_mapping[task] for task in tasks_order]
+selected_task_display = st.selectbox("Select Task", task_display_names)
+task = reverse_task_mapping[selected_task_display]
+
 dataset_name = st.selectbox("Dataset Name", list(st.session_state.datasets.keys()))
 
 threshold = st.slider(
@@ -288,16 +340,16 @@ with col1:
             st.success(f"{task.capitalize()} task completed successfully!")
 
 with col2:
-    confirm_deletion = st.checkbox("Confirm Deletion")
-    if st.button("Remove Dataset"):
-        if confirm_deletion:
-            del st.session_state.datasets[dataset_name]
-            save_dataset_names_to_gcs(st.session_state.datasets)
-            st.success(f"Dataset '{dataset_name}' deleted.")
-            st.session_state.confirm_delete = False  # Automatically uncheck after deletion
-            st.experimental_rerun()  # Refresh to reflect deletion
-        else:
-            st.warning("Please check the confirmation box to delete the dataset.")
+    # confirm_deletion = st.checkbox("Confirm Deletion")
+    # if st.button("Remove Dataset"):
+    #     if confirm_deletion:
+    #         del st.session_state.datasets[dataset_name]
+    #         save_dataset_names_to_gcs(st.session_state.datasets)
+    #         st.success(f"Dataset '{dataset_name}' deleted.")
+    #         st.session_state.confirm_delete = False  # Automatically uncheck after deletion
+    #         st.experimental_rerun()  # Refresh to reflect deletion
+    #     else:
+    #         st.warning("Please check the confirmation box to delete the dataset.")
 
 # Conditionally show the upload section
 if use_new_data:
