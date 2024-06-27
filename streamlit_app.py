@@ -296,9 +296,6 @@ threshold = st.slider(
     help="Adjust the detection threshold for the model."
 )
 
-# Align checkbox and button to the right side
-# col1, col2 = st.columns([3, 1])
-# with col1:
 # Update the task execution button code to handle the combined ETA
 if st.button("Run Task"):
     visualize_flag = "--visualize"  # Always true
@@ -359,17 +356,6 @@ if st.button("Run Task"):
         st.session_state.show_errors = True
     else:
         st.success(f"{task.capitalize()} task completed successfully!")
-
-    # confirm_deletion = st.checkbox("Confirm Deletion")
-    # if st.button("Remove Dataset"):
-    #     if confirm_deletion:
-    #         del st.session_state.datasets[dataset_name]
-    #         save_dataset_names_to_gcs(st.session_state.datasets)
-    #         st.success(f"Dataset '{dataset_name}' deleted.")
-    #         st.session_state.confirm_delete = False  # Automatically uncheck after deletion
-    #         st.experimental_rerun()  # Refresh to reflect deletion
-    #     else:
-    #         st.warning("Please check the confirmation box to delete the dataset.")
 
 # Conditionally show the upload section
 # Mapping for upload folder display names
