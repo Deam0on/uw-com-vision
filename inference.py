@@ -56,53 +56,58 @@ import re
 from numpy import sqrt
 from data_preparation import split_dataset
 
-def register_datasets(dataset_info, test_size=0.2):
+def register_datasets(dataset_info, dataset_name, test_size=0.2):
     """
-    Registers the datasets in the Detectron2 framework.
+    Registers the selected dataset in the Detectron2 framework.
 
     Parameters:
     - dataset_info: Dictionary containing dataset names and their info.
+    - dataset_name: Name of the dataset to register.
     - test_size: Proportion of the dataset to include in the test split.
     """
-    for dataset_name, info in dataset_info.items():
-        print(f"Processing dataset: {dataset_name}, Info: {info}")  # Debug: print dataset being processed
-        img_dir, label_dir, thing_classes = info
+    if dataset_name not in dataset_info:
+        raise ValueError(f"Dataset '{dataset_name}' not found in dataset_info.")
 
-        # Load or split the dataset
-        split_dir = "/home/deamoon_uw_nn/split_dir/"
-        split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
-        category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
-        category_key = dataset_name
-        
-        if os.path.exists(split_file):
-            with open(split_file, 'r') as f:
-                split_data = json.load(f)
-            train_files = split_data['train']
-            test_files = split_data['test']
-        else:
-            # Create split data if it doesn't exist
-            train_files, test_files = split_dataset(img_dir, dataset_name, test_size=test_size)
-            split_data = {'train': train_files, 'test': test_files}
-            os.makedirs(split_dir, exist_ok=True)
-            with open(split_file, 'w') as f:
-                json.dump(split_data, f)
-            print(f"Split created and saved at {split_file}")
+    img_dir, label_dir, thing_classes = dataset_info[dataset_name]
+    
+    print(f"Processing dataset: {dataset_name}, Info: {dataset_info[dataset_name]}")  # Debug: print dataset being processed
 
-        # Register training dataset
-        DatasetCatalog.register(
-            f"{dataset_name}_train",
-            lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
-            get_split_dicts(img_dir, label_dir, files, category_json, category_key)
-        )
-        MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
+    # Load or split the dataset
+    split_dir = "/home/deamoon_uw_nn/split_dir/"
+    split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+    category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
+    category_key = dataset_name
+    
+    if os.path.exists(split_file):
+        with open(split_file, 'r') as f:
+            split_data = json.load(f)
+        train_files = split_data['train']
+        test_files = split_data['test']
+    else:
+        # Create split data if it doesn't exist
+        train_files, test_files = split_dataset(img_dir, dataset_name, test_size=test_size)
+        split_data = {'train': train_files, 'test': test_files}
+        os.makedirs(split_dir, exist_ok=True)
+        with open(split_file, 'w') as f:
+            json.dump(split_data, f)
+        print(f"Split created and saved at {split_file}")
 
-        # Register testing dataset
-        DatasetCatalog.register(
-            f"{dataset_name}_test",
-            lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
-            get_split_dicts(img_dir, label_dir, files, category_json, category_key)
-        )
-        MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
+    # Register training dataset
+    DatasetCatalog.register(
+        f"{dataset_name}_train",
+        lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
+        get_split_dicts(img_dir, label_dir, files, category_json, category_key)
+    )
+    MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
+
+    # Register testing dataset
+    DatasetCatalog.register(
+        f"{dataset_name}_test",
+        lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
+        get_split_dicts(img_dir, label_dir, files, category_json, category_key)
+    )
+    MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
+
 
 
 def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
