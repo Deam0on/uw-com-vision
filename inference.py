@@ -894,7 +894,7 @@ def run_inference(dataset_name, output_dir, visualize=False, threshold=0.65):
     - visualize: Boolean, if True, save visualizations of predictions.
     """
     dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
-    register_datasets(dataset_info)
+    register_datasets(dataset_info, dataset_name)
     
     trained_model_paths = get_trained_model_paths("/home/deamoon_uw_nn/split_dir")
     selected_model_dataset = dataset_name  # User-selected model
