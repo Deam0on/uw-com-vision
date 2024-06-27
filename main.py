@@ -117,6 +117,8 @@ def main():
     total_start_time = datetime.now()
     download_time_taken = 0
     upload_time_taken = 0
+
+    print(f"Running task: {args.task} on dataset: {args.dataset_name}")  # Debug: print task and dataset
     
     if args.download:
         print(f"Downloading data for dataset {args.dataset_name} from bucket...")
