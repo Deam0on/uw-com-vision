@@ -79,8 +79,13 @@ def register_datasets(dataset_info, test_size=0.2):
             train_files = split_data['train']
             test_files = split_data['test']
         else:
-            # train_files, test_files = split_dataset(img_dir, dataset_name, test_size=0.2)
-            print(f"No split found at {split_file}")
+            # Create split data if it doesn't exist
+            train_files, test_files = split_dataset(img_dir, dataset_name, test_size=test_size)
+            split_data = {'train': train_files, 'test': test_files}
+            os.makedirs(split_dir, exist_ok=True)
+            with open(split_file, 'w') as f:
+                json.dump(split_data, f)
+            print(f"Split created and saved at {split_file}")
 
         # Register training dataset
         DatasetCatalog.register(
