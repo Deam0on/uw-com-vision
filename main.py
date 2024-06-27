@@ -14,6 +14,9 @@ ETA_FILE = '/home/deamoon_uw_nn/uw-com-vision/eta_data.json'
 def download_data_from_bucket():
     """
     Download data from a Google Cloud Storage bucket to a local directory.
+    
+    Returns:
+    - float: Time taken to download data in seconds.
     """
     download_start_time = datetime.now()
     dirpath = Path('/home/deamoon_uw_nn') / 'DATASET'
@@ -28,6 +31,9 @@ def download_data_from_bucket():
 def upload_data_to_bucket():
     """
     Upload data from local directories to a Google Cloud Storage bucket.
+    
+    Returns:
+    - float: Time taken to upload data in seconds.
     """
     upload_start_time = datetime.now()
     time_offset = timedelta(hours=2)
@@ -42,6 +48,12 @@ def upload_data_to_bucket():
     return (upload_end_time - upload_start_time).total_seconds()
 
 def read_eta_data():
+    """
+    Read ETA data from a JSON file.
+    
+    Returns:
+    - dict: ETA data.
+    """
     if os.path.exists(ETA_FILE):
         with open(ETA_FILE, 'r') as file:
             return json.load(file)
@@ -55,6 +67,14 @@ def read_eta_data():
         }
 
 def update_eta_data(task, time_taken, num_images=0):
+    """
+    Update ETA data with new timings.
+
+    Parameters:
+    - task: Task name (e.g., 'inference', 'prepare').
+    - time_taken: Time taken for the task.
+    - num_images: Number of images processed (relevant for 'inference' task).
+    """
     data = read_eta_data()
 
     if task == 'inference':
