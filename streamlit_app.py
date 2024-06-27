@@ -8,6 +8,9 @@ from google.api_core import page_iterator
 from io import BytesIO
 from PIL import Image
 import time
+import zipfile
+from tempfile import TemporaryDirectory
+
 
 # Add these lines at the beginning of the script
 ADMIN_PASSWORD = "deamoon_uw_nn"
@@ -21,6 +24,24 @@ GCS_DATASET_FOLDER = 'DATASET'
 GCS_INFERENCE_FOLDER = 'DATASET/INFERENCE'
 GCS_ARCHIVE_FOLDER = 'Archive'
 GCS_DATASET_INFO_PATH = 'dataset_info.json'
+
+def create_zip_from_gcs(bucket_name, folder, zip_name="archive.zip"):
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blobs = bucket.list_blobs(prefix=folder)
+    
+    with TemporaryDirectory() as tempdir:
+        zip_path = os.path.join(tempdir, zip_name)
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for blob in blobs:
+                if blob.name.endswith('.png') or blob.name.endswith('results_x_pred_1.csv') or blob.name.endswith('results_x_pred_0.csv'):
+                    file_path = os.path.join(tempdir, os.path.basename(blob.name))
+                    blob.download_to_filename(file_path)
+                    zipf.write(file_path, os.path.basename(blob.name))
+        with open(zip_path, "rb") as f:
+            bytes_zip = f.read()
+    return bytes_zip
+
 
 def check_password():
     def password_entered():
@@ -450,6 +471,55 @@ if st.session_state.show_images:
             )
     else:
         st.write("No specific CSV files found in the selected folder.")
+
+# After displaying the inference images and CSV download buttons, add the following:
+if st.session_state.show_images:
+    st.write(f"Displaying images from folder: {folder_dropdown[1]}")  # Use formatted name for display
+    image_files = list_png_files_in_gcs_folder(GCS_BUCKET_NAME, selected_folder)  # Use original name for operations
+    if image_files:
+        for blob in image_files:
+            img_bytes = blob.download_as_bytes()
+            img = Image.open(BytesIO(img_bytes))
+            st.image(img, caption=os.path.basename(blob.name))
+    else:
+        st.write("No images found in the selected folder.")
+
+    # Button to download specific CSV files
+    csv_files = list_specific_csv_files_in_gcs_folder(GCS_BUCKET_NAME, selected_folder)  # Use original name for operations
+    if csv_files:
+        for blob in csv_files:
+            csv_bytes = blob.download_as_bytes()
+            csv_name = os.path.basename(blob.name)
+            if csv_name == 'results_x_pred_1.csv':
+                if dataset_name != 'hw_patterns':
+                    download_name = 'results_pores.csv'
+                else:
+                    download_name = 'results_cyclones.csv'
+            elif csv_name == 'results_x_pred_0.csv':
+                if dataset_name != 'hw_patterns':
+                    download_name = 'results_throats.csv'
+                else:
+                    download_name = 'results_flows.csv'
+            else:
+                continue  # Skip files that don't match the specific names
+            st.download_button(
+                label=f"Download {download_name}",
+                data=csv_bytes,
+                file_name=download_name,
+                mime='text/csv'
+            )
+    else:
+        st.write("No specific CSV files found in the selected folder.")
+
+    # Add "Download All" button
+    if st.button("Download All as Zip"):
+        zip_bytes = create_zip_from_gcs(GCS_BUCKET_NAME, selected_folder)
+        st.download_button(
+            label="Download All",
+            data=zip_bytes,
+            file_name="inference_results.zip",
+            mime="application/zip"
+        )
 
 
 
