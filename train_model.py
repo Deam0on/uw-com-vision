@@ -31,6 +31,8 @@ from scipy.ndimage import binary_fill_holes
 from skimage.morphology import dilation, erosion
 from sklearn.model_selection import train_test_split
 from data_preparation import split_dataset
+from data_preparation import split_dataset, register_datasets, get_split_dicts
+from data_preparation import get_trained_model_paths, load_model, choose_and_use_model, read_dataset_info
 
 
 # def split_dataset(img_dir, dataset_name, test_size=0.2, seed=42):
@@ -64,38 +66,38 @@ from data_preparation import split_dataset
 
 #     return train_files, test_files
 
-def register_datasets(dataset_info, test_size=0.2):
-    for dataset_name, info in dataset_info.items():
-        img_dir, label_dir, thing_classes = info
-        split_dir = "/home/deamoon_uw_nn/split_dir/"
-        split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
-        category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
-        category_key = dataset_name
+# def register_datasets(dataset_info, test_size=0.2):
+#     for dataset_name, info in dataset_info.items():
+#         img_dir, label_dir, thing_classes = info
+#         split_dir = "/home/deamoon_uw_nn/split_dir/"
+#         split_file = os.path.join(split_dir, f"{dataset_name}_split.json")
+#         category_json = "/home/deamoon_uw_nn/uw-com-vision/dataset_info.json"
+#         category_key = dataset_name
         
-        if os.path.exists(split_file):
-            with open(split_file, 'r') as f:
-                split_data = json.load(f)
-            train_files = split_data['train']
-            test_files = split_data['test']
-        else:
-            print(f"No split found at {split_file}")
-            continue  # Skip if no split file
-        print("-------------------------------")
-        print(f"Registering datasets for {dataset_name}")
-        print("-------------------------------")
-        DatasetCatalog.register(
-            f"{dataset_name}_train",
-            lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
-            get_split_dicts(img_dir, label_dir, files, category_json, category_key)
-        )
-        MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
+#         if os.path.exists(split_file):
+#             with open(split_file, 'r') as f:
+#                 split_data = json.load(f)
+#             train_files = split_data['train']
+#             test_files = split_data['test']
+#         else:
+#             print(f"No split found at {split_file}")
+#             continue  # Skip if no split file
+#         print("-------------------------------")
+#         print(f"Registering datasets for {dataset_name}")
+#         print("-------------------------------")
+#         DatasetCatalog.register(
+#             f"{dataset_name}_train",
+#             lambda img_dir=img_dir, label_dir=label_dir, files=train_files:
+#             get_split_dicts(img_dir, label_dir, files, category_json, category_key)
+#         )
+#         MetadataCatalog.get(f"{dataset_name}_train").set(thing_classes=thing_classes)
 
-        DatasetCatalog.register(
-            f"{dataset_name}_test",
-            lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
-            get_split_dicts(img_dir, label_dir, files, category_json, category_key)
-        )
-        MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
+#         DatasetCatalog.register(
+#             f"{dataset_name}_test",
+#             lambda img_dir=img_dir, label_dir=label_dir, files=test_files:
+#             get_split_dicts(img_dir, label_dir, files, category_json, category_key)
+#         )
+#         MetadataCatalog.get(f"{dataset_name}_test").set(thing_classes=thing_classes)
 
 
 # def split_dataset(img_dir, label_dir, dataset_name, test_size=0.2, seed=42):
@@ -282,67 +284,67 @@ def register_datasets(dataset_info, test_size=0.2):
 #         dataset_dicts.append(record)
 #     return dataset_dicts
 
-def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
-    dataset_info = read_dataset_info(category_json)
-    if category_key not in dataset_info:
-        raise ValueError(f"Category key '{category_key}' not found in JSON")
-    category_names = dataset_info[category_key][2]
-    category_name_to_id = {name: idx for idx, name in enumerate(category_names)}
+# def get_split_dicts(img_dir, label_dir, files, category_json, category_key):
+#     dataset_info = read_dataset_info(category_json)
+#     if category_key not in dataset_info:
+#         raise ValueError(f"Category key '{category_key}' not found in JSON")
+#     category_names = dataset_info[category_key][2]
+#     category_name_to_id = {name: idx for idx, name in enumerate(category_names)}
 
-    dataset_dicts = []
-    idx = 0
-    for file in files:
-        json_file = os.path.join(label_dir, file)
-        if not os.path.exists(json_file):
-            print(f"Label file not found: {json_file}")
-            continue  # Skip missing files
+#     dataset_dicts = []
+#     idx = 0
+#     for file in files:
+#         json_file = os.path.join(label_dir, file)
+#         if not os.path.exists(json_file):
+#             print(f"Label file not found: {json_file}")
+#             continue  # Skip missing files
 
-        with open(json_file) as f:
-            imgs_anns = json.load(f)
+#         with open(json_file) as f:
+#             imgs_anns = json.load(f)
 
-        record = {
-            "file_name": os.path.join(img_dir, imgs_anns["metadata"]["name"]),
-            "image_id": idx,
-            "height": imgs_anns["metadata"]["height"],
-            "width": imgs_anns["metadata"]["width"]
-        }
-        idx += 1
-        annos = imgs_anns["instances"]
-        objs = []
+#         record = {
+#             "file_name": os.path.join(img_dir, imgs_anns["metadata"]["name"]),
+#             "image_id": idx,
+#             "height": imgs_anns["metadata"]["height"],
+#             "width": imgs_anns["metadata"]["width"]
+#         }
+#         idx += 1
+#         annos = imgs_anns["instances"]
+#         objs = []
 
-        for anno in annos:
-            categoryName = anno["className"]
-            if categoryName not in category_name_to_id:
-                raise ValueError(f"Category Name Not Found: {categoryName}")
-            category_id = category_name_to_id[categoryName]
-            type = anno["type"]
+#         for anno in annos:
+#             categoryName = anno["className"]
+#             if categoryName not in category_name_to_id:
+#                 raise ValueError(f"Category Name Not Found: {categoryName}")
+#             category_id = category_name_to_id[categoryName]
+#             type = anno["type"]
 
-            if type == "ellipse":
-                cx, cy, rx, ry, theta = anno["cx"], anno["cy"], anno["rx"], anno["ry"], anno["angle"]
-                ellipse = ((cx, cy), (rx, ry), theta)
-                circ = Point(ellipse[0]).buffer(1)
-                ell = scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
-                ellr = rotate(ell, ellipse[2])
-                px, py = ellr.exterior.coords.xy
-                poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
-                poly = [p for x in poly for p in x]
-            elif type == "polygon":
-                px, py = anno["points"][0:-1:2], anno["points"][1:-1:2]
-                px.append(anno["points"][0])
-                py.append(anno["points"][-1])
-                poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
-                poly = [p for x in poly for p in x]
+#             if type == "ellipse":
+#                 cx, cy, rx, ry, theta = anno["cx"], anno["cy"], anno["rx"], anno["ry"], anno["angle"]
+#                 ellipse = ((cx, cy), (rx, ry), theta)
+#                 circ = Point(ellipse[0]).buffer(1)
+#                 ell = scale(circ, int(ellipse[1][0]), int(ellipse[1][1]))
+#                 ellr = rotate(ell, ellipse[2])
+#                 px, py = ellr.exterior.coords.xy
+#                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+#                 poly = [p for x in poly for p in x]
+#             elif type == "polygon":
+#                 px, py = anno["points"][0:-1:2], anno["points"][1:-1:2]
+#                 px.append(anno["points"][0])
+#                 py.append(anno["points"][-1])
+#                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
+#                 poly = [p for x in poly for p in x]
 
-            obj = {
-                "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
-                "bbox_mode": BoxMode.XYXY_ABS,
-                "segmentation": [poly],
-                "category_id": category_id,
-            }
-            objs.append(obj)
-        record["annotations"] = objs
-        dataset_dicts.append(record)
-    return dataset_dicts
+#             obj = {
+#                 "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
+#                 "bbox_mode": BoxMode.XYXY_ABS,
+#                 "segmentation": [poly],
+#                 "category_id": category_id,
+#             }
+#             objs.append(obj)
+#         record["annotations"] = objs
+#         dataset_dicts.append(record)
+#     return dataset_dicts
 
     
 def custom_mapper(dataset_dicts):
@@ -388,12 +390,12 @@ class CustomTrainer(DefaultTrainer):
     def build_train_loader(cls, cfg):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
 
-def read_dataset_info(file_path):
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-        # Convert list values back to tuples for consistency with the original data
-        dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
-    return dataset_info
+# def read_dataset_info(file_path):
+#     with open(file_path, 'r') as file:
+#         data = json.load(file)
+#         # Convert list values back to tuples for consistency with the original data
+#         dataset_info = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items()}
+#     return dataset_info
 
 def train_on_dataset(dataset_name, output_dir):
     dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
