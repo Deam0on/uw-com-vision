@@ -82,17 +82,13 @@ class CustomTrainer(DefaultTrainer):
     def build_train_loader(cls, cfg):
         return build_detection_train_loader(cfg, mapper=custom_mapper)
 
-def train_on_dataset(params, dataset_name, output_dir):
+def train_on_dataset(dataset_name, output_dir):
     """
-    Trains a model on the specified dataset using given hyperparameters.
+    Trains a model on the specified dataset.
 
     Parameters:
-    - params: Dictionary of hyperparameters.
     - dataset_name: Name of the dataset.
     - output_dir: Directory to save the trained model.
-
-    Returns:
-    - dict: Evaluation metric and status for Hyperopt.
     """
     # Read dataset information
     dataset_info = read_dataset_info('/home/deamoon_uw_nn/uw-com-vision/dataset_info.json')
@@ -100,15 +96,24 @@ def train_on_dataset(params, dataset_name, output_dir):
     # Register datasets
     register_datasets({dataset_name: dataset_info[dataset_name]})
 
+    # Debug prints for verification
+    print(DatasetCatalog.get(f"{dataset_name}_train"))
+    print(DatasetCatalog.get(f"{dataset_name}_test"))
+    
+    # Path for the split file
+    split_file = os.path.join("/home/deamoon_uw_nn/split_dir/", f"{dataset_name}_split.json")
+    print(f"Split file for {dataset_name}: {split_file}")
+
     # Configuration for training
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml"))
     cfg.DATASETS.TRAIN = (f"{dataset_name}_train",)
     cfg.DATASETS.TEST = (f"{dataset_name}_test",)
     cfg.DATALOADER.NUM_WORKERS = 2
-    cfg.SOLVER.IMS_PER_BATCH = params['batch_size']
-    cfg.SOLVER.BASE_LR = params['learning_rate']
-    cfg.SOLVER.MAX_ITER = params['max_iter']
+    cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml")
+    cfg.SOLVER.IMS_PER_BATCH = 8
+    cfg.SOLVER.BASE_LR = 0.00025
+    cfg.SOLVER.MAX_ITER = 1000
     cfg.SOLVER.STEPS = []
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 32
 
@@ -117,20 +122,17 @@ def train_on_dataset(params, dataset_name, output_dir):
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
     cfg.MODEL.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # Output directory for the trial
-    trial_output_dir = os.path.join(output_dir, f"trial_{params['trial_id']}")
-    os.makedirs(trial_output_dir, exist_ok=True)
-    cfg.OUTPUT_DIR = trial_output_dir
+    # Output directory for the dataset
+    dataset_output_dir = os.path.join(output_dir, dataset_name)
+    os.makedirs(dataset_output_dir, exist_ok=True)
+    cfg.OUTPUT_DIR = dataset_output_dir
 
     # Initialize and start the trainer
     trainer = DefaultTrainer(cfg)
     trainer.resume_or_load(resume=False)
     trainer.train()
 
-    # Evaluate the model
-    evaluator = COCOEvaluator(f"{dataset_name}_test", cfg, False, output_dir=trial_output_dir)
-    val_loader = build_detection_test_loader(cfg, f"{dataset_name}_test")
-    metrics = inference_on_dataset(trainer.model, val_loader, evaluator)
-    
-    # Return the main evaluation metric (e.g., bbox/AP50)
-    return {'loss': -metrics["bbox"]["AP50"], 'status': STATUS_OK}
+    # Save the trained model
+    model_path = os.path.join(dataset_output_dir, "model_final.pth")
+    torch.save(trainer.model.state_dict(), model_path)
+    print(f"Model trained on {dataset_name} saved to {model_path}")
